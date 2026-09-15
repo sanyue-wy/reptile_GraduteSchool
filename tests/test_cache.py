@@ -137,7 +137,7 @@ class TestCrawlCache:
         assert mock_cache.stats["writes"] == 1
 
     def test_get_or_fetch_force(self, mock_cache):
-        """force=True 但缓存新鲕�时仍返回缓存（force 仅作用于过期缓存）"""
+        """force=True 时忽略新鲜缓存并重新抓取"""
         url = "http://test.edu.cn/page"
         mock_cache.write(url, "old content")
 
@@ -145,8 +145,16 @@ class TestCrawlCache:
             return "new content"
 
         result = mock_cache.get_or_fetch(fetch_fn, url, force=True)
-        # 缓存新鲜，force 不会强制刷新
-        assert result == "old content"
+        assert result == "new content"
+
+    def test_clear(self, tmp_dir):
+        """clear 删除当前缓存目录中的文件"""
+        cache = CrawlCache(cache_dir=tmp_dir / "cache", max_age_days=7)
+        cache.write("http://test.edu.cn/page", "<html>cached</html>")
+        cache.write("http://test.edu.cn/api", '{"data": []}')
+
+        assert cache.clear() == 2
+        assert not cache.cache_dir.exists()
 
     def test_get_or_fetch_no_cache(self, mock_cache):
         """use_cache=False 时不读不写缓存"""

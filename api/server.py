@@ -409,7 +409,7 @@ def _run_crawl_task(task_id: str) -> None:
         _update_task(task_id, status="running")
 
         # 导入 main 模块的执行逻辑
-        from main import build_tasks, execute_task
+        from main import build_tasks, execute_task, run_export_pipeline
         from utils.cache import CrawlCache
         from utils.http import PoliteSession
         from utils.progress import get_progress_tracker
@@ -450,11 +450,9 @@ def _run_crawl_task(task_id: str) -> None:
             "percent": 95.0,
         })
 
-        from pipelines.export import export_summary, export_merged
         all_merged = _read_all_merged_records()
         if all_merged:
-            export_summary(all_merged)
-            export_merged(all_merged)
+            run_export_pipeline(all_merged, Path("data/output"))
 
         _update_task(task_id, status="completed", progress={
             "total_steps": len(tasks),
@@ -737,7 +735,7 @@ def api_failures_retry():
     if not retry_all and not failure_ids:
         return jsonify({"code": 40001, "message": "failure_ids 不能为空"}), 400
 
-    active_failures = get_active_failures()
+    active_failures = [failure for failure in load_failures() if failure.get("status") == "active"]
 
     if retry_all:
         target_failures = active_failures
@@ -893,8 +891,14 @@ def api_config_get():
             "global": global_config,
             "schools": schools,
             "validation": validation_report,
+            "plugins": _list_plugins_payload(),
         }
     })
+
+
+def _list_plugins_payload():
+    from config.plugins import list_plugins
+    return {"items": list_plugins()}
 
 
 # ------------------------------------------------------------------
@@ -1107,6 +1111,83 @@ def api_config_export():
         as_attachment=True,
         download_name="school_data.json",
     )
+
+
+@app.route("/api/plugins", methods=["GET"])
+def api_plugins_list():
+    from config.plugins import list_plugins
+    return jsonify({"code": 0, "data": {"items": list_plugins()}})
+
+
+@app.route("/api/plugins/pipeline/<pipeline_type>", methods=["PUT"])
+def api_plugin_pipeline_save(pipeline_type: str):
+    from config.plugins import update_pipeline
+    data = request.get_json() or {}
+    weights = data.get("weights", data)
+    if not isinstance(weights, dict):
+        return jsonify({"code": 40001, "message": "weights 必须是对象"}), 400
+    result = update_pipeline(pipeline_type, weights)
+    if result is None:
+        return jsonify({"code": 40001, "message": "pipeline_type 必须是 processors 或 exporters"}), 400
+    return jsonify({"code": 0, "data": {"pipeline_type": pipeline_type, "weights": result}})
+
+
+@app.route("/api/plugins/upload", methods=["POST"])
+def api_plugin_upload():
+    from config.plugins import upload_plugin
+    kind = request.form.get("kind", "")
+    filename = request.form.get("filename", "")
+    source = request.form.get("source", "")
+    if "file" in request.files:
+        uploaded = request.files["file"]
+        filename = filename or uploaded.filename
+        source = source or uploaded.read().decode("utf-8")
+    if not kind or not filename or not source:
+        return jsonify({"code": 40001, "message": "kind、filename 和 source 不能为空"}), 400
+    try:
+        plugin = upload_plugin(kind, filename, source)
+    except ValueError as e:
+        return jsonify({"code": 40002, "message": str(e)}), 400
+    except Exception as e:
+        logger.exception("插件上传失败")
+        return jsonify({"code": 50001, "message": "插件上传失败", "detail": str(e)}), 500
+    return jsonify({"code": 0, "data": plugin})
+
+
+@app.route("/api/plugins/<path:plugin_key>", methods=["PUT", "DELETE"])
+def api_plugin_update(plugin_key: str):
+    from config.plugins import delete_plugin, update_plugin
+    if ":" not in plugin_key:
+        return jsonify({"code": 40001, "message": "插件标识必须为 kind:id"}), 400
+    kind, plugin_id = plugin_key.split(":", 1)
+    if request.method == "DELETE":
+        if not delete_plugin(kind, plugin_id):
+            return jsonify({"code": 40401, "message": "插件不存在"}), 404
+        return jsonify({"code": 0, "data": {"status": "deleted", "plugin": f"{kind}:{plugin_id}"}})
+    data = request.get_json() or {}
+    plugin = update_plugin(kind, plugin_id, data)
+    if plugin is None:
+        return jsonify({"code": 40401, "message": "插件不存在"}), 404
+    return jsonify({"code": 0, "data": plugin})
+
+
+@app.route("/api/plugins/<path:plugin_key>/reload", methods=["POST"])
+def api_plugin_reload(plugin_key: str):
+    from config.plugins import reload_plugin
+    if ":" not in plugin_key:
+        return jsonify({"code": 40001, "message": "插件标识必须为 kind:id"}), 400
+    kind, plugin_id = plugin_key.split(":", 1)
+    plugin = reload_plugin(kind, plugin_id)
+    if plugin is None:
+        return jsonify({"code": 40401, "message": "插件不存在"}), 404
+    return jsonify({"code": 0, "data": plugin})
+
+
+@app.route("/api/cache/clear", methods=["POST"])
+def api_cache_clear():
+    from utils.cache import CrawlCache
+    removed = CrawlCache().clear()
+    return jsonify({"code": 0, "data": {"removed": removed, "message": f"已清理 {removed} 个缓存文件"}})
 
 
 # ------------------------------------------------------------------

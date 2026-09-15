@@ -224,7 +224,7 @@ class ProgressTracker:
 
     def get_recent_tutors(self, limit: int = 6) -> list[dict]:
         """从最新的合并 JSONL 文件中取最近的导师记录。"""
-        output_dir = Path("data/output")
+        output_dir = self.progress_file.parent
         if not output_dir.exists():
             return []
 
@@ -257,7 +257,7 @@ class ProgressTracker:
 
     def get_recent_failures(self, limit: int = 5) -> list[dict]:
         """从 failures.json 读取最近失败记录。"""
-        failures_file = Path("data/output/failures.json")
+        failures_file = self.log_file.parent / "failures.json"
         if not failures_file.exists():
             return []
         try:

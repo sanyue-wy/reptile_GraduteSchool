@@ -310,6 +310,33 @@ const api = {
 
     // 配置
     getConfig: () => apiCall("/api/config"),
+    getPlugins: () => apiCall("/api/plugins"),
+    savePlugin: (kind, pluginId, data) => apiCall(`/api/plugins/${encodeURIComponent(`${kind}:${pluginId}`)}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+    }),
+    savePluginPipeline: (type, weights) => apiCall(`/api/plugins/pipeline/${encodeURIComponent(type)}`, {
+        method: "PUT",
+        body: JSON.stringify({ weights }),
+    }),
+    uploadPlugin: (formData) => fetch(`${API_BASE}/api/plugins/upload`, {
+        method: "POST",
+        body: formData,
+    }).then((r) => r.json()).then((json) => {
+        if (json.code !== 0) {
+            const err = new Error(json.message || "插件上传失败");
+            err.code = json.code;
+            throw err;
+        }
+        return json.data;
+    }),
+    deletePlugin: (kind, pluginId) => apiCall(`/api/plugins/${encodeURIComponent(`${kind}:${pluginId}`)}`, {
+        method: "DELETE",
+    }),
+    reloadPlugin: (kind, pluginId) => apiCall(`/api/plugins/${encodeURIComponent(`${kind}:${pluginId}`)}/reload`, {
+        method: "POST",
+    }),
+    clearCache: () => apiCall("/api/cache/clear", { method: "POST" }),
     saveSchoolConfig: (name, data) => apiCall(`/api/config/schools/${encodeURIComponent(name)}`, {
         method: "PUT",
         body: JSON.stringify(data),

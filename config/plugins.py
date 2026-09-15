@@ -192,7 +192,7 @@ def save_plugin_config(config: dict[str, Any]) -> None:
 
 
 def _safe_builtin_plugins() -> dict[str, list[dict[str, str]]]:
-    plugins = {kind: [dict(meta) for meta in BUILTIN_METADATA.get(kind, []).values()] for kind in PLUGIN_KINDS}
+    plugins = {kind: [dict(meta) for meta in (BUILTIN_METADATA.get(kind, {}) or {}).values()] for kind in PLUGIN_KINDS}
 
     try:
         from spiders import ENGINE_REGISTRY

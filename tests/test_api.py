@@ -396,6 +396,81 @@ class TestApiFailuresExtended:
         assert data["code"] == 0
 
 
+class TestApiPlugins:
+    """插件管理接口单测"""
+
+    @pytest.fixture
+    def plugin_api_env(self, monkeypatch, tmp_path):
+        import config.plugins as plugins
+        import sys
+
+        config_path = tmp_path / "plugins.json"
+        ext_dir = tmp_path / "plugins_ext"
+        monkeypatch.setattr(plugins, "PLUGIN_CONFIG_PATH", config_path)
+        monkeypatch.setattr(plugins, "EXT_PLUGIN_DIR", ext_dir)
+        plugins._EXTERNAL_CACHE.clear()
+        yield plugins
+        plugins._EXTERNAL_CACHE.clear()
+        for module_name in list(sys.modules):
+            if module_name.startswith("plugins_ext."):
+                sys.modules.pop(module_name, None)
+
+    def test_list_plugins(self, client, plugin_api_env):
+        resp = client.get("/api/plugins")
+        data = resp.get_json()
+        assert data["code"] == 0
+        kinds = {item["kind"] for item in data["data"]["items"]}
+        assert kinds == {"source", "fetcher", "parser", "processor", "exporter", "presenter", "utility"}
+
+    def test_config_includes_plugins(self, client, plugin_api_env):
+        data = client.get("/api/config").get_json()["data"]
+        assert "plugins" in data
+        assert data["plugins"]["items"]
+
+    def test_save_plugin_pipeline(self, client, plugin_api_env):
+        resp = client.put("/api/plugins/pipeline/processors", json={"weights": {"merge": 10}})
+        data = resp.get_json()
+        assert data["code"] == 0
+        assert data["data"]["weights"] == {"merge": 10}
+        saved = json.loads(plugin_api_env.PLUGIN_CONFIG_PATH.read_text(encoding="utf-8"))
+        assert saved["pipeline"]["processors"] == {"merge": 10}
+
+    def test_save_plugin_pipeline_rejects_unknown_type(self, client, plugin_api_env):
+        resp = client.put("/api/plugins/pipeline/presenters", json={"weights": {"overview": 1}})
+        assert resp.get_json()["code"] == 40001
+
+    def test_update_plugin(self, client, plugin_api_env):
+        resp = client.put("/api/plugins/processor:merge", json={"enabled": False, "config": {"mode": "strict"}})
+        data = resp.get_json()
+        assert data["code"] == 0
+        assert data["data"]["enabled"] is False
+        assert data["data"]["config"] == {"mode": "strict"}
+
+    def test_upload_reload_and_delete_plugin(self, client, plugin_api_env):
+        source = '''PLUGIN_META = {"name": "sample", "kind": "processor", "version": "1.0.0", "author": "测试", "description": "sample"}\ndef process(records, ctx):\n    return records\n'''
+        upload = client.post("/api/plugins/upload", data={"kind": "processor", "filename": "sample.py", "source": source})
+        assert upload.get_json()["code"] == 0
+        reload_resp = client.post("/api/plugins/processor:sample/reload")
+        assert reload_resp.get_json()["code"] == 0
+        delete_resp = client.delete("/api/plugins/processor:sample")
+        assert delete_resp.get_json()["code"] == 0
+        assert not (plugin_api_env.EXT_PLUGIN_DIR / "processor" / "sample.py").exists()
+
+    def test_cache_clear(self, client, monkeypatch, tmp_path):
+        import utils.cache as cache_module
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "example.com").mkdir()
+        (cache_dir / "example.com" / "page.html").write_text("<html></html>", encoding="utf-8")
+        monkeypatch.setattr(cache_module, "CACHE_DIR", cache_dir)
+
+        resp = client.post("/api/cache/clear")
+        data = resp.get_json()
+        assert data["code"] == 0
+        assert data["data"]["removed"] == 1
+        assert not cache_dir.exists()
+
+
 class TestApiRunCrawlTask:
     """_run_crawl_task 单测"""
 

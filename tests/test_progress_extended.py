@@ -88,7 +88,7 @@ class TestProgressTracker:
 
     def test_get_recent_tutors_from_jsonl(self, mock_progress, tmp_path):
         """get_recent_tutors 从 JSONL 读取"""
-        output_dir = Path("data/output")
+        output_dir = mock_progress.progress_file.parent
         output_dir.mkdir(parents=True, exist_ok=True)
         jsonl_path = output_dir / "测试大学_机械学院.jsonl"
         jsonl_path.write_text(

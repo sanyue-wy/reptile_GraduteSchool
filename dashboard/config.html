@@ -33,6 +33,7 @@
           <button class="btn btn-outline btn-sm" onclick="downloadConfigFile()">📤 导出配置</button>
           <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file').click()">📥 导入配置</button>
           <input type="file" id="import-file" accept=".json,.py" style="display:none" onchange="importConfig()">
+          <button class="btn btn-outline btn-sm" onclick="clearCache()">清理缓存</button>
           <button class="btn btn-primary btn-sm" onclick="saveAllConfigs()">💾 保存全部</button>
         </div>
       </header>
@@ -50,6 +51,7 @@
           <div class="tab active" onclick="switchTab('visual')">可视化编辑</div>
           <div class="tab" onclick="switchTab('json')">JSON 源码</div>
           <div class="tab" onclick="switchTab('global')">全局参数</div>
+          <div class="tab" onclick="switchTab('plugins')">插件配置</div>
         </div>
 
         <!-- Tab: Visual Editor -->
@@ -105,6 +107,48 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab: Plugin Manager (hidden) -->
+        <div id="tabPlugins" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2>插件配置</h2>
+                <p class="hint" style="margin:6px 0 0">管理内置插件开关、处理器/导出器顺序，以及外部插件上传。</p>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="loadPlugins()">刷新</button>
+            </div>
+            <div class="card-body">
+              <div class="plugin-toolbar">
+                <select id="plugin-kind-filter" onchange="renderPluginTab()">
+                  <option value="all">全部类型</option>
+                  <option value="source">source</option>
+                  <option value="fetcher">fetcher</option>
+                  <option value="parser">parser</option>
+                  <option value="processor">processor</option>
+                  <option value="exporter">exporter</option>
+                  <option value="presenter">presenter</option>
+                  <option value="utility">utility</option>
+                </select>
+                <input id="plugin-search" type="text" placeholder="搜索插件名称" oninput="renderPluginTab()">
+              </div>
+              <div id="plugin-summary" class="hint" style="margin:12px 0"></div>
+              <div id="plugin-list"></div>
+              <div class="config-actions" style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+                <select id="plugin-upload-kind">
+                  <option value="processor">processor</option>
+                  <option value="exporter">exporter</option>
+                  <option value="fetcher">fetcher</option>
+                  <option value="parser">parser</option>
+                  <option value="utility">utility</option>
+                </select>
+                <input type="file" id="plugin-file" accept=".py">
+                <button class="btn btn-primary" onclick="uploadPlugin()">上传外部插件</button>
+                <button class="btn btn-outline" onclick="clearCache()">清理页面缓存</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -117,6 +161,7 @@
     let configData = null;
     let selectedSchoolName = null;
     let globalConfig = null;
+    let pluginData = { items: [] };
 
     // 检测后端连通性
     async function checkBackend() {
@@ -138,10 +183,12 @@
       try {
         const data = await api.getConfig();
         configData = data;
+        pluginData = data.plugins || { items: [] };
         renderStats();
         renderSchoolTree();
         renderJsonView();
         renderGlobalForm();
+        renderPluginTab();
       } catch (err) {
         showToast(err.message, "error");
       }
@@ -517,6 +564,147 @@
       }
     }
 
+    // ==================== 插件管理 ====================
+    async function loadPlugins() {
+      try {
+        const data = await api.getPlugins();
+        pluginData = data;
+        renderPluginTab();
+        showToast("插件列表已刷新", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function renderPluginTab() {
+      const items = pluginData.items || [];
+      const kind = document.getElementById("plugin-kind-filter")?.value || "all";
+      const query = (document.getElementById("plugin-search")?.value || "").trim().toLowerCase();
+      const filtered = items.filter(plugin => {
+        const matchesKind = kind === "all" || plugin.kind === kind;
+        const matchesQuery = !query || `${plugin.name} ${plugin.description || ""}`.toLowerCase().includes(query);
+        return matchesKind && matchesQuery;
+      });
+      const counts = items.reduce((acc, plugin) => {
+        acc[plugin.kind] = (acc[plugin.kind] || 0) + 1;
+        return acc;
+      }, {});
+      const summary = Object.entries(counts).map(([pluginKind, count]) => `${pluginKind}: ${count}`).join(" · ");
+      document.getElementById("plugin-summary").textContent = `共 ${items.length} 个插件；${summary || "暂无插件"}`;
+      const list = document.getElementById("plugin-list");
+      if (!filtered.length) {
+        list.innerHTML = '<div class="empty-state"><p>没有匹配的插件</p></div>';
+        return;
+      }
+      list.innerHTML = filtered.map(plugin => {
+        const key = `${plugin.kind}:${plugin.id}`;
+        const isPipeline = ["processor", "exporter"].includes(plugin.kind);
+        const configText = JSON.stringify(plugin.config || {}, null, 2);
+        return `
+          <div class="plugin-card" data-plugin-key="${escapeHtml(key)}" style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+              <div>
+                <h3 style="margin:0">${escapeHtml(plugin.name)} <span class="hint">${escapeHtml(plugin.kind)} · ${escapeHtml(plugin.version || "")}</span></h3>
+                <p class="hint" style="margin:6px 0">${escapeHtml(plugin.description || "")}</p>
+                <div class="hint">${plugin.builtin ? "内置插件" : "外部插件"} · 接口: ${escapeHtml(plugin.interface || "")}${plugin.path ? ` · ${escapeHtml(plugin.path)}` : ""}</div>
+              </div>
+              <label class="toggle" title="启用/禁用">
+                <input type="checkbox" data-plugin-enabled ${plugin.enabled ? "checked" : ""}><span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="config-grid" style="margin-top:12px">
+              ${isPipeline ? `<div class="config-field"><label>流水线权重</label><input type="number" data-plugin-weight value="${Number(plugin.weight ?? 100)}"></div>` : ""}
+              <div class="config-field" style="grid-column:${isPipeline ? "1" : "1/-1"}">
+                <label>插件配置 JSON</label>
+                <textarea data-plugin-config rows="3" style="font-family:monospace;font-size:12px">${escapeHtml(configText)}</textarea>
+              </div>
+            </div>
+            <div class="config-actions" style="margin-top:10px">
+              <button class="btn btn-success btn-sm" onclick="savePluginConfig('${escapeHtml(plugin.kind)}','${escapeHtml(plugin.id)}')">保存插件</button>
+              ${plugin.builtin ? "" : `<button class="btn btn-outline btn-sm" onclick="reloadPlugin('${escapeHtml(plugin.kind)}','${escapeHtml(plugin.id)}')">重载</button><button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deletePlugin('${escapeHtml(plugin.kind)}','${escapeHtml(plugin.id)}')">删除</button>`}
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    async function savePluginConfig(kind, pluginId) {
+      const card = document.querySelector(`[data-plugin-key="${CSS.escape(`${kind}:${pluginId}`)}"]`);
+      if (!card) return;
+      const enabled = card.querySelector("[data-plugin-enabled]").checked;
+      const weight = card.querySelector("[data-plugin-weight]")?.value;
+      let config = {};
+      try {
+        config = JSON.parse(card.querySelector("[data-plugin-config]").value || "{}");
+      } catch {
+        showToast("插件配置必须是合法 JSON", "error");
+        return;
+      }
+      try {
+        await api.savePlugin(kind, pluginId, { enabled, config });
+        if (weight !== undefined) {
+          const weights = {};
+          (pluginData.items || []).filter(plugin => plugin.kind === kind && plugin.weight !== undefined).forEach(plugin => {
+            const isCurrent = plugin.id === pluginId;
+            const currentCard = isCurrent ? card : document.querySelector(`[data-plugin-key="${CSS.escape(`${kind}:${plugin.id}`)}"]`);
+            weights[plugin.id] = Number(isCurrent ? weight : currentCard?.querySelector("[data-plugin-weight]")?.value ?? plugin.weight);
+          });
+          await api.savePluginPipeline(`${kind}s`, weights);
+        }
+        showToast("插件配置已保存", "success");
+        await loadPlugins();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function uploadPlugin() {
+      const file = document.getElementById("plugin-file").files[0];
+      const kind = document.getElementById("plugin-upload-kind").value;
+      if (!file) { showToast("请选择 .py 插件文件", "warning"); return; }
+      const formData = new FormData();
+      formData.append("kind", kind);
+      formData.append("filename", file.name);
+      formData.append("file", file);
+      try {
+        await api.uploadPlugin(formData);
+        showToast("插件上传并加载成功", "success");
+        document.getElementById("plugin-file").value = "";
+        await loadPlugins();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function reloadPlugin(kind, pluginId) {
+      try {
+        await api.reloadPlugin(kind, pluginId);
+        showToast("插件已重载", "success");
+        await loadPlugins();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function deletePlugin(kind, pluginId) {
+      if (!confirm(`确定删除外部插件 ${kind}:${pluginId} 吗？`)) return;
+      try {
+        await api.deletePlugin(kind, pluginId);
+        showToast("插件已删除", "success");
+        await loadPlugins();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function clearCache() {
+      try {
+        const result = await api.clearCache();
+        showToast(result.message || "缓存已清理", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
     // ==================== 增删学校 ====================
     function addNewSchool() {
       const name = prompt("请输入学校名称：");
@@ -586,11 +774,10 @@
       document.getElementById("tabVisual").style.display  = tab === "visual" ? "block" : "none";
       document.getElementById("tabJson").style.display    = tab === "json"   ? "block" : "none";
       document.getElementById("tabGlobal").style.display = tab === "global" ? "block" : "none";
-      document.querySelectorAll(".tab").forEach((t, i) => {
-        t.classList.toggle("active",
-          (i === 0 && tab === "visual") ||
-          (i === 1 && tab === "json") ||
-          (i === 2 && tab === "global"));
+      document.getElementById("tabPlugins").style.display = tab === "plugins" ? "block" : "none";
+      document.querySelectorAll(".tab").forEach((t) => {
+        const target = t.getAttribute("onclick").match(/'([^']+)'/)?.[1];
+        t.classList.toggle("active", target === tab);
       });
     }
 

@@ -1,7 +1,7 @@
 {
   "university": "测试大学",
   "college": "机械学院",
-  "discovered_at": "2026-09-15T13:02:24.803337",
+  "discovered_at": "2026-09-15T20:41:32.043570",
   "candidates": [
     {
       "url": "http://example.com",
@@ -12,7 +12,7 @@
       "markers": [],
       "reachable": null,
       "status_code": null,
-      "discovered_at": "2026-09-15T13:02:24.803337"
+      "discovered_at": "2026-09-15T20:41:32.043570"
     }
   ],
   "summary": {

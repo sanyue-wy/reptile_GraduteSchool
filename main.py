@@ -391,6 +391,15 @@ def run_merge(university: str, college: str, year: int, progress: ProgressTracke
                 if line:
                     merged.append(json.loads(line))
 
+    # 执行 processor 插件链后写回合并结果
+    merged = run_processor_pipeline(
+        merged,
+        {"university": university, "college": college, "year": year},
+    )
+    with open(output_path, "w", encoding="utf-8") as f:
+        for record in merged:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
     # 更新进度
     progress.update_school_status(
         university, college,
@@ -650,10 +659,15 @@ def main():
     parser.add_argument("--raw-dir", default="data/raw", help="原件落盘目录")
     parser.add_argument("--no-cache", action="store_true", help="禁用页面缓存（每次强制走网络）")
     parser.add_argument("--cache-days", type=int, default=7, help="缓存新鲜期（天），默认 7 天")
+    parser.add_argument("--clear-cache", action="store_true", help="启动前清空页面缓存")
     parser.add_argument("--circuit-break-threshold", type=int, default=5, help="同因熔断阈值（同一 domain+error_type 连续失败次数）")
     parser.add_argument("--circuit-break-window", type=int, default=3600, help="熔断窗口秒数（默认 3600）")
 
     args = parser.parse_args()
+
+    if args.clear_cache:
+        removed = CrawlCache(max_age_days=args.cache_days).clear()
+        logger.info("已清空页面缓存：%d 个文件", removed)
 
     # 加载并校验配置
     raw_configs = load_schools_config()
@@ -787,9 +801,8 @@ def main():
                     all_merged.append(json.loads(line))
 
     if all_merged:
-        export_summary(all_merged)
-        export_merged(all_merged)
-        logger.info("全量导出完成：%d 条记录", len(all_merged))
+        export_results = run_export_pipeline(all_merged, Path("data/output"))
+        logger.info("全量导出完成：%d 条记录，导出器：%s", len(all_merged), sorted(export_results))
     else:
         logger.warning("无合并数据，跳过汇总表生成")
 

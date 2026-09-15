@@ -87,7 +87,8 @@ class CrawlCache:
             return 0
         removed = 0
         with self._lock:
-            for path in self.cache_dir.rglob("*"):
+            paths = sorted(self.cache_dir.rglob("*"), key=lambda path: len(path.parts), reverse=True)
+            for path in paths:
                 try:
                     if path.is_file() or path.is_symlink():
                         path.unlink()
@@ -96,6 +97,10 @@ class CrawlCache:
                         path.rmdir()
                 except OSError:
                     logger.warning("清理缓存失败: %s", path)
+            try:
+                self.cache_dir.rmdir()
+            except OSError:
+                pass
         return removed
 
     def read_text(self, url: str) -> Optional[str]:
