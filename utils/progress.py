@@ -169,9 +169,12 @@ class ProgressTracker:
             for src in ("source_a", "source_b", "merged"):
                 if school.get(src) == "done":
                     counts[src] += 1
+        # 容错：pipelines 结构可能不完整（如重置后为空），缺失时自动补全
+        pipelines = data.setdefault("pipelines", {})
         for src in counts:
-            data["pipelines"][src]["completed"] = counts[src]
-            data["pipelines"][src]["total"] = total
+            entry = pipelines.setdefault(src, {})
+            entry["completed"] = counts[src]
+            entry["total"] = total
 
     # ------------------------------------------------------------------
     # 概览统计（供 /api/overview 使用）
