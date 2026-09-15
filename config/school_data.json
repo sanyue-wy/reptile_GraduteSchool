@@ -3114,7 +3114,11 @@
         "college": "机械学院",
         "faculty": {
           "list_type": "static_html",
-          "list_url": "https://faculty.seu.edu.cn/teacher"
+          "list_url": "http://me.seu.edu.cn/xscz/list.htm",
+          "list_item_selector": "ul.xx_zm_nr li",
+          "list_research_selector": ".research",
+          "enabled": true,
+          "list_name_selector": "a"
         },
         "notice": {
           "enabled": false

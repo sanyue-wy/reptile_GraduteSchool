@@ -227,7 +227,7 @@ def run_source_a(
         # 静态 HTML 模式
         teachers = fetch_faculty_list(session, list_url, {
             "item": faculty_cfg.get("list_item_selector", "li"),
-            "name": "title",
+            "name": faculty_cfg.get("list_name_selector", "title"),
             "profile": "href",
             "research": faculty_cfg.get("list_research_selector", ""),
         }, cache=cache, force=task.force)
