@@ -1,0 +1,12 @@
+{
+  "overrides": {},
+  "pipeline": {
+    "processors": {
+      "merge": 300
+    },
+    "exporters": {
+      "jsonl": 100,
+      "xlsx": 200
+    }
+  }
+}

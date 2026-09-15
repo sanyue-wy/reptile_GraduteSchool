@@ -34,6 +34,22 @@ class ConfigError:
 VALID_CATEGORIES = {"mechanical", "automation"}
 VALID_LIST_TYPES = {"static_html", "ajax_api", "js_render", "pdf_list"}
 
+
+def _registered_list_types() -> set[str]:
+    try:
+        from config.plugins import list_plugin_ids
+        return set(list_plugin_ids("fetcher"))
+    except Exception:
+        return set(VALID_LIST_TYPES)
+
+
+def _registered_parser_templates() -> set[str]:
+    try:
+        from parsers import list_registered
+        return set(list_registered())
+    except Exception:
+        return {"yzw_major", "richtext_notice", "yzw_major_api"}
+
 # 占位符 URL 模式（用于启动前配置体检）
 PLACEHOLDER_URL_PATTERNS = (
     "x.com",
@@ -127,9 +143,10 @@ def validate_school_config(config: Dict) -> List[ConfigError]:
 
             # list_type
             list_type = faculty.get("list_type")
-            if list_type and list_type not in VALID_LIST_TYPES:
+            valid_list_types = _registered_list_types()
+            if list_type and list_type not in valid_list_types:
                 errors.append(ConfigError(university, college, "faculty.list_type",
-                                          f"list_type 必须是 {VALID_LIST_TYPES}，得到: {list_type!r}"))
+                                          f"list_type 必须是已注册 fetcher：{sorted(valid_list_types)}，得到: {list_type!r}"))
 
             # list_url: 占位符检测（启动前体检，error 级）
             if list_url and isinstance(list_url, str) and _check_placeholder_url(list_url):
@@ -153,6 +170,9 @@ def validate_school_config(config: Dict) -> List[ConfigError]:
                 if not template or not isinstance(template, str) or not template.strip():
                     errors.append(ConfigError(university, college, "notice.template",
                                               "notice.enabled=true 时 template 不能为空"))
+                elif template not in _registered_parser_templates():
+                    errors.append(ConfigError(university, college, "notice.template",
+                                              f"template 必须是已注册 parser：{sorted(_registered_parser_templates())}，得到: {template!r}"))
 
                 # 当 template="yzw_major" 时，school_code 必填
                 if template == "yzw_major":

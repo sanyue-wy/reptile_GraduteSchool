@@ -81,6 +81,23 @@ class CrawlCache:
     # 对外接口
     # ------------------------------------------------------------------
 
+    def clear(self) -> int:
+        """清空当前缓存目录并返回删除的文件数。"""
+        if not self.cache_dir.exists():
+            return 0
+        removed = 0
+        with self._lock:
+            for path in self.cache_dir.rglob("*"):
+                try:
+                    if path.is_file() or path.is_symlink():
+                        path.unlink()
+                        removed += 1
+                    elif path.is_dir():
+                        path.rmdir()
+                except OSError:
+                    logger.warning("清理缓存失败: %s", path)
+        return removed
+
     def read_text(self, url: str) -> Optional[str]:
         """读缓存文本；不存在或过期返回 None。"""
         p, fresh = self._find_cached(url)
@@ -126,7 +143,7 @@ class CrawlCache:
         """
         if use_cache:
             p, fresh = self._find_cached(url)
-            if p is not None and (fresh or not force):
+            if p is not None and fresh and not force:
                 # 命中：新鲜直接返回；过期且非 force 时降级使用旧数据（页面改版时再 --force 刷新）
                 try:
                     with self._lock:

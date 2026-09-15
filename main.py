@@ -27,7 +27,9 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config.loader import load_schools_config, get_school_config
+from config.plugins import is_enabled, load_plugin_config, plugin_config
 from config.validator import validate_all_configs
+from exporters import dispatch as dispatch_exporter
 from parsers import dispatch
 from pipelines.export import (
     export_merged,
@@ -38,6 +40,7 @@ from pipelines.export import (
     get_active_failures,
 )
 from pipelines.merge import merge_sources
+from processors import dispatch as dispatch_processor
 from spiders.ajax_api import fetch_faculty_via_api
 from spiders.detail_parser import fetch_detail
 from spiders.static_list import fetch_faculty_list, parse_faculty_html
@@ -405,6 +408,33 @@ def run_merge(university: str, college: str, year: int, progress: ProgressTracke
     progress.add_log("INFO", f"{university}/{college} 合并完成：merged {stats.get('merged',0)} / partial_faculty {stats.get('partial_faculty',0)} / partial_notice {stats.get('partial_notice',0)}")
 
     return merged
+
+
+def run_processor_pipeline(records: list[dict], ctx: Optional[dict] = None) -> list[dict]:
+    """按 plugins.json 权重执行启用的 processor 插件。"""
+    context = dict(ctx or {})
+    pipeline = load_plugin_config().get("pipeline", {}).get("processors", {})
+    enabled = []
+    for name, weight in pipeline.items():
+        if is_enabled("processor", name):
+            enabled.append((int(weight), name))
+    for _, name in sorted(enabled):
+        plugin_ctx = {**context, "plugin_config": plugin_config("processor", name)}
+        records = dispatch_processor(name, records, plugin_ctx)
+    return records
+
+
+def run_export_pipeline(records: list[dict], output_dir: Path) -> dict:
+    """按 plugins.json 权重执行启用的 exporter 插件。"""
+    pipeline = load_plugin_config().get("pipeline", {}).get("exporters", {})
+    enabled = []
+    for name, weight in pipeline.items():
+        if is_enabled("exporter", name):
+            enabled.append((int(weight), name))
+    results = {}
+    for _, name in sorted(enabled):
+        results[name] = dispatch_exporter(name, records, output_dir)
+    return results
 
 
 def execute_task(
