@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>失败记录 · 导师信息采集监控面板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ==================== Sidebar ==================== -->
+    <aside class="sidebar">
+      <div class="logo">
+        研究生导师采集
+        <span>双一流高校 · 机械/自动化类</span>
+      </div>
+      <a class="nav-item"       href="index.html"><span class="nav-icon">📊</span> 总览面板</a>
+      <a class="nav-item"       href="schools.html"><span class="nav-icon">🏫</span> 学校列表</a>
+      <a class="nav-item"       href="tutors.html"><span class="nav-icon">👨‍🏫</span> 导师数据</a>
+      <a class="nav-item active" href="failures.html"><span class="nav-icon">⚠️</span> 失败记录</a>
+      <a class="nav-item"       href="config.html"><span class="nav-icon">⚙️</span> 配置管理</a>
+      <div class="sidebar-footer">
+        v0.2.0 · API 驱动<br>
+        <span id="backend-status" style="color:rgba(255,255,255,.5)">检查后端…</span>
+      </div>
+    </aside>
+
+    <!-- ==================== Main ==================== -->
+    <div class="main">
+      <header class="topbar">
+        <h1>⚠️ 失败记录</h1>
+        <div class="topbar-actions">
+          <div class="view-toggle">
+            <button class="view-btn active" onclick="setView('card')">卡片视图</button>
+            <button class="view-btn" onclick="setView('table')">表格视图</button>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="retryAll()" id="retry-all-btn">🔄 重试全部</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <select id="statusFilter" onchange="onFilterChange()">
+            <option value="">全部状态</option>
+            <option value="active">待重试</option>
+            <option value="resolved">已解决</option>
+            <option value="ignored">已忽略</option>
+          </select>
+          <select id="sourceFilter" onchange="onFilterChange()">
+            <option value="">全部来源</option>
+            <option value="Source A">Source A</option>
+            <option value="Source B">Source B</option>
+          </select>
+          <span class="filter-tag" id="resultCount">共 0 条</span>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="error-summary" id="error-summary">
+          <div class="error-stat"><h3 style="color:var(--danger)">0</h3><p>总失败数</p></div>
+          <div class="error-stat"><h3 style="color:var(--danger)">0</h3><p>HTTP 错误</p></div>
+          <div class="error-stat"><h3 style="color:var(--warning)">0</h3><p>连接超时</p></div>
+          <div class="error-stat"><h3 style="color:var(--info)">0</h3><p>解析/其他</p></div>
+        </div>
+
+        <!-- Card View -->
+        <div id="cardView">
+          <div class="card">
+            <div class="card-body" id="failureCardList">
+              <!-- 由 JS 填充 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Table View (hidden by default) -->
+        <div id="tableView" style="display:none">
+          <div class="card">
+            <div class="table-wrap">
+              <table class="full">
+                <thead>
+                  <tr>
+                    <th>学校</th>
+                    <th>学院</th>
+                    <th>数据源</th>
+                    <th>错误类型</th>
+                    <th>错误信息</th>
+                    <th>时间</th>
+                    <th>重试次数</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="failureTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination-wrap">
+              <span id="fail-page-info">显示 0-0 / 共 0 条</span>
+              <div class="page-btns" id="fail-pagination"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Crawl Progress Modal ==================== -->
+  <div class="crawl-modal" id="taskModal" style="display:none">
+    <div class="crawl-content">
+      <div class="crawl-title">🔄 重试任务执行中</div>
+      <div class="crawl-step" id="task-step">加入队列中…</div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="task-progress-bar" style="width:0%"></div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--text-secondary)" id="task-percent">0%</div>
+    </div>
+  </div>
+
+  <!-- ==================== Scripts ==================== -->
+  <script src="components/toast.js"></script>
+  <script src="components/badge.js"></script>
+  <script src="components/pagination.js"></script>
+  <script src="api.js"></script>
+  <script>
+    let currentPage = 1;
+    const pageSize = 20;
+    let currentData = null;
+    let taskTimer = null;
+
+    const ERROR_TYPE_MAP = {
+      "http_403": { label: "反爬封禁",   color: "#ef4444", bg: "#fee2e2" },
+      "http_404": { label: "页面不存在", color: "#f59e0b", bg: "#fffbeb" },
+      "timeout":   { label: "连接超时",  color: "#f59e0b", bg: "#fffbeb" },
+      "dns_error": { label: "DNS 错误",  color: "#3b82f6", bg: "#dbeafe" },
+      "parse_error": { label: "解析失败", color: "#8b5cf6", bg: "#f3e8ff" },
+    };
+
+    function getErrorTypeInfo(type) {
+      return ERROR_TYPE_MAP[type] || { label: type || "未知错误", color: "#6b7280", bg: "#f3f4f6" };
+    }
+
+    // 检测后端连通性
+    async function checkBackend() {
+      const statusEl = document.getElementById("backend-status");
+      try {
+        const resp = await fetch(`${API_BASE}/api/overview`, { signal: AbortSignal.timeout(3000) });
+        if (resp.ok) {
+          statusEl.textContent = "后端在线";
+        } else {
+          statusEl.textContent = "后端不可用（演示模式）";
+        }
+      } catch {
+        statusEl.textContent = "后端离线（演示模式）";
+      }
+    }
+
+    // ==================== 数据加载 ====================
+    async function loadData() {
+      try {
+        const params = {};
+        const status = document.getElementById("statusFilter").value;
+        const source = document.getElementById("sourceFilter").value;
+        if (status) params.status = status;
+        if (source) params.source = source;
+        params.page = currentPage;
+        params.page_size = pageSize;
+
+        const data = await api.failures(params);
+        currentData = data;
+        renderCardView(data.items || []);
+        renderTableView(data.items || []);
+
+        const total = data.total || 0;
+        const start = (data.page - 1) * (data.page_size || 0) + 1;
+        const end = Math.min(data.page * (data.page_size || 0), total);
+        document.getElementById("fail-page-info").textContent = `显示 ${total > 0 ? start : 0}-${end} / 共 ${total} 条`;
+        document.getElementById("resultCount").textContent = `共 ${total} 条`;
+
+        const totalPages = Math.ceil(total / (data.page_size || 20));
+        renderPagination(
+          document.getElementById("fail-pagination"),
+          data.page || 1,
+          totalPages,
+          (page) => { currentPage = page; loadData(); }
+        );
+
+        // 更新摘要统计
+        updateSummary(data.summary || {});
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function updateSummary(summary) {
+      const items = currentData?.items || [];
+      const httpCount = summary.http_error || 0;
+      const timeoutCount = summary.timeout || 0;
+      const parseCount = (summary.parse_error || 0) + (summary.dns_error || 0);
+
+      const stats = document.querySelectorAll("#error-summary .error-stat h3");
+      stats[0].textContent = items.length;
+      stats[1].textContent = httpCount;
+      stats[2].textContent = timeoutCount;
+      stats[3].textContent = parseCount;
+    }
+
+    // ==================== 视图切换 ====================
+    function setView(view) {
+      document.getElementById("cardView").style.display = view === "card" ? "block" : "none";
+      document.getElementById("tableView").style.display = view === "table" ? "block" : "none";
+      document.querySelectorAll(".view-btn").forEach((b, i) => {
+        b.classList.toggle("active", (i === 0 && view === "card") || (i === 1 && view === "table"));
+      });
+    }
+
+    // ==================== 渲染 ====================
+    function renderCardView(items) {
+      const el = document.getElementById("failureCardList");
+      if (items.length === 0) {
+        el.innerHTML = '<div class="empty-state"><span class="emoji">🎉</span><p>暂无失败记录</p></div>';
+        return;
+      }
+
+      el.innerHTML = items.map(f => {
+        const et = getErrorTypeInfo(f.error_type);
+        const resolved = f.status === "resolved";
+        const ignored = f.status === "ignored";
+
+        return `<div class="error-card ${resolved ? "resolved" : ""}">
+          <div class="error-top">
+            <span class="error-title">${f.school || ""} · ${f.college || ""}</span>
+            <span class="badge" style="background:${et.bg};color:${et.color}">${et.label}</span>
+          </div>
+          <div class="error-meta">
+            <span>📍 ${f.source || "—"}</span>
+            <span>🕐 ${formatTime(f.occurred_at || "")}</span>
+            <span>🔁 ${f.retry_count > 0 ? "已重试 " + f.retry_count + " 次" : "未重试"}</span>
+          </div>
+          <div class="error-message ${et.color === "#f59e0b" ? "warn" : ""}">${f.error_message || "—"}</div>
+          ${f.url ? `<div class="error-url">🔗 ${f.url}</div>` : ""}
+          <div class="error-actions" style="margin-top:10px">
+            ${resolved
+              ? `<button class="btn btn-outline btn-sm" disabled>已自动恢复</button>`
+              : `<button class="btn btn-primary btn-sm" onclick="retryOne('${f.id}')">🔄 重试</button>`
+            }
+            ${ignored
+              ? `<button class="btn btn-outline btn-sm" disabled>已忽略</button>`
+              : `<button class="btn btn-outline btn-sm" onclick="ignoreOne('${f.id}')">忽略</button>`
+            }
+            ${f.url ? `<button class="btn btn-outline btn-sm" onclick="viewRaw('${encodeURIComponent(f.url)}')">📋 查看原件</button>` : ""}
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderTableView(items) {
+      const tbody = document.getElementById("failureTableBody");
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px"><span style="font-size:40px">📭</span><p style="margin-top:8px;color:var(--text-secondary)">暂无失败记录</p></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(f => {
+        const et = getErrorTypeInfo(f.error_type);
+        const isResolved = f.status === "resolved";
+        const isIgnored = f.status === "ignored";
+
+        return `<tr>
+          <td><strong>${f.school || ""}</strong></td>
+          <td>${f.college || ""}</td>
+          <td>${f.source || ""}</td>
+          <td>${renderBadge(f.error_type)}</td>
+          <td style="max-width:240px;font-size:12px">${f.error_message || "—"}</td>
+          <td>${formatTime(f.occurred_at || "")}</td>
+          <td>${f.retry_count || 0}</td>
+          <td>${isResolved ? '<span class="badge badge-success">已解决</span>' : isIgnored ? '<span class="badge badge-gray">已忽略</span>' : '<span class="badge badge-danger">失败</span>'}</td>
+          <td>
+            ${isResolved
+              ? `<button class="btn btn-outline btn-sm" disabled>已恢复</button>`
+              : isIgnored
+                ? `<button class="btn btn-outline btn-sm" disabled>已忽略</button>`
+                : `<button class="btn btn-primary btn-sm" onclick="retryOne('${f.id}')">重试</button>`
+            }
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return "—";
+      // ISO 格式: 2026-09-14T14:23:05 → 2026-09-14 14:23:05
+      return isoStr.replace("T", " ").replace(/\.\d+$/, "");
+    }
+
+    // ==================== 操作 ====================
+    async function retryOne(id) {
+      try {
+        const data = await api.retryFailures([id]);
+        showToast("✅ 重试任务已加入队列", "success");
+        showTaskProgress(data.task_id);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function retryAll() {
+      const activeCount = (currentData?.items || []).filter(f => f.status === "active").length;
+      if (activeCount === 0) {
+        showToast("暂无待重试的失败记录", "info");
+        return;
+      }
+      if (!confirm(`确认重试全部 ${activeCount} 条失败记录？`)) return;
+      try {
+        const data = await api.retryAllFailures();
+        showToast("✅ 全部重试任务已加入队列", "success");
+        showTaskProgress(data.task_id);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function ignoreOne(id) {
+      if (!confirm("确定忽略此失败记录？")) return;
+      try {
+        await api.ignoreFailure(id);
+        showToast("✅ 已忽略", "success");
+        loadData();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function viewRaw(url) {
+      // url 是原始 URL，无法直接查看原件文件
+      // 这里打开 URL 供查看
+      window.open(decodeURIComponent(url), "_blank");
+    }
+
+    // ==================== 任务进度 ====================
+    function showTaskProgress(taskId) {
+      document.getElementById("taskModal").style.display = "flex";
+      pollTaskProgress(taskId);
+    }
+
+    async function pollTaskProgress(taskId) {
+      try {
+        const data = await api.taskProgress(taskId);
+        const status = data.status;
+        const p = data.progress || {};
+
+        document.getElementById("task-step").textContent = p.current_step || "执行中";
+        const pct = Math.round(p.percent || 0);
+        document.getElementById("task-progress-bar").style.width = pct + "%";
+        document.getElementById("task-percent").textContent = pct + "%";
+
+        if (status === "running" || status === "queued") {
+          taskTimer = setTimeout(() => pollTaskProgress(taskId), 3000);
+        } else if (status === "completed") {
+          showToast("✅ 任务已完成，正在刷新数据…", "success");
+          document.getElementById("taskModal").style.display = "none";
+          loadData();
+        } else if (status === "failed") {
+          showToast(`❌ 任务失败：${p.current_step || ""}`, "error");
+          document.getElementById("taskModal").style.display = "none";
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+        document.getElementById("taskModal").style.display = "none";
+      }
+    }
+
+    // ==================== Init ====================
+    document.addEventListener("DOMContentLoaded", () => {
+      checkBackend();
+      loadData();
+    });
+  </script>
+</body>
+</html>

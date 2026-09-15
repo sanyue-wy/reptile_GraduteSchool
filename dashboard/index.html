@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>采集总览 · 导师信息采集监控面板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ==================== Sidebar ==================== -->
+    <aside class="sidebar">
+      <div class="logo">
+        研究生导师采集
+        <span>双一流高校 · 机械/自动化类</span>
+      </div>
+      <a class="nav-item active" href="index.html"><span class="nav-icon">📊</span> 总览面板</a>
+      <a class="nav-item"       href="schools.html"><span class="nav-icon">🏫</span> 学校列表</a>
+      <a class="nav-item"       href="tutors.html"><span class="nav-icon">👨‍🏫</span> 导师数据</a>
+      <a class="nav-item"       href="failures.html"><span class="nav-icon">⚠️</span> 失败记录</a>
+      <a class="nav-item"       href="config.html"><span class="nav-icon">⚙️</span> 配置管理</a>
+      <div class="sidebar-footer">
+        v0.2.0 · API 驱动<br>
+        <span id="backend-status" style="color:rgba(255,255,255,.5)">检查后端…</span>
+      </div>
+    </aside>
+
+    <!-- ==================== Main ==================== -->
+    <div class="main">
+      <header class="topbar">
+        <h1>📊 采集总览</h1>
+        <div class="topbar-actions">
+          <span style="font-size:13px;color:var(--text-secondary)">
+            <span class="status-dot idle" id="crawl-status-dot"></span>
+            <span id="crawl-status-text">空闲</span>
+          </span>
+          <button class="btn btn-outline btn-sm" onclick="refreshOverview()">🔄 刷新</button>
+          <button class="btn btn-primary btn-sm" onclick="openCrawlModal()">▶ 开始采集</button>
+        </div>
+      </header>
+
+      <div class="content" id="content">
+        <!-- 骨架屏 / 加载状态 -->
+        <div id="loading-skeleton">
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon blue"><div class="skeleton" style="width:48px;height:48px;border-radius:12px"></div></div><div class="stat-info"><h3 class="skeleton" style="width:60px;height:28px"></h3><p class="skeleton" style="width:80px;height:13px;margin-top:4px"></p></div></div>
+            <div class="stat-card"><div class="stat-icon green"><div class="skeleton" style="width:48px;height:48px;border-radius:12px"></div></div><div class="stat-info"><h3 class="skeleton" style="width:60px;height:28px"></h3><p class="skeleton" style="width:80px;height:13px;margin-top:4px"></p></div></div>
+            <div class="stat-card"><div class="stat-icon amber"><div class="skeleton" style="width:48px;height:48px;border-radius:12px"></div></div><div class="stat-info"><h3 class="skeleton" style="width:60px;height:28px"></h3><p class="skeleton" style="width:80px;height:13px;margin-top:4px"></p></div></div>
+            <div class="stat-card"><div class="stat-icon red"><div class="skeleton" style="width:48px;height:48px;border-radius:12px"></div></div><div class="stat-info"><h3 class="skeleton" style="width:60px;height:28px"></h3><p class="skeleton" style="width:80px;height:13px;margin-top:4px"></p></div></div>
+          </div>
+        </div>
+
+        <!-- 真实内容（加载完成后显示） -->
+        <div id="dashboard" style="display:none">
+
+          <!-- ===== Stats Cards ===== -->
+          <div class="stats-grid">
+            <div class="stat-card" onclick="location.href='schools.html?status=done'">
+              <div class="stat-icon blue">🏫</div>
+              <div class="stat-info">
+                <h3 id="stat-total">0</h3>
+                <p>双一流高校总数</p>
+              </div>
+            </div>
+            <div class="stat-card" onclick="location.href='schools.html?status=done'">
+              <div class="stat-icon green">✅</div>
+              <div class="stat-info">
+                <h3 id="stat-done">0</h3>
+                <p>已完成采集</p>
+              </div>
+            </div>
+            <div class="stat-card" onclick="location.href='schools.html?status=running'">
+              <div class="stat-icon amber">⏳</div>
+              <div class="stat-info">
+                <h3 id="stat-running">0</h3>
+                <p>进行中</p>
+              </div>
+            </div>
+            <div class="stat-card" onclick="location.href='failures.html'">
+              <div class="stat-icon red">❌</div>
+              <div class="stat-info">
+                <h3 id="stat-failed">0</h3>
+                <p>失败 / 需重试</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Pipeline Progress ===== -->
+          <div class="card" style="margin-bottom:24px">
+            <div class="card-header">
+              <h2>采集进度</h2>
+              <span id="progress-summary" style="font-size:13px;color:var(--text-secondary)">加载中…</span>
+            </div>
+            <div class="card-body">
+              <div id="pipeline-progress" style="display:flex;gap:24px;flex-wrap:wrap">
+                <!-- 由 JS 填充 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Charts ===== -->
+          <div class="two-col">
+            <!-- 数据来源饼图 -->
+            <div class="card">
+              <div class="card-header"><h2>导师数据来源占比</h2></div>
+              <div class="card-body" style="display:flex;align-items:center;justify-content:center">
+                <canvas id="sourceChart" height="220"></canvas>
+              </div>
+            </div>
+
+            <!-- 学校状态分布柱状图 -->
+            <div class="card">
+              <div class="card-header"><h2>学校采集状态分布</h2></div>
+              <div class="card-body">
+                <canvas id="statusChart" height="220"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== School Table + Recent Failures ===== -->
+          <div class="three-col">
+            <!-- School List (preview, top 10) -->
+            <div class="card">
+              <div class="card-header">
+                <h2>学校采集明细（前 10 所）</h2>
+                <button class="btn btn-outline" style="padding:4px 12px;font-size:12px" onclick="location.href='schools.html'">查看全部 →</button>
+              </div>
+              <div class="card-body" style="padding:0">
+                <div class="table-wrap">
+                  <table class="full" id="schoolTable">
+                    <thead>
+                      <tr>
+                        <th>学校</th>
+                        <th>层次</th>
+                        <th>官网</th>
+                        <th>研招网</th>
+                        <th>导师数</th>
+                        <th>状态</th>
+                      </tr>
+                    </thead>
+                    <tbody id="schoolTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Failures -->
+            <div class="card">
+              <div class="card-header">
+                <h2>⚠️ 最近失败记录</h2>
+                <button class="btn btn-outline" style="padding:4px 12px;font-size:12px" onclick="location.href='failures.html'">查看全部 →</button>
+              </div>
+              <div class="card-body" id="failureList">
+                <!-- 由 JS 填充 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Tutor Cards Preview ===== -->
+          <div class="card" style="margin-bottom:24px">
+            <div class="card-header">
+              <h2>👨‍🏫 导师数据预览</h2>
+              <span style="font-size:13px;color:var(--text-secondary)">最近采集的导师</span>
+            </div>
+            <div class="card-body">
+              <div class="tutor-grid" id="tutorGrid">
+                <!-- 由 JS 填充 -->
+              </div>
+              <div style="text-align:center;padding:16px">
+                <button class="btn btn-outline btn-sm" onclick="location.href='tutors.html'">查看全部导师 →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Activity Log ===== -->
+          <div class="card">
+            <div class="card-header">
+              <h2>📋 运行日志</h2>
+              <span style="font-size:13px;color:var(--text-secondary)">最近 20 条</span>
+            </div>
+            <div class="card-body">
+              <div class="log-list" id="logList"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Crawl Modal ==================== -->
+  <div class="crawl-modal" id="crawlModal" style="display:none">
+    <div class="crawl-content">
+      <div class="crawl-title">▶ 开始采集</div>
+
+      <div class="config-section">
+        <h4>目标学校</h4>
+        <select id="crawl-school" style="width:100%">
+          <option value="__all__">全部学校 (147 所)</option>
+        </select>
+      </div>
+
+      <div class="config-section">
+        <h4>学科范围</h4>
+        <div style="display:flex;gap:16px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="mechanical" checked id="c-cat-mech"> 机械类</label>
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="automation" checked id="c-cat-auto"> 自动化类</label>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h4>数据源</h4>
+        <div style="display:flex;gap:16px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="source_a" checked id="c-src-a"> 官网师资页</label>
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="source_b" checked id="c-src-b"> 研招网</label>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h4>年份 & 选项</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <input type="number" id="crawl-year" value="2026" min="2020" max="2030" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="crawl-force"> 强制重新采集</label>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding-top:12px;border-top:1px solid var(--border)">
+        <button class="btn btn-primary" onclick="startCrawl()">确认采集</button>
+        <button class="btn btn-outline" onclick="closeCrawlModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Scripts ==================== -->
+  <script src="components/toast.js"></script>
+  <script src="components/badge.js"></script>
+  <script src="api.js"></script>
+  <script>
+    let charts = {};
+
+    // 检测后端连通性
+    async function checkBackend() {
+      const statusEl = document.getElementById("backend-status");
+      try {
+        const resp = await fetch(`${API_BASE}/api/overview`, { signal: AbortSignal.timeout(3000) });
+        if (resp.ok) {
+          statusEl.textContent = "后端在线";
+          statusEl.style.color = "rgba(16,185,129,.8)";
+          return true;
+        } else {
+          statusEl.textContent = "后端不可用（演示模式）";
+          statusEl.style.color = "rgba(239,68,68,.8)";
+        }
+      } catch {
+        statusEl.textContent = "后端离线（演示模式）";
+      }
+      return false;
+    }
+
+    // 加载概览数据
+    async function refreshOverview() {
+      try {
+        const data = await api.overview();
+        renderOverview(data);
+        document.getElementById("loading-skeleton").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function renderOverview(data) {
+      // 统计卡片
+      const stats = data.stats || {};
+      document.getElementById("stat-total").textContent   = stats.total_schools || 0;
+      document.getElementById("stat-done").textContent     = stats.done || 0;
+      document.getElementById("stat-running").textContent  = stats.running || 0;
+      document.getElementById("stat-failed").textContent   = stats.failed || 0;
+
+      // 爬取状态指示
+      const crawlDot = document.getElementById("crawl-status-dot");
+      const crawlText = document.getElementById("crawl-status-text");
+      if (stats.running > 0) {
+        crawlDot.className = "status-dot running";
+        crawlText.textContent = `采集中 (${stats.running} 所)`;
+      } else if (stats.failed > 0) {
+        crawlDot.className = "status-dot failed";
+        crawlText.textContent = `${stats.failed} 所失败`;
+      } else {
+        crawlDot.className = "status-dot idle";
+        crawlText.textContent = "空闲";
+      }
+
+      // 进度条
+      const progress = data.progress || {};
+      const pipelineDiv = document.getElementById("pipeline-progress");
+      pipelineDiv.innerHTML = "";
+
+      const pipes = [
+        { label: "Source A · 官网师资页", key: "source_a", color: "var(--primary)" },
+        { label: "Source B · 研招网",      key: "source_b", color: "var(--info)" },
+        { label: "合并导出",               key: "merged",   color: "var(--warning)" },
+      ];
+
+      let completedTotal = 0;
+      let overallTotal = 0;
+
+      pipes.forEach(p => {
+        const pdata = progress[p.key] || { completed: 0, total: 1 };
+        const pct = pdata.total > 0 ? Math.round((pdata.completed / pdata.total) * 100) : 0;
+        completedTotal += pdata.completed;
+        overallTotal = Math.max(overallTotal, pdata.total);
+
+        const div = document.createElement("div");
+        div.style.flex = "1";
+        div.innerHTML = `
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">${p.label}</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${p.color},#fff);</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">${pdata.completed} / ${pdata.total} 所</div>
+        `;
+        pipelineDiv.appendChild(div);
+      });
+
+      document.getElementById("progress-summary").textContent = `${completedTotal} / ${overallTotal} 任务完成`;
+
+      // 数据来源饼图
+      const sb = data.source_breakdown || { matched: 0, notice_only: 0, faculty_only: 0, unmatched: 0 };
+      const totalTutors = sb.matched + sb.notice_only + sb.faculty_only + sb.unmatched;
+      renderSourceChart(sb);
+
+      // 学校状态柱状图
+      const chartData = [
+        { label: "已完成", value: stats.done,    color: "#10b981" },
+        { label: "部分完成", value: stats.partial, color: "#f59e0b" },
+        { label: "进行中",  value: stats.running, color: "#3b82f6" },
+        { label: "未开始", value: stats.pending, color: "#d1d5db" },
+        { label: "失败",    value: stats.failed,  color: "#ef4444" },
+      ];
+      renderStatusChart(chartData);
+
+      // 学校表格（前 10 所）
+      renderSchoolTable(data);
+
+      // 最近失败记录
+      renderFailures(data.recent_failures || []);
+
+      // 导师卡片
+      renderTutorCards(data.recent_tutors || []);
+
+      // 日志
+      renderLogs(data.logs || []);
+    }
+
+    function renderSchoolTable(data) {
+      const tbody = document.getElementById("schoolTableBody");
+      // 从学校列表获取前 10 条 — 如果 overview 没有学校列表，我们通过 /api/schools 获取
+      // overview 返回不带学校列表，使用 api.schools()
+      // 这里我们直接显示 stats 摘要作为表格替代
+      const stats = data.stats || {};
+      const rows = [
+        { label: "已完成",   value: stats.done,     icon: "✅", color: "var(--success)" },
+        { label: "进行中",   value: stats.running,  icon: "⏳", color: "var(--info)" },
+        { label: "部分完成", value: stats.partial,  icon: "⚠️", color: "var(--warning)" },
+        { label: "未开始",   value: stats.pending,  icon: "—",  color: "var(--text-secondary)" },
+        { label: "失败",     value: stats.failed,   icon: "❌", color: "var(--danger)" },
+      ];
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td><strong>${r.label}</strong></td>
+          <td><span style="color:${r.color}">${r.icon}</span></td>
+          <td style="text-align:right">${r.value} 所</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderFailures(list) {
+      const el = document.getElementById("failureList");
+      if (list.length === 0) {
+        el.innerHTML = '<p class="empty-state"><span class="emoji">🎉</span><p>暂无失败记录</p></p>';
+        return;
+      }
+      el.innerHTML = list.map(f => `
+        <div class="failure-item">
+          <div class="failure-info">
+            <h4>${f.school || ""} · ${f.college || ""}</h4>
+            <p>${f.source || ""} · ${f.error || f.error_message || ""}</p>
+          </div>
+          <span style="font-size:11px;color:var(--text-secondary)">${f.time || f.occurred_at || ""}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderTutorCards(tutors) {
+      const grid = document.getElementById("tutorGrid");
+      if (tutors.length === 0) {
+        grid.innerHTML = '<p class="empty-state" style="grid-column:1/-1"><span class="emoji">📭</span><p>暂无导师数据</p></p>';
+        return;
+      }
+      grid.innerHTML = tutors.map(t => `
+        <div class="tutor-card">
+          <div class="tutor-name">${t.name || ""}</div>
+          <div class="tutor-meta">${t.school || ""} · ${t.college || ""} · ${t.title || ""}</div>
+          <div class="tutor-tags">
+            ${(t.areas || []).map(a => `<span class="tutor-tag">${a}</span>`).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderLogs(logs) {
+      const el = document.getElementById("logList");
+      if (logs.length === 0) {
+        el.innerHTML = '<p class="empty-state"><span class="emoji">📭</span><p>暂无日志记录</p></p>';
+        return;
+      }
+      el.innerHTML = logs.map(l => `
+        <div class="log-item">
+          <span class="log-time">${l.time}</span>
+          <span class="log-level ${l.level}">${l.level}</span>
+          <span class="log-msg">${l.msg}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderSourceChart(sb) {
+      if (charts.sourceChart) charts.sourceChart.destroy();
+      charts.sourceChart = new Chart(document.getElementById("sourceChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["官网+研招网匹配", "仅研招网", "仅官网", "未匹配"],
+          datasets: [{
+            data: [sb.matched, sb.notice_only, sb.faculty_only, sb.unmatched],
+            backgroundColor: ["#4f46e5", "#10b981", "#f59e0b", "#d1d5db"],
+            borderWidth: 0,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "60%",
+          plugins: {
+            legend: { position: "bottom", labels: { padding: 12, font: { size: 12 } } }
+          }
+        }
+      });
+    }
+
+    function renderStatusChart(data) {
+      if (charts.statusChart) charts.statusChart.destroy();
+      charts.statusChart = new Chart(document.getElementById("statusChart"), {
+        type: "bar",
+        data: {
+          labels: data.map(d => d.label),
+          datasets: [{
+            label: "学校数量",
+            data: data.map(d => d.value),
+            backgroundColor: data.map(d => d.color),
+            borderRadius: 6,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 20, font: { size: 11 } }, grid: { color: "#f3f4f6" } },
+            x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+          }
+        }
+      });
+    }
+
+    // ===== Crawl Modal =====
+    let crawlTaskId = null;
+    let crawlPollTimer = null;
+
+    function openCrawlModal() {
+      document.getElementById("crawlModal").style.display = "flex";
+    }
+
+    function closeCrawlModal() {
+      document.getElementById("crawlModal").style.display = "none";
+    }
+
+    async function startCrawl() {
+      const schoolsEl = document.getElementById("crawl-school").value;
+      const cats = [];
+      if (document.getElementById("c-cat-mech").checked) cats.push("mechanical");
+      if (document.getElementById("c-cat-auto").checked)  cats.push("automation");
+      const sources = [];
+      if (document.getElementById("c-src-a").checked) sources.push("source_a");
+      if (document.getElementById("c-src-b").checked) sources.push("source_b");
+      const year = parseInt(document.getElementById("crawl-year").value);
+      const force = document.getElementById("crawl-force").checked;
+
+      if (cats.length === 0 || sources.length === 0) {
+        showToast("请选择学科和数据源", "warning");
+        return;
+      }
+
+      try {
+        const data = await api.startCrawl({
+          schools: schoolsEl === "__all__" ? ["__all__"] : [schoolsEl],
+          categories: cats,
+          sources: sources,
+          force: force,
+          year: year,
+        });
+
+        closeCrawlModal();
+        showToast(data.message || "采集任务已加入队列", "success");
+        crawlTaskId = data.task_id;
+        pollCrawlProgress();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function pollCrawlProgress() {
+      if (!crawlTaskId) return;
+
+      try {
+        const data = await api.taskProgress(crawlTaskId);
+        const status = data.status;
+
+        if (status === "running" || status === "queued") {
+          const p = data.progress || {};
+          document.querySelector(".crawl-title").innerHTML = `▶ 采集中…`;
+          document.getElementById("progress-summary").textContent = p.current_step || "执行中";
+          crawlPollTimer = setTimeout(pollCrawlProgress, 3000);
+        } else if (status === "completed") {
+          showToast("采集完成！", "success");
+          crawlTaskId = null;
+          refreshOverview();
+        } else if (status === "failed") {
+          showToast(`采集失败：${data.progress?.current_step || ""}`, "error");
+          crawlTaskId = null;
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+        crawlTaskId = null;
+      }
+    }
+
+    // ==================== Init ====================
+    let backendOnline = false;
+    document.addEventListener("DOMContentLoaded", async () => {
+      backendOnline = await checkBackend();
+      refreshOverview();
+      // 仅在后端在线时轮询概览数据（每 30s 刷新一次）
+      if (backendOnline) {
+        setInterval(refreshOverview, 30000);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,3128 @@
+[
+  {
+    "university": "上海交通大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "上海外国语大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "上海大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "上海财经大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "东北农业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "东北大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "东北师范大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "东北林业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "东华大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "东南大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中南大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中南财经政法大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国中医科学院",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国人民大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国传媒大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国农业大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国地质大学（北京）",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国地质大学（武汉）",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国政法大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国海洋大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国石油大学（北京）",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国石油大学（华东）",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国矿业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国矿业大学（北京）",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国科学技术大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中国药科大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中央民族大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中央财经大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中央音乐学院",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "中山大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "云南大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "兰州大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "内蒙古大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京交通大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京体育大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京化工大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京外国语大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京工业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京师范大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京林业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京理工大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京科技大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京航空航天大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "北京邮电大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华东师范大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华东理工大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华中农业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华中师范大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华中科技大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华北电力大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华南师范大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "华南理工大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南京农业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南京大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南京师范大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南京理工大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南京航空航天大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南开大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "南昌大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "厦门大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "合肥工业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "吉林大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "同济大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "哈尔滨工业大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "哈尔滨工程大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "四川大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "国防科技大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "复旦大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "大连海事大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "大连理工大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "天津医科大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "天津大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "太原理工大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "宁夏大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "安徽大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "对外经济贸易大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "山东大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "广西大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "延边大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "新疆大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "暨南大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "武汉大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "武汉理工大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "江南大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "河北工业大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "河海大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "浙江大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "海南大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "清华大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "湖南大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "湖南师范大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "电子科技大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "石河子大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "福州大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "苏州大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西北农林科技大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西北大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西北工业大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西南交通大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西南大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西南财经大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西安交通大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西安电子科技大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "西藏大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "贵州大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "辽宁大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "郑州大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "重庆大学",
+    "level": "985",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "长安大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "university": "青海大学",
+    "level": "211",
+    "categories": [
+      {
+        "college": "机械工程学院",
+        "category": "mechanical",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "college": "自动化学院",
+        "category": "automation",
+        "faculty": {
+          "list_type": "static_html",
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  {
+    "categories": [
+      {
+        "category": "mechanical",
+        "college": "机械学院",
+        "faculty": {
+          "list_type": "static_html",
+          "list_url": "https://faculty.seu.edu.cn/teacher",
+          "list_item_selector": ".faculty-list li a[title]",
+          "list_research_selector": ".desc"
+        },
+        "notice": {
+          "enabled": false
+        }
+      }
+    ],
+    "university": "测试大学"
+  }
+]

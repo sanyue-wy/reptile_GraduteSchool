@@ -1,0 +1,4 @@
+{"total": 2, "data": [
+    {"title": "张三", "post": "副教授", "degree": "博士", "exField1": "博士生导师,硕士生导师", "cnUrl": "/teacher/1", "headerPic": "/photo/1.jpg"},
+    {"title": "李四", "post": "教授", "degree": "博士", "exField1": "博士生导师", "cnUrl": "/teacher/2", "headerPic": "/photo/2.jpg"}
+]}

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学校列表 · 导师信息采集监控面板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ==================== Sidebar ==================== -->
+    <aside class="sidebar">
+      <div class="logo">
+        研究生导师采集
+        <span>双一流高校 · 机械/自动化类</span>
+      </div>
+      <a class="nav-item" href="index.html"><span class="nav-icon">📊</span> 总览面板</a>
+      <a class="nav-item active" href="schools.html"><span class="nav-icon">🏫</span> 学校列表</a>
+      <a class="nav-item" href="tutors.html"><span class="nav-icon">👨‍🏫</span> 导师数据</a>
+      <a class="nav-item" href="failures.html"><span class="nav-icon">⚠️</span> 失败记录</a>
+      <a class="nav-item" href="config.html"><span class="nav-icon">⚙️</span> 配置管理</a>
+      <div class="sidebar-footer">
+        v0.2.0 · API 驱动<br>
+        <span id="backend-status" style="color:rgba(255,255,255,.5)">检查后端…</span>
+      </div>
+    </aside>
+
+    <!-- ==================== Main ==================== -->
+    <div class="main">
+      <header class="topbar">
+        <h1>🏫 学校列表</h1>
+        <div class="topbar-actions">
+          <button class="btn btn-outline btn-sm" onclick="toggleAll(true)">全选</button>
+          <button class="btn btn-primary btn-sm" onclick="batchCrawl()" disabled id="batch-crawl-btn">▶ 批量采集选中</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Mini Stats -->
+        <div class="mini-stats" id="mini-stats">
+          <div class="mini-stat"><h3 style="color:var(--success)" id="stat-done">-</h3><p>已完成</p></div>
+          <div class="mini-stat"><h3 style="color:var(--warning)" id="stat-partial">-</h3><p>部分完成</p></div>
+          <div class="mini-stat"><h3 style="color:var(--info)" id="stat-running">-</h3><p>进行中</p></div>
+          <div class="mini-stat"><h3 style="color:var(--text-secondary)" id="stat-pending">-</h3><p>未开始</p></div>
+          <div class="mini-stat"><h3 style="color:var(--danger)" id="stat-failed">-</h3><p>失败</p></div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <input type="text" placeholder="🔍 搜索学校名称..." id="searchInput" oninput="onFilterChange()">
+          <select id="statusFilter" onchange="onFilterChange()">
+            <option value="">全部状态</option>
+            <option value="done">已完成</option>
+            <option value="partial">部分完成</option>
+            <option value="running">进行中</option>
+            <option value="pending">未开始</option>
+            <option value="failed">失败</option>
+          </select>
+          <select id="categoryFilter" onchange="onFilterChange()">
+            <option value="">全部学科</option>
+            <option value="mechanical">机械类</option>
+            <option value="automation">自动化类</option>
+          </select>
+          <span class="filter-tag" id="resultCount">共 0 所</span>
+        </div>
+
+        <!-- School Table -->
+        <div class="card">
+          <div class="table-wrap">
+            <table class="full" id="schoolTable">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="checkAll" onchange="toggleAll(this.checked)"></th>
+                  <th>序号</th>
+                  <th>学校名称</th>
+                  <th>层次</th>
+                  <th>机械学院</th>
+                  <th>自动化学院</th>
+                  <th>Source A</th>
+                  <th>Source B</th>
+                  <th>导师数</th>
+                  <th>匹配率</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination-wrap">
+            <span id="page-info">显示 0-0 / 共 0 条</span>
+            <div class="page-btns" id="pagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== School Detail Modal ==================== -->
+  <div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetailModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-school-name">—</h2>
+        <button class="modal-close" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- 由 JS 填充 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Crawl Modal ==================== -->
+  <div class="crawl-modal" id="crawlModal" style="display:none">
+    <div class="crawl-content">
+      <div class="crawl-title">▶ 开始采集</div>
+
+      <div class="config-section">
+        <h4>学科范围</h4>
+        <div style="display:flex;gap:16px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="mechanical" checked id="c-cat-mech"> 机械类</label>
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="automation" checked id="c-cat-auto"> 自动化类</label>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h4>数据源</h4>
+        <div style="display:flex;gap:16px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="source_a" checked id="c-src-a"> 官网师资页</label>
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="source_b" checked id="c-src-b"> 研招网</label>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h4>年份 & 选项</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <input type="number" id="crawl-year" value="2026" min="2020" max="2030" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="crawl-force"> 强制重新采集</label>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding-top:12px;border-top:1px solid var(--border)">
+        <button class="btn btn-primary" onclick="startCrawl()">确认采集</button>
+        <button class="btn btn-outline" onclick="closeCrawlModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Scripts ==================== -->
+  <script src="components/toast.js"></script>
+  <script src="components/badge.js"></script>
+  <script src="components/pagination.js"></script>
+  <script src="api.js"></script>
+  <script>
+    // 状态映射
+    const SCHOOL_STATUS_MAP = {
+      done:    { label: "已完成",   cls: "badge-success" },
+      partial: { label: "部分完成", cls: "badge-warning" },
+      running: { label: "采集中",   cls: "badge-info" },
+      pending: { label: "未开始",   cls: "badge-gray" },
+      failed:  { label: "失败",     cls: "badge-danger" },
+    };
+
+    const SOURCE_MAP = {
+      done:    { label: "✅", color: "var(--success)" },
+      running: { label: "⏳", color: "var(--info)" },
+      pending: { label: "—",  color: "var(--text-secondary)" },
+      failed:  { label: "❌", color: "var(--danger)" },
+    };
+
+    let currentPage = 1;
+    let currentPageSize = 20;
+    let cachedConfig = null;
+    let selectedSchool = null;
+    let crawlTaskId = null;
+    let crawlPollTimer = null;
+
+    // 检测后端连通性
+    async function checkBackend() {
+      const statusEl = document.getElementById("backend-status");
+      try {
+        const resp = await fetch(`${API_BASE}/api/overview`, { signal: AbortSignal.timeout(3000) });
+        if (resp.ok) {
+          statusEl.textContent = "后端在线";
+        } else {
+          statusEl.textContent = "后端不可用（演示模式）";
+        }
+      } catch {
+        statusEl.textContent = "后端离线（演示模式）";
+      }
+    }
+
+    // ==================== 数据加载 ====================
+    async function loadData() {
+      try {
+        const params = {
+          q: document.getElementById("searchInput").value.trim(),
+          status: document.getElementById("statusFilter").value,
+          category: document.getElementById("categoryFilter").value,
+          page: currentPage,
+          page_size: currentPageSize,
+        };
+        const data = await api.schools(params);
+        renderTable(data);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // ==================== 渲染 ====================
+    function renderTable(data) {
+      const tbody = document.getElementById("tableBody");
+      const items = data.items || [];
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:32px"><span style="font-size:40px">📭</span><p style="margin-top:8px;color:var(--text-secondary)">暂无学校数据</p></td></tr>`;
+      } else {
+        tbody.innerHTML = items.map((s, i) => {
+          const st = SCHOOL_STATUS_MAP[s.status] || SCHOOL_STATUS_MAP.pending;
+          const sa = SOURCE_MAP[s.source_a_status] || SOURCE_MAP.pending;
+          const sb = SOURCE_MAP[s.source_b_status] || SOURCE_MAP.pending;
+          return `<tr>
+            <td><input type="checkbox" class="row-check" data-id="${s.id}" data-name="${s.name}"></td>
+            <td>${(currentPage - 1) * currentPageSize + i + 1}</td>
+            <td><strong>${s.name}</strong></td>
+            <td>${renderLevelBadge(s.level)}</td>
+            <td>${s.mech_college || "—"}</td>
+            <td>${s.auto_college || "—"}</td>
+            <td style="text-align:center;color:${sa.color}">${sa.label}</td>
+            <td style="text-align:center;color:${sb.color}">${sb.label}</td>
+            <td>${s.tutor_count || 0}</td>
+            <td>${s.tutor_count > 0 ? s.match_rate + "%" : "—"}</td>
+            <td>${renderBadge(s.status)}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="margin-right:4px" onclick="viewSchool(${s.id})">查看</button>
+              <button class="btn btn-outline btn-sm" style="margin-right:4px" onclick="configSchool('${encodeURIComponent(s.name)}')">配置</button>
+              <button class="btn btn-primary btn-sm" onclick="crawlSchool('${s.name}')">采集</button>
+            </td>
+          </tr>`;
+        }).join("");
+      }
+
+      // 统计摘要
+      const summary = data.summary || {};
+      document.getElementById("stat-done").textContent     = summary.done || 0;
+      document.getElementById("stat-partial").textContent   = summary.partial || 0;
+      document.getElementById("stat-running").textContent    = summary.running || 0;
+      document.getElementById("stat-pending").textContent    = summary.pending || 0;
+      document.getElementById("stat-failed").textContent     = summary.failed || 0;
+
+      // 结果计数
+      const total = data.total || 0;
+      const start = (data.page - 1) * (data.page_size || 0) + 1;
+      const end = Math.min(data.page * (data.page_size || 0), total);
+      document.getElementById("page-info").textContent = `显示 ${total > 0 ? start : 0}-${end} / 共 ${total} 条`;
+      document.getElementById("resultCount").textContent = `共 ${total} 所`;
+
+      // 分页
+      const totalPages = Math.ceil(total / (data.page_size || 20));
+      renderPagination(
+        document.getElementById("pagination"),
+        data.page || 1,
+        totalPages,
+        (page) => { currentPage = page; loadData(); }
+      );
+    }
+
+    // ==================== 筛选 & 分页 ====================
+    function onFilterChange() {
+      currentPage = 1;
+      loadData();
+    }
+
+    function toggleAll(checked) {
+      document.querySelectorAll(".row-check").forEach(c => c.checked = checked);
+      document.getElementById("checkAll").checked = checked;
+      updateBatchBtn();
+    }
+
+    function updateBatchBtn() {
+      const checked = document.querySelectorAll(".row-check:checked");
+      const btn = document.getElementById("batch-crawl-btn");
+      btn.disabled = checked.length === 0;
+    }
+
+    document.getElementById("checkAll")?.addEventListener("change", (e) => {
+      toggleAll(e.target.checked);
+    });
+
+    // ==================== 操作 ====================
+    async function viewSchool(id) {
+      try {
+        const data = await api.schoolDetail(id);
+        const modalBody = document.getElementById("modal-body");
+        const catLabels = { mechanical: "机械类", automation: "自动化类" };
+
+        let html = `<div class="detail-row"><div class="detail-label">学校</div><div class="detail-value"><strong>${data.name}</strong></div></div>`;
+        html += `<div class="detail-row"><div class="detail-label">层次</div><div class="detail-value">${renderLevelBadge(data.level)}</div></div>`;
+        html += `<div class="detail-section"><h3>学院明细</h3>`;
+
+        if (data.categories && data.categories.length > 0) {
+          html += `<table class="full" style="font-size:13px"><thead><tr><th>学院</th><th>类别</th><th>官网</th><th>研招网</th><th>导师数</th><th>状态</th></tr></thead><tbody>`;
+          data.categories.forEach(cat => {
+            html += `<tr>
+              <td>${cat.college}</td>
+              <td>${catLabels[cat.category] || cat.category}</td>
+              <td style="color:${SOURCE_MAP[cat.source_a_status]?.color || 'inherit'}">${SOURCE_MAP[cat.source_a_status]?.label || '—'}</td>
+              <td style="color:${SOURCE_MAP[cat.source_b_status]?.color || 'inherit'}">${SOURCE_MAP[cat.source_b_status]?.label || '—'}</td>
+              <td>${cat.tutor_count || 0}</td>
+              <td>${renderBadge(cat.source_a_status === "done" || cat.source_b_status === "done" ? "done" : "pending")}</td>
+            </tr>`;
+          });
+          html += `</tbody></table>`;
+        } else {
+          html += `<p style="color:var(--text-secondary)">暂无学院配置</p>`;
+        }
+        html += `</div>`;
+        html += `<div class="detail-section"><h3>快速操作</h3><div class="config-actions"><button class="btn btn-primary btn-sm" onclick="closeDetailModal(); crawlSchool('${data.name}')">采集本校</button><button class="btn btn-outline btn-sm" onclick="closeDetailModal(); configSchool('${encodeURIComponent(data.name)}')">编辑配置</button></div></div>`;
+
+        modalBody.innerHTML = html;
+        document.getElementById("modal-school-name").textContent = data.name;
+        document.getElementById("detailModal").classList.add("show");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function closeDetailModal() {
+      document.getElementById("detailModal").classList.remove("show");
+    }
+
+    function configSchool(name) {
+      window.location.href = `config.html?school=${name}`;
+    }
+
+    function crawlSchool(name) {
+      selectedSchool = name;
+      document.getElementById("crawlModal").style.display = "flex";
+    }
+
+    function batchCrawl() {
+      const checked = document.querySelectorAll(".row-check:checked");
+      if (checked.length === 0) return;
+      const schools = Array.from(checked).map(c => c.dataset.name);
+      openBatchCrawl(schools);
+    }
+
+    async function startCrawl() {
+      const cats = [];
+      if (document.getElementById("c-cat-mech").checked) cats.push("mechanical");
+      if (document.getElementById("c-cat-auto").checked)  cats.push("automation");
+      const sources = [];
+      if (document.getElementById("c-src-a").checked) sources.push("source_a");
+      if (document.getElementById("c-src-b").checked) sources.push("source_b");
+      const year = parseInt(document.getElementById("crawl-year").value);
+      const force = document.getElementById("crawl-force").checked;
+
+      if (cats.length === 0 || sources.length === 0) {
+        showToast("请选择学科和数据源", "warning");
+        return;
+      }
+
+      let schoolsParam;
+      if (selectedSchool) {
+        schoolsParam = [selectedSchool];
+      } else {
+        const checkedBoxes = document.querySelectorAll(".row-check:checked");
+        if (checkedBoxes.length === 0) {
+          schoolsParam = ["__all__"];
+        } else {
+          schoolsParam = Array.from(checkedBoxes).map(c => c.dataset.name);
+        }
+      }
+
+      try {
+        const data = await api.startCrawl({
+          schools: schoolsParam,
+          categories: cats,
+          sources: sources,
+          force: force,
+          year: year,
+        });
+
+        closeCrawlModal();
+        showToast(data.message || "采集任务已加入队列", "success");
+        crawlTaskId = data.task_id;
+
+        // 显示进度弹窗
+        showCrawlProgress();
+        pollCrawlProgress();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function showCrawlProgress() {
+      const modalBody = document.getElementById("crawlModal").querySelector(".crawl-content");
+      modalBody.innerHTML = `
+        <div class="crawl-title">🔄 采集中…</div>
+        <div class="crawl-step" id="crawl-step">开始执行任务</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="crawl-progress-bar" style="width:0%"></div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-secondary)" id="crawl-percent">0%</div>
+      `;
+      document.getElementById("crawlModal").style.display = "flex";
+    }
+
+    async function pollCrawlProgress() {
+      if (!crawlTaskId) return;
+      try {
+        const data = await api.taskProgress(crawlTaskId);
+        const status = data.status;
+        const p = data.progress || {};
+        document.getElementById("crawl-step").textContent = p.current_step || "执行中";
+        const pct = Math.round(p.percent || 0);
+        document.getElementById("crawl-progress-bar").style.width = pct + "%";
+        document.getElementById("crawl-percent").textContent = pct + "%";
+
+        if (status === "running" || status === "queued") {
+          crawlPollTimer = setTimeout(pollCrawlProgress, 3000);
+        } else if (status === "completed") {
+          showToast("采集完成！", "success");
+          crawlTaskId = null;
+          closeCrawlModal();
+          loadData();
+        } else if (status === "failed") {
+          showToast(`采集失败：${p.current_step || ""}`, "error");
+          crawlTaskId = null;
+          closeCrawlModal();
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+        crawlTaskId = null;
+        closeCrawlModal();
+      }
+    }
+
+    function closeCrawlModal() {
+      document.getElementById("crawlModal").style.display = "none";
+      if (crawlPollTimer) { clearTimeout(crawlPollTimer); crawlPollTimer = null; }
+      selectedSchool = null;
+
+      // 恢复原始表单 HTML
+      const modalContent = `
+        <div class="crawl-title">▶ 开始采集</div>
+        <div class="config-section">
+          <h4>学科范围</h4>
+          <div style="display:flex;gap:16px">
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="mechanical" checked id="c-cat-mech"> 机械类</label>
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="automation" checked id="c-cat-auto"> 自动化类</label>
+          </div>
+        </div>
+        <div class="config-section">
+          <h4>数据源</h4>
+          <div style="display:flex;gap:16px">
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="source_a" checked id="c-src-a"> 官网师资页</label>
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="source_b" checked id="c-src-b"> 研招网</label>
+          </div>
+        </div>
+        <div class="config-section">
+          <h4>年份 & 选项</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <input type="number" id="crawl-year" value="2026" min="2020" max="2030" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px">
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="crawl-force"> 强制重新采集</label>
+          </div>
+        </div>
+        <div style="margin-top:20px;padding-top:12px;border-top:1px solid var(--border)">
+          <button class="btn btn-primary" onclick="startCrawl()">确认采集</button>
+          <button class="btn btn-outline" onclick="closeCrawlModal()">取消</button>
+        </div>
+      `;
+      document.getElementById("crawlModal").querySelector(".crawl-content").innerHTML = modalContent;
+    }
+
+    function batchCrawl() {
+      const checked = document.querySelectorAll(".row-check:checked");
+      if (checked.length === 0) return;
+      selectedSchool = null;
+      document.getElementById("crawlModal").style.display = "flex";
+    }
+
+    // ==================== Init ====================
+    document.addEventListener("DOMContentLoaded", () => {
+      checkBackend();
+      loadData();
+    });
+  </script>
+</body>
+</html>

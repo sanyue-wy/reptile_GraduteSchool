@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导师数据 · 导师信息采集监控面板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ==================== Sidebar ==================== -->
+    <aside class="sidebar">
+      <div class="logo">
+        研究生导师采集
+        <span>双一流高校 · 机械/自动化类</span>
+      </div>
+      <a class="nav-item" href="index.html"><span class="nav-icon">📊</span> 总览面板</a>
+      <a class="nav-item" href="schools.html"><span class="nav-icon">🏫</span> 学校列表</a>
+      <a class="nav-item active" href="tutors.html"><span class="nav-icon">👨‍🏫</span> 导师数据</a>
+      <a class="nav-item"       href="failures.html"><span class="nav-icon">⚠️</span> 失败记录</a>
+      <a class="nav-item"       href="config.html"><span class="nav-icon">⚙️</span> 配置管理</a>
+      <div class="sidebar-footer">
+        v0.2.0 · API 驱动<br>
+        <span id="backend-status" style="color:rgba(255,255,255,.5)">检查后端…</span>
+      </div>
+    </aside>
+
+    <!-- ==================== Main ==================== -->
+    <div class="main">
+      <header class="topbar">
+        <h1>👨‍🏫 导师数据</h1>
+        <div class="topbar-actions">
+          <button class="btn btn-outline btn-sm" onclick="exportData('excel')">📥 导出 Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportData('json')">📄 导出 JSON</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <input type="text" placeholder="🔍 搜索姓名 / 研究方向..." id="searchName" oninput="debounceFilter()" style="width:240px">
+          <select id="filterSchool" onchange="onFilterChange()">
+            <option value="">全部学校</option>
+          </select>
+          <select id="filterCollege" onchange="onFilterChange()">
+            <option value="">全部学院</option>
+          </select>
+          <select id="filterMatch" onchange="onFilterChange()">
+            <option value="">全部匹配状态</option>
+            <option value="merged">已合并</option>
+            <option value="partial_faculty">仅官网</option>
+            <option value="partial_notice">仅研招网</option>
+          </select>
+          <span class="filter-tag" id="count">共 0 位导师</span>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card">
+          <div class="table-wrap">
+            <table class="full" id="tutorTable">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>学校</th>
+                  <th>学院</th>
+                  <th>职称</th>
+                  <th>导师级别</th>
+                  <th>研究方向</th>
+                  <th>招生状态</th>
+                  <th>匹配状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination-wrap">
+            <span id="page-info">显示 0-0 / 共 0 条</span>
+            <div class="page-btns" id="pagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Detail Modal ==================== -->
+  <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalName">—</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- ==================== Scripts ==================== -->
+  <script src="components/toast.js"></script>
+  <script src="components/badge.js"></script>
+  <script src="components/pagination.js"></script>
+  <script src="api.js"></script>
+  <script>
+    let currentPage = 1;
+    const pageSize = 20;
+    let configCache = null;
+    let debounceTimer = null;
+
+    const MATCH_MAP = {
+      merged:          { label: "已合并",   cls: "badge-success" },
+      partial_faculty: { label: "仅官网",   cls: "badge-warning" },
+      partial_notice:  { label: "仅研招网", cls: "badge-info" },
+    };
+
+    // 检测后端连通性
+    async function checkBackend() {
+      const statusEl = document.getElementById("backend-status");
+      try {
+        const resp = await fetch(`${API_BASE}/api/overview`, { signal: AbortSignal.timeout(3000) });
+        if (resp.ok) {
+          statusEl.textContent = "后端在线";
+        } else {
+          statusEl.textContent = "后端不可用（演示模式）";
+        }
+      } catch {
+        statusEl.textContent = "后端离线（演示模式）";
+      }
+    }
+
+    // ==================== 数据加载 ====================
+    async function loadData() {
+      try {
+        const params = {
+          q: document.getElementById("searchName").value.trim(),
+          school: document.getElementById("filterSchool").value,
+          college: document.getElementById("filterCollege").value,
+          page: currentPage,
+          page_size: pageSize,
+        };
+        const matchFilter = document.getElementById("filterMatch").value;
+        if (matchFilter) params.match = matchFilter;
+        const data = await api.tutors(params);
+        render(data);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // ==================== 筛选 ====================
+    function onFilterChange() {
+      currentPage = 1;
+      const school = document.getElementById("filterSchool").value;
+      const collegeEl = document.getElementById("filterCollege");
+      collegeEl.innerHTML = '<option value="">全部学院</option>';
+      if (school && configCache) {
+        const colleges = new Set();
+        configCache.schools.forEach(s => {
+          if (s.university === school) {
+            s.categories.forEach(c => colleges.add(c.college));
+          }
+        });
+        colleges.forEach(c => {
+          collegeEl.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+      }
+      loadData();
+    }
+
+    function debounceFilter() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentPage = 1;
+        loadData();
+      }, 400);
+    }
+
+    // ==================== 填充下拉选项 ====================
+    async function populateFilters() {
+      if (!configCache) {
+        try {
+          const config = await api.getConfig();
+          configCache = config;
+        } catch (err) {
+          console.warn("无法加载学校配置:", err);
+          configCache = { schools: [] };
+        }
+      }
+
+      const schoolEl = document.getElementById("filterSchool");
+      if (configCache.schools && configCache.schools.length > 0) {
+        configCache.schools.forEach(s => {
+          schoolEl.innerHTML += `<option value="${s.university}">${s.university}</option>`;
+        });
+      }
+    }
+
+    // ==================== 渲染 ====================
+    function render(data) {
+      const tbody = document.getElementById("tbody");
+      const items = data.items || [];
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px"><span style="font-size:40px">📭</span><p style="margin-top:8px;color:var(--text-secondary)">暂无导师数据</p></td></tr>`;
+      } else {
+        tbody.innerHTML = items.map((t, i) => {
+          const m = MATCH_MAP[t.match_status] || MATCH_MAP.merged;
+          const areas = (t.areas || []).map(a => `<span class="tag">${a}</span>`).join("");
+          const inRoster = t.enrollment && t.enrollment.in_roster;
+          const enrBadge = inRoster
+            ? '<span class="badge badge-success">在招</span>'
+            : '<span class="badge badge-gray">未确认</span>';
+          return `<tr>
+            <td><strong>${t.name}</strong></td>
+            <td>${t.school || ""}</td>
+            <td>${t.college || ""}</td>
+            <td>${t.title || "—"}</td>
+            <td>${renderLevelLabel(t.level)}</td>
+            <td>${areas || "<span style='color:var(--text-secondary)'>—</span>"}</td>
+            <td>${enrBadge}</td>
+            <td><span class="badge ${m.cls}">${m.label}</span></td>
+            <td><button class="btn btn-outline btn-sm" onclick="showDetail('${encodeURIComponent(t.school)}','${encodeURIComponent(t.name)}')">详情</button></td>
+          </tr>`;
+        }).join("");
+      }
+
+      const total = data.total || 0;
+      const start = (data.page - 1) * (data.page_size || 0) + 1;
+      const end = Math.min(data.page * (data.page_size || 0), total);
+      document.getElementById("page-info").textContent = `显示 ${total > 0 ? start : 0}-${end} / 共 ${total} 条`;
+      document.getElementById("count").textContent = `共 ${total} 位导师`;
+
+      const totalPages = Math.ceil(total / (data.page_size || 20));
+      renderPagination(
+        document.getElementById("pagination"),
+        data.page || 1,
+        totalPages,
+        (page) => { currentPage = page; loadData(); }
+      );
+    }
+
+    // ==================== 详情弹窗 ====================
+    async function showDetail(school, name) {
+      try {
+        const t = await api.tutorDetail(decodeURIComponent(school), decodeURIComponent(name));
+        const mm = MATCH_MAP[t.match_status] || MATCH_MAP.merged;
+
+        const areas = (t.areas || []).map(a => `<span class="tag" style="font-size:13px;padding:4px 12px">${a}</span>`).join(" ");
+
+        let enrHtml = "";
+        if (t.enrollment) {
+          enrHtml = `
+            <div class="detail-row"><div class="detail-label">在招生</div><div class="detail-value">${t.enrollment.in_roster ? '<span class="badge badge-success">是</span>' : '<span class="badge badge-gray">待确认</span>'}</div></div>
+            <div class="detail-row"><div class="detail-label">学位类型</div><div class="detail-value">${(t.enrollment.degree_types || []).join("、") || "—"}</div></div>
+            <div class="detail-row"><div class="detail-label">招生方向</div>
+              <div class="detail-value">
+                ${(t.enrollment.directions || []).map(d => `<div>• ${d.code} ${d.name}</div>`).join("") || "—"}
+              </div></div>
+            <div class="detail-row"><div class="detail-label">来源链接</div><div class="detail-value">${t.enrollment.source_url ? '<a href="'+t.enrollment.source_url+'" target="_blank">'+t.enrollment.source_url+'</a>' : "无"}</div></div>
+          `;
+        }
+
+        const rawRef = t.raw_ref || { faculty: "", notice: "" };
+
+        document.getElementById("modalName").innerHTML = `${t.name} <span style="font-size:13px;color:var(--text-secondary)">${t.school || ""} · ${t.college || ""}</span>`;
+        document.getElementById("modalBody").innerHTML = `
+          <div class="detail-row"><div class="detail-label">职称</div><div class="detail-value">${t.title || "—"}</div></div>
+          <div class="detail-row"><div class="detail-label">导师级别</div><div class="detail-value">${renderLevelLabel(t.level)}</div></div>
+          <div class="detail-row"><div class="detail-label">邮箱</div><div class="detail-value">${t.email || "未公开"}</div></div>
+          <div class="detail-row"><div class="detail-label">主页</div><div class="detail-value">${t.profile_url ? '<a href="'+t.profile_url+'" target="_blank">'+t.profile_url+'</a>' : "无"}</div></div>
+          <div class="detail-row"><div class="detail-label">匹配状态</div><div class="detail-value"><span class="badge ${mm.cls}">${mm.label}</span></div></div>
+          <div class="detail-row"><div class="detail-label">数据来源</div><div class="detail-value">${t.source_type?.faculty ? '官网师资页 ✓' : '官网未采'} / ${t.source_type?.notice ? '研招网 ✓' : '研招网未采'}</div></div>
+          <div class="detail-section">
+            <h3>📚 研究方向</h3>
+            <div>${areas || '<span style="color:var(--text-secondary)">暂无数据</span>'}</div>
+          </div>
+          <div class="detail-section">
+            <h3>🎓 招生信息</h3>
+            ${enrHtml || '<p style="color:var(--text-secondary)">暂无招生信息（仅官网数据）</p>'}
+          </div>
+          <div class="detail-section">
+            <h3>📄 原件参考</h3>
+            ${rawRef.faculty ? `<div style="font-size:12px;padding:4px 0">• 官网原件：<a href="${api.rawFile(rawRef.faculty)}" target="_blank" style="color:var(--info)">查看原件</a></div>` : ""}
+            ${rawRef.notice ? `<div style="font-size:12px;padding:4px 0">• 公示原件：<a href="${api.rawFile(rawRef.notice)}" target="_blank" style="color:var(--info)">查看原件</a></div>` : ""}
+          </div>
+        `;
+        document.getElementById("modal").classList.add("show");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.remove("show");
+    }
+
+    // ==================== 导出 ====================
+    function exportData(format) {
+      const school = document.getElementById("filterSchool").value;
+      const college = document.getElementById("filterCollege").value;
+      api.exportData({ format: format, school: school, college: college });
+    }
+
+    // ==================== Init ====================
+    document.addEventListener("DOMContentLoaded", () => {
+      checkBackend();
+      populateFilters();
+      loadData();
+    });
+  </script>
+</body>
+</html>

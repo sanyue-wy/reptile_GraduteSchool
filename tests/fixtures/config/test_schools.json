@@ -1,0 +1,33 @@
+[
+    {
+        "university": "测试大学",
+        "level": "211",
+        "categories": [
+            {
+                "college": "机械工程学院",
+                "category": "mechanical",
+                "faculty": {
+                    "list_url": "http://test.edu.cn/faculty",
+                    "list_type": "static_html",
+                    "list_item_selector": "li a",
+                    "list_research_selector": "p.desc",
+                    "detail_selectors": {
+                        "name": ".name",
+                        "title": ".title",
+                        "email_re": "[\\w.]+@[\\w.]+"
+                    },
+                    "api_params": {},
+                    "referer": ""
+                },
+                "notice": {
+                    "enabled": true,
+                    "entry_url": "https://yz.chsi.com.cn/zsml/",
+                    "school_code": "99999",
+                    "major_codes": {},
+                    "title_pattern": "",
+                    "template": "yzw_major"
+                }
+            }
+        ]
+    }
+]

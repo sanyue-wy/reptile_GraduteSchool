@@ -1,0 +1,7 @@
+# 文件：requirements-dev.txt
+pytest>=7.4
+pytest-cov>=4.1
+black>=23.0
+flake8>=6.0
+isort>=5.12
+mypy>=1.5

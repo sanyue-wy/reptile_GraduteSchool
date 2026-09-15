@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>配置管理 · 导师信息采集监控面板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ==================== Sidebar ==================== -->
+    <aside class="sidebar">
+      <div class="logo">
+        研究生导师采集
+        <span>双一流高校 · 机械/自动化类</span>
+      </div>
+      <a class="nav-item"       href="index.html"><span class="nav-icon">📊</span> 总览面板</a>
+      <a class="nav-item"       href="schools.html"><span class="nav-icon">🏫</span> 学校列表</a>
+      <a class="nav-item"       href="tutors.html"><span class="nav-icon">👨‍🏫</span>导师数据</a>
+      <a class="nav-item"       href="failures.html"><span class="nav-icon">⚠️</span> 失败记录</a>
+      <a class="nav-item active" href="config.html"><span class="nav-icon">⚙️</span> 配置管理</a>
+      <div class="sidebar-footer">
+        v0.2.0 · API 驱动<br>
+        <span id="backend-status" style="color:rgba(255,255,255,.5)">检查后端…</span>
+      </div>
+    </aside>
+
+    <!-- ==================== Main ==================== -->
+    <div class="main">
+      <header class="topbar">
+        <h1>⚙️ 配置管理</h1>
+        <div class="topbar-actions">
+          <button class="btn btn-outline btn-sm" onclick="downloadConfigFile()">📤 导出配置</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file').click()">📥 导入配置</button>
+          <input type="file" id="import-file" accept=".json,.py" style="display:none" onchange="importConfig()">
+          <button class="btn btn-primary btn-sm" onclick="saveAllConfigs()">💾 保存全部</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Config Stats -->
+        <div class="config-stats" id="config-stats">
+          <div class="config-stat"><h3 id="stat-school-count">-</h3><p>已配置学校</p></div>
+          <div class="config-stat"><h3 id="stat-task-count">-</h3><p>总任务数</p></div>
+          <div class="config-stat"><h3 style="color:var(--success)" id="stat-verified">-</h3><p>配置校验通过</p></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <div class="tab active" onclick="switchTab('visual')">可视化编辑</div>
+          <div class="tab" onclick="switchTab('json')">JSON 源码</div>
+          <div class="tab" onclick="switchTab('global')">全局参数</div>
+        </div>
+
+        <!-- Tab: Visual Editor -->
+        <div id="tabVisual">
+          <div style="display:flex;gap:16px;min-height:500px">
+            <!-- Left: School Tree -->
+            <div style="width:320px;overflow-y:auto">
+              <div class="card" style="margin-bottom:0">
+                <div class="card-header"><h2>学校列表</h2></div>
+                <div class="card-body" style="padding:0;max-height:500px;overflow-y:auto" id="school-tree">
+                  <!-- 由 JS 填充 -->
+                </div>
+              </div>
+              <div style="padding:12px;text-align:center">
+                <button class="btn btn-outline btn-sm" onclick="addNewSchool()">＋ 添加新学校</button>
+              </div>
+            </div>
+
+            <!-- Right: Config Form -->
+            <div style="flex:1;overflow-y:auto" id="config-form-container">
+              <div class="empty-state" id="no-school-selected">
+                <div class="emoji">⚙️</div>
+                <p>请选择左侧学校以编辑配置</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: JSON Source (hidden) -->
+        <div id="tabJson" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <h2>config/schools.py — JSON 源码视图</h2>
+              <button class="btn btn-outline btn-sm" onclick="copyJsonToClipboard()">📋 复制</button>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div class="json-preview" id="jsonContent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Global Params (hidden) -->
+        <div id="tabGlobal" style="display:none">
+          <div class="card">
+            <div class="card-header"><h2>全局采集参数</h2></div>
+            <div class="card-body">
+              <div class="config-grid" id="global-form">
+                <!-- 由 JS 填充 -->
+              </div>
+              <div class="config-actions" style="margin-top:16px">
+                <button class="btn btn-primary" onclick="saveGlobalConfig()">💾 保存全局配置</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Scripts ==================== -->
+  <script src="components/toast.js"></script>
+  <script src="components/badge.js"></script>
+  <script src="api.js"></script>
+  <script>
+    let configData = null;
+    let selectedSchoolName = null;
+    let globalConfig = null;
+
+    // 检测后端连通性
+    async function checkBackend() {
+      const statusEl = document.getElementById("backend-status");
+      try {
+        const resp = await fetch(`${API_BASE}/api/config`, { signal: AbortSignal.timeout(3000) });
+        if (resp.ok) {
+          statusEl.textContent = "后端在线";
+        } else {
+          statusEl.textContent = "后端不可用（演示模式）";
+        }
+      } catch {
+        statusEl.textContent = "后端离线（演示模式）";
+      }
+    }
+
+    // ==================== 加载配置 ====================
+    async function loadConfig() {
+      try {
+        const data = await api.getConfig();
+        configData = data;
+        renderStats();
+        renderSchoolTree();
+        renderJsonView();
+        renderGlobalForm();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // ==================== 渲染统计 ====================
+    function renderStats() {
+      const schools = configData.schools || [];
+      const verifiedCount = schools.filter(s => s.verified).length;
+      const taskCount = schools.reduce((sum, s) => sum + (s.categories || []).length, 0);
+
+      document.getElementById("stat-school-count").textContent = schools.length;
+      document.getElementById("stat-task-count").textContent = taskCount;
+      document.getElementById("stat-verified").textContent = verifiedCount;
+    }
+
+    // ==================== 渲染学校树 ====================
+    function renderSchoolTree() {
+      const treeEl = document.getElementById("school-tree");
+      const schools = configData.schools || [];
+
+      if (schools.length === 0) {
+        treeEl.innerHTML = '<p style="padding:16px;color:var(--text-secondary)">暂无学校配置</p>';
+        return;
+      }
+
+      treeEl.innerHTML = schools.map((s, idx) => {
+        const isOpen = s.university === selectedSchoolName;
+        const verifiedBadge = s.verified ? renderBadge("done") : renderBadge("failed");
+        return `
+          <div class="school-config ${isOpen ? "open" : ""}" id="school-tree-${idx}">
+            <div class="school-config-header" onclick="selectSchool('${escapeHtml(s.university)}', ${idx})">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="expand-icon">▶</span>
+                <h3>${escapeHtml(s.university)} <span style="font-size:11px;color:var(--text-secondary)">${verifiedBadge}</span></h3>
+              </div>
+              <div class="meta">
+                <span>${(s.categories || []).length} 学院</span>
+                <span>${s.tutor_count || 0} 位导师</span>
+              </div>
+            </div>
+            <div class="school-config-body">
+              ${(s.categories || []).map((cat, cidx) => `
+                <div style="padding:8px 14px;border-bottom:1px solid var(--border);cursor:pointer" onclick="selectCategory(${idx}, ${cidx})">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span><strong>${escapeHtml(cat.college)}</strong> · <span style="font-size:11px;color:var(--text-secondary)">${cat.category === "mechanical" ? "机械类" : "自动化类"}</span></div>
+                    ${cat.faculty?.list_url ? '<span style="font-size:11px;color:var(--info)">已配置</span>' : '<span style="font-size:11px;color:var(--warning)">未配置</span>'}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // ==================== 选中学校 ====================
+    function selectSchool(name, index) {
+      selectedSchoolName = name;
+      document.querySelectorAll(".school-config").forEach((el, i) => {
+        el.classList.toggle("open", i === index);
+      });
+      const noSel = document.getElementById("no-school-selected");
+      if (noSel) noSel.style.display = "none";
+      renderConfigForm();
+    }
+
+    function selectCategory(schoolIdx, catIdx) {
+      renderConfigForm();
+      const el = document.querySelector(`[data-cat-index="${catIdx}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ==================== 渲染配置表单 ====================
+    function renderConfigForm() {
+      const school = configData.schools.find(s => s.university === selectedSchoolName);
+      if (!school) return;
+
+      const container = document.getElementById("config-form-container");
+      const verifiedBadge = school.verified ? renderBadge("done") : renderBadge("failed");
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <h2 id="form-school-name">${escapeHtml(school.university)}</h2>
+            <span id="form-school-verified">${verifiedBadge}</span>
+          </div>
+          <div class="card-body">
+            <div class="config-field">
+              <label>学校名称</label>
+              <input type="text" id="school-name-input" value="${escapeHtml(school.university)}" readonly style="background:#f9fafb">
+            </div>
+
+            <div id="categories-form">
+              ${(school.categories || []).map((cat, cidx) => renderCategoryForm(cat, cidx)).join("")}
+            </div>
+
+            <div class="config-actions">
+              <button class="btn btn-primary" onclick="testConnection()">🧪 测试连接</button>
+              <button class="btn btn-success" onclick="saveSchoolConfig()">💾 保存学校配置</button>
+              <button class="btn btn-outline" onclick="addCategory()">＋ 添加学院</button>
+              <button class="btn btn-outline" style="color:var(--danger)" onclick="if(confirm('确定删除？'))deleteSchool()">🗑 删除学校</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCategoryForm(cat, cidx) {
+      const faculty = cat.faculty || {};
+      const notice = cat.notice || {};
+      const detailSel = faculty.detail_selectors || {};
+
+      let detailFields = "";
+      if (Object.keys(detailSel).length > 0) {
+        detailFields = Object.entries(detailSel).map(([k, v]) => `
+          <div class="config-field code-field" style="margin-bottom:8px">
+            <label>${escapeHtml(k)}</label>
+            <input type="text" data-cat="${cidx}" data-detail-key="${escapeHtml(k)}" value="${escapeHtml(v)}">
+          </div>`).join("");
+      } else {
+        detailFields = `
+          <div class="config-field code-field" style="margin-bottom:8px">
+            <label>姓名选择器</label>
+            <input type="text" data-cat="${cidx}" data-detail-key="name" value="">
+          </div>
+          <div class="config-field code-field" style="margin-bottom:8px">
+            <label>职称选择器</label>
+            <input type="text" data-cat="${cidx}" data-detail-key="title" value="">
+          </div>`;
+      }
+
+      return `
+        <div class="config-section" data-cat-index="${cidx}" style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+          <h4>📋 ${escapeHtml(cat.college)} · ${cat.category === "mechanical" ? "机械类" : "自动化类"}</h4>
+          <div class="config-grid">
+            <div class="config-field">
+              <label>学院名称</label>
+              <input type="text" data-cat="${cidx}" data-field="college" value="${escapeHtml(cat.college)}">
+            </div>
+            <div class="config-field">
+              <label>类别</label>
+              <select data-cat="${cidx}" data-field="category">
+                <option value="mechanical" ${cat.category === "mechanical" ? "selected" : ""}>机械类</option>
+                <option value="automation" ${cat.category === "automation" ? "selected" : ""}>自动化类</option>
+              </select>
+            </div>
+
+            <div class="config-field" style="grid-column:1/-1">
+              <label>列表页 / API URL</label>
+              <input type="text" data-cat="${cidx}" data-field="list_url" placeholder="请输入官网师资页地址..." value="${escapeHtml(faculty.list_url || "")}">
+              <div class="hint">静态 HTML 页面地址或 AJAX API 接口地址</div>
+            </div>
+            <div class="config-field">
+              <label>页面类型</label>
+              <select data-cat="${cidx}" data-field="list_type">
+                <option value="static_html" ${faculty.list_type === "static_html" ? "selected" : ""}>static_html</option>
+                <option value="ajax_api" ${faculty.list_type === "ajax_api" ? "selected" : ""}>ajax_api</option>
+              </select>
+            </div>
+            <div class="config-field">
+              <label>列表项选择器</label>
+              <input type="text" data-cat="${cidx}" data-field="list_item_selector" value="${escapeHtml(faculty.list_item_selector || "")}">
+              <div class="hint">CSS selector：教师条目</div>
+            </div>
+
+            <div class="config-field" style="grid-column:1/-1">
+              <label>详情页选择器</label>
+              <div style="display:flex;flex-direction:column;gap:6px" id="detail-selectors-${cidx}">
+                ${detailFields}
+              </div>
+              <div class="hint" style="margin-top:4px">用于解析教师详情页的 CSS 选择器或正则</div>
+            </div>
+
+            <div class="config-field" style="grid-column:1/-1">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <label class="toggle"><input type="checkbox" data-cat="${cidx}" data-notice="enabled" ${notice.enabled ? "checked" : ""}><span class="toggle-slider"></span></label>
+                <span style="font-size:13px">启用研招网 (Notice) 采集</span>
+              </div>
+            </div>
+            <div class="config-field">
+              <label>研招网入口 URL</label>
+              <input type="text" data-cat="${cidx}" data-notice="entry_url" placeholder="https://yz.chsi.com.cn/..." value="${escapeHtml(notice.entry_url || "")}">
+            </div>
+            <div class="config-field">
+              <label>标题匹配正则</label>
+              <input type="text" data-cat="${cidx}" data-notice="title_pattern" value="${escapeHtml(notice.title_pattern || "")}">
+            </div>
+            <div class="config-field">
+              <label>解析模板</label>
+              <select data-cat="${cidx}" data-notice="template">
+                <option value="yzw_major" ${notice.template === "yzw_major" ? "selected" : ""}>yzw_major</option>
+                <option value="richtext_notice" ${notice.template === "richtext_notice" ? "selected" : ""}>richtext_notice</option>
+                <option value="yzw_major_api" ${notice.template === "yzw_major_api" ? "selected" : ""}>yzw_major_api</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="config-actions" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+            <button class="btn btn-outline btn-sm" onclick="testCategoryConnection(${cidx})">🧪 测试本学院</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== JSON 视图 ====================
+    function renderJsonView() {
+      const el = document.getElementById("jsonContent");
+      el.innerHTML = syntaxHighlight(JSON.stringify(configData.schools, null, 2));
+    }
+
+    function syntaxHighlight(json) {
+        return json.replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+            let cls = "num";
+            if (/^"/.test(match)) cls = /:$/.test(match) ? "key" : "str";
+            else if (/true|false/.test(match)) cls = "bool";
+            return `<span class="${cls}">${match}</span>`;
+        });
+    }
+
+    function copyJsonToClipboard() {
+        const content = JSON.stringify(configData.schools, null, 2);
+        navigator.clipboard.writeText(content).then(() => {
+            showToast("JSON 已复制到剪贴板", "success");
+        });
+    }
+
+    // ==================== 全局参数表单 ====================
+    function renderGlobalForm() {
+      globalConfig = configData.global || {};
+      const fields = [
+        { label: "请求延迟范围（秒）",     key: "delay_range",       type: "text", hint: "礼貌抓取间隔，随机取值（用逗号分隔）" },
+        { label: "最大重试次数",          key: "max_retries",       type: "number" },
+        { label: "连接超时（秒）",         key: "timeout",           type: "number" },
+        { label: "反爬冷却阈值（次）",     key: "cooldown_threshold", type: "number", hint: "连续 403/429 达此次数触发冷却" },
+        { label: "冷却等待时间（秒）",     key: "cooldown_seconds",  type: "number", hint: "默认 30 分钟" },
+        { label: "线程数",               key: "workers",           type: "number" },
+        { label: "数据年份",             key: "year",              type: "number" },
+        { label: "模糊匹配阈值",         key: "fuzzy_threshold",   type: "text", hint: "difflib 相似度 ≥ 此值视为匹配" },
+      ];
+
+      let form = "";
+      fields.forEach(f => {
+        const val = Array.isArray(globalConfig[f.key]) ? globalConfig[f.key].join(", ") : (globalConfig[f.key] ?? "");
+        form += `
+          <div class="config-field">
+            <label>${f.label}</label>
+            <input type="${f.type}" data-global="${f.key}" value="${escapeHtml(val)}" style="font-family:monospace;font-size:12px">
+            ${f.hint ? `<div class="hint">${f.hint}</div>` : ""}
+          </div>`;
+      });
+
+      form += `
+        <div class="config-field" style="grid-column:1/-1">
+          <label>User-Agent 池（每行一个）</label>
+          <textarea data-global="user_agents" rows="4" style="font-family:monospace;font-size:12px">${(globalConfig.user_agents || []).join("\n")}</textarea>
+        </div>`;
+
+      document.getElementById("global-form").innerHTML = form;
+    }
+
+    // ==================== 保存 ====================
+    async function saveSchoolConfig() {
+      if (!selectedSchoolName) return;
+      const school = configData.schools.find(s => s.university === selectedSchoolName);
+      if (!school) return;
+
+      school.university = document.getElementById("school-name-input").value.trim();
+
+      const catSections = document.querySelectorAll('[data-cat-index]');
+      school.categories = Array.from(catSections).map(sec => {
+        const cidx = sec.getAttribute("data-cat-index");
+        const cat = {
+          college: sec.querySelector("[data-field='college']").value.trim(),
+          category: sec.querySelector("[data-field='category']").value,
+          faculty: {
+            list_url: sec.querySelector("[data-field='list_url']").value.trim(),
+            list_type: sec.querySelector("[data-field='list_type']").value,
+          },
+          notice: {
+            enabled: sec.querySelector("[data-notice='enabled']").checked,
+            entry_url: sec.querySelector("[data-notice='entry_url']").value.trim(),
+            title_pattern: sec.querySelector("[data-notice='title_pattern']").value.trim(),
+            template: sec.querySelector("[data-notice='template']").value,
+          },
+        };
+
+        const listItemSel = sec.querySelector("[data-field='list_item_selector']");
+        if (listItemSel && listItemSel.value.trim()) cat.faculty.list_item_selector = listItemSel.value.trim();
+
+        const detailSelectors = {};
+        sec.querySelectorAll("[data-detail-key]").forEach(inp => {
+          if (inp.value.trim()) detailSelectors[inp.getAttribute("data-detail-key")] = inp.value.trim();
+        });
+        if (Object.keys(detailSelectors).length > 0) cat.faculty.detail_selectors = detailSelectors;
+
+        return cat;
+      });
+
+      school.verified = true;
+
+      try {
+        await api.saveSchoolConfig(selectedSchoolName, school);
+        showToast(`${selectedSchoolName} 配置已保存`, "success");
+        const idx = configData.schools.findIndex(s => s.university === selectedSchoolName);
+        if (idx >= 0) configData.schools[idx] = school;
+        renderSchoolTree();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function saveGlobalConfig() {
+      const newGlobal = { ...globalConfig };
+      document.querySelectorAll("#global-form [data-global]").forEach(inp => {
+        const key = inp.getAttribute("data-global");
+        if (inp.type === "number") {
+          newGlobal[key] = parseFloat(inp.value);
+        } else if (inp.tagName === "TEXTAREA") {
+          newGlobal[key] = inp.value.split("\n").map(l => l.trim()).filter(l => l);
+        } else if (key === "delay_range" && inp.value.includes(",")) {
+          newGlobal[key] = inp.value.split(",").map(v => parseFloat(v.trim()));
+        } else if (key === "fuzzy_threshold") {
+          newGlobal[key] = parseFloat(inp.value);
+        } else {
+          newGlobal[key] = inp.value;
+        }
+      });
+
+      try {
+        await api.saveGlobalConfig(newGlobal);
+        showToast("全局配置已保存", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function saveAllConfigs() {
+      if (selectedSchoolName) await saveSchoolConfig();
+    }
+
+    async function testConnection() {
+      const urlInput = document.querySelector("[data-field='list_url']");
+      const url = urlInput ? urlInput.value.trim() : "";
+      if (!url) { showToast("请输入要测试的 URL", "warning"); return; }
+
+      try {
+        const result = await api.testConnection({ url: url, method: "GET", headers: {} });
+        if (result.reachable) {
+          showToast(`✅ 连接成功 — 状态 ${result.status_code}，耗时 ${result.response_time_ms}ms，"${result.sample_title || ""}"`, "success", 8000);
+        } else {
+          showToast(`❌ 连接失败 — ${result.sample_title || "不可达"}`, "error", 8000);
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function testCategoryConnection(cidx) {
+      const section = document.querySelector(`[data-cat-index="${cidx}"]`);
+      const url = section.querySelector("[data-field='list_url']").value.trim();
+      if (!url) { showToast("请输入 URL", "warning"); return; }
+      showToast("测试连接中…", "info", 2000);
+      try {
+        const result = await api.testConnection({ url: url, method: "GET", headers: {} });
+        if (result.reachable) {
+          showToast(`✅ 状态 ${result.status_code}，耗时 ${result.response_time_ms}ms`, "success", 8000);
+        } else {
+          showToast(`❌ ${result.sample_title || "不可达"}`, "error", 8000);
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // ==================== 增删学校 ====================
+    function addNewSchool() {
+      const name = prompt("请输入学校名称：");
+      if (name) {
+        configData.schools.unshift({
+          university: name, categories: [], tutor_count: 0, verified: false,
+        });
+        selectedSchoolName = name;
+        const idx = configData.schools.findIndex(s => s.university === name);
+        renderSchoolTree();
+        selectSchool(name, idx);
+      }
+    }
+
+    function addCategory() {
+      if (!selectedSchoolName) return;
+      const college = prompt("请输入学院名称：");
+      if (college) {
+        const school = configData.schools.find(s => s.university === selectedSchoolName);
+        school.categories.push({
+          college: college,
+          category: "mechanical",
+          faculty: { list_url: "", list_type: "static_html" },
+          notice: { enabled: false },
+        });
+        renderConfigForm();
+      }
+    }
+
+    function deleteSchool() {
+      if (!selectedSchoolName) return;
+      const idx = configData.schools.findIndex(s => s.university === selectedSchoolName);
+      if (idx >= 0) {
+        configData.schools.splice(idx, 1);
+        selectedSchoolName = null;
+        renderSchoolTree();
+        document.getElementById("config-form-container").innerHTML = `
+          <div class="empty-state" id="no-school-selected">
+            <div class="emoji">⚙️</div>
+            <p>请选择左侧学校以编辑配置</p>
+          </div>`;
+      }
+    }
+
+    // ==================== 导入 / 导出 ====================
+    function downloadConfigFile() {
+      api.exportConfig();
+    }
+
+    async function importConfig() {
+      const file = document.getElementById("import-file").files[0];
+      if (!file) return;
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const data = await api.importConfig(formData);
+        showToast(`✅ ${data.message || "导入成功"}`, "success");
+        loadConfig();
+        document.getElementById("import-file").value = "";
+      } catch (err) {
+        showToast(`❌ ${err.message}`, "error");
+      }
+    }
+
+    // ==================== Tab 切换 ====================
+    function switchTab(tab) {
+      document.getElementById("tabVisual").style.display  = tab === "visual" ? "block" : "none";
+      document.getElementById("tabJson").style.display    = tab === "json"   ? "block" : "none";
+      document.getElementById("tabGlobal").style.display = tab === "global" ? "block" : "none";
+      document.querySelectorAll(".tab").forEach((t, i) => {
+        t.classList.toggle("active",
+          (i === 0 && tab === "visual") ||
+          (i === 1 && tab === "json") ||
+          (i === 2 && tab === "global"));
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ==================== Init ====================
+    document.addEventListener("DOMContentLoaded", () => {
+      checkBackend();
+      const params = new URLSearchParams(window.location.search);
+      const schoolParam = params.get("school");
+
+      loadConfig().then(() => {
+        if (schoolParam && configData) {
+          const decoded = decodeURIComponent(schoolParam);
+          const idx = configData.schools.findIndex(s => s.university === decoded);
+          if (idx >= 0) selectSchool(decoded, idx);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
