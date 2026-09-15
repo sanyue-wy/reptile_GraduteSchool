@@ -104,6 +104,14 @@ class CircuitBreaker:
         """记录一次失败。返回 True 表示已触发熔断。"""
         if domain in self._tripped_domains:
             return True
+        # 新增：DNS 错误立即熔断，不做计数等待
+        if error_class == "dns_error":
+            self._tripped_domains.add(domain)
+            logger.warning(
+                "DNS 错误快速熔断: domain=%s（域名不可达，跳过后续重试）",
+                domain,
+            )
+            return True
         key = (domain, error_class)
         now = time.time()
         self._history[key].append(now)

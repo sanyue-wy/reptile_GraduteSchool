@@ -436,11 +436,11 @@ def _run_crawl_task(task_id: str) -> None:
                 "percent": round(completed / len(tasks) * 100, 1),
             })
 
-            success, error = execute_task(task, session, progress, cache)
+            success, error, error_type = execute_task(task, session, progress, cache)
             completed += 1
 
             if not success:
-                logger.warning("任务 %s 子任务失败: %s / %s / %s", task_id, task.university, task.college, task.source)
+                logger.warning("任务 %s 子任务失败 [%s]: %s / %s / %s — %s", task_id, error_type, task.university, task.college, task.source, error)
 
         # 全量导出
         _update_task(task_id, progress={

@@ -61,6 +61,7 @@
           <div class="error-stat"><h3 style="color:var(--danger)">0</h3><p>HTTP 错误</p></div>
           <div class="error-stat"><h3 style="color:var(--warning)">0</h3><p>连接超时</p></div>
           <div class="error-stat"><h3 style="color:var(--info)">0</h3><p>解析/其他</p></div>
+          <div class="error-stat"><h3 style="color:#3b82f6">0</h3><p>DNS 错误</p></div>
         </div>
 
         <!-- Card View -->
@@ -126,12 +127,17 @@
     let currentData = null;
     let taskTimer = null;
 
+    // 修改后：与后端 classify_error() 产出的 6 种类型完全对齐
     const ERROR_TYPE_MAP = {
-      "http_403": { label: "反爬封禁",   color: "#ef4444", bg: "#fee2e2" },
-      "http_404": { label: "页面不存在", color: "#f59e0b", bg: "#fffbeb" },
-      "timeout":   { label: "连接超时",  color: "#f59e0b", bg: "#fffbeb" },
-      "dns_error": { label: "DNS 错误",  color: "#3b82f6", bg: "#dbeafe" },
-      "parse_error": { label: "解析失败", color: "#8b5cf6", bg: "#f3e8ff" },
+      "dns_error":       { label: "DNS 错误",   color: "#3b82f6", bg: "#dbeafe" },
+      "connection_error": { label: "连接断开",   color: "#f59e0b", bg: "#fffbeb" },
+      "timeout":         { label: "请求超时",    color: "#f59e0b", bg: "#fffbeb" },
+      "blocked":         { label: "反爬封禁",    color: "#ef4444", bg: "#fee2e2" },
+      "http_error":      { label: "服务端错误",  color: "#ef4444", bg: "#fee2e2" },
+      "parse_error":     { label: "解析失败",    color: "#8b5cf6", bg: "#f3e8ff" },
+      // 兼容旧数据
+      "http_403":        { label: "反爬封禁(旧)", color: "#ef4444", bg: "#fee2e2" },
+      "http_404":        { label: "页面不存在(旧)", color: "#f59e0b", bg: "#fffbeb" },
     };
 
     function getErrorTypeInfo(type) {
@@ -194,13 +200,15 @@
       const items = currentData?.items || [];
       const httpCount = summary.http_error || 0;
       const timeoutCount = summary.timeout || 0;
-      const parseCount = (summary.parse_error || 0) + (summary.dns_error || 0);
+      const parseCount = summary.parse_error || 0;
+      const dnsCount = summary.dns_error || 0;
 
       const stats = document.querySelectorAll("#error-summary .error-stat h3");
       stats[0].textContent = items.length;
       stats[1].textContent = httpCount;
       stats[2].textContent = timeoutCount;
       stats[3].textContent = parseCount;
+      stats[4].textContent = dnsCount;
     }
 
     // ==================== 视图切换 ====================

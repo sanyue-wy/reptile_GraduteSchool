@@ -18,7 +18,6 @@ from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -57,15 +56,9 @@ class PoliteSession:
         self.cooldown_threshold = cooldown_threshold
         self.cooldown_seconds = cooldown_seconds
 
-        # 构建 requests Session（内置 urllib3 重试）
+        # 构建 requests Session（HTTPAdapter 不再内置重试，由 _request() 统一控制）
         self._session = requests.Session()
-        retry_strategy = Retry(
-            total=max_retries,
-            backoff_factor=1.0,
-            status_forcelist=[500, 502, 503, 504],
-            allowed_methods=["GET", "POST"],
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
+        adapter = HTTPAdapter()
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
 
@@ -189,6 +182,15 @@ class PoliteSession:
                 return resp
 
             except (requests.ConnectionError, requests.Timeout) as e:
+                # DNS 解析失败是确定性错误，重试无意义
+                err_str = str(e).lower()
+                is_dns = ("getaddrinfo" in err_str
+                          or "name or service not known" in err_str
+                          or "nameresolutionerror" in err_str)
+                if is_dns:
+                    self.stats["failed"] += 1
+                    raise
+
                 if attempt < self.max_retries:
                     backoff = (2 ** attempt) * random.uniform(1, 3)
                     logger.warning("连接失败 %s，%d 次重试，等待 %.1fs: %s",

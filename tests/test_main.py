@@ -387,24 +387,31 @@ class TestCircuitBreaker:
         from main import CircuitBreaker
         cb = CircuitBreaker(threshold=5)
         for _ in range(4):
-            assert not cb.record("example.com", "dns_error")
+            assert not cb.record("example.com", "timeout")
         assert not cb.is_tripped("example.com")
 
     def test_record_at_threshold(self):
         """达到阈值触发熔断"""
         from main import CircuitBreaker
         cb = CircuitBreaker(threshold=3)
-        assert not cb.record("example.com", "dns_error")
-        assert not cb.record("example.com", "dns_error")
-        assert cb.record("example.com", "dns_error") is True
+        assert not cb.record("example.com", "timeout")
+        assert not cb.record("example.com", "timeout")
+        assert cb.record("example.com", "timeout") is True
         assert cb.is_tripped("example.com")
+
+    def test_dns_error_fast_trip(self):
+        """DNS 错误立即熔断，不做计数等待"""
+        from main import CircuitBreaker
+        cb = CircuitBreaker(threshold=5)
+        assert cb.record("bad.example", "dns_error") is True
+        assert cb.is_tripped("bad.example")
 
     def test_different_domains_independent(self):
         """不同域名独立计数"""
         from main import CircuitBreaker
         cb = CircuitBreaker(threshold=3)
         for _ in range(3):
-            cb.record("example.com", "dns_error")
+            cb.record("example.com", "timeout")
         assert cb.is_tripped("example.com")
         assert not cb.is_tripped("other.com")
 
@@ -413,7 +420,7 @@ class TestCircuitBreaker:
         from main import CircuitBreaker
         cb = CircuitBreaker(threshold=3)
         for _ in range(3):
-            cb.record("example.com", "dns_error")
+            cb.record("example.com", "timeout")
         assert cb.is_tripped("example.com")
         cb.reset("example.com")
         assert not cb.is_tripped("example.com")
