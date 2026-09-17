@@ -198,7 +198,8 @@ class URLResolver:
             resp = self.session.get(endpoint, params={"q": query})
         else:
             resp = self.session.get(endpoint, params={"q": query})
-        return resp.text
+        from utils.http import response_text
+        return response_text(resp)
 
     def _extract_urls_from_html(self, html: str, engine: str) -> list[str]:
         """从搜索结果 HTML 中提取 .edu.cn 链接。"""
@@ -227,7 +228,8 @@ class URLResolver:
         for domain in domain_patterns:
             try:
                 homepage_url = f"https://{domain}"
-                html = self.session.get(homepage_url).text
+                from utils.http import response_text
+                html = response_text(self.session.get(homepage_url))
                 links = self._extract_faculty_links(html, homepage_url)
                 for link in links:
                     candidates.append(URLCandidate(
@@ -261,7 +263,8 @@ class URLResolver:
     def _score_candidate(self, candidate: URLCandidate, university: str, college: str):
         """对候选 URL 进行特征打分。"""
         try:
-            html = self.session.get(candidate.url).text
+            from utils.http import response_text
+            html = response_text(self.session.get(candidate.url))
         except Exception:
             return
 

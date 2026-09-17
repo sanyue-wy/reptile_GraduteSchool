@@ -1,0 +1,9 @@
+function toggleLogStream() {
+        const btn = event.target;
+        if (logSSE) {
+          logSSE.close();
+          logSSE = null;
+          btn.textContent = "▶ 继续";
+          btn.classList.add("btn-warning");
+          document.getElementById("log-stream-status").textContent = "⏸ 已暂停";
+      

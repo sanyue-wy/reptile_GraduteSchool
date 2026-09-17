@@ -1,0 +1,922 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=2.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0" />
+<title>专任教师-武汉大学电气与自动化学院</title><meta name="pageType" content="2">
+<meta name="pageTitle" content="专任教师">
+
+
+<META Name="SiteName" Content="武汉大学电气与自动化学院" />
+<META Name="SiteDomain" Content="eea.whu.edu.cn" />
+<META Name="ColumnName" Content="专任教师" />
+<META Name="ColumnKeywords" Content="专任教师" />
+
+<meta name="renderer" content="webkit" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<link type="text/css" rel="stylesheet" href="../styles/base.css" />
+<link type="text/css" rel="stylesheet" href="../styles/main.css" />
+<link type="text/css" rel="stylesheet" href="../styles/mobile.css" />
+<link type="text/css" rel="stylesheet" href="../styles/animate.min.css" />
+<!--Announced by Visual SiteBuilder 9-->
+<link rel="stylesheet" type="text/css" href="../_sitegray/_sitegray_d.css" />
+<script language="javascript" src="../_sitegray/_sitegray.js"></script>
+<!-- CustomerNO:7765626265723230747f475750515742000300014351 -->
+<link rel="stylesheet" type="text/css" href="../cnyxnygcx.vsb.css" />
+<script type="text/javascript" src="/system/resource/js/counter.js"></script>
+<script type="text/javascript">_jsq_(1017,'/cnyxnygcx.jsp',-1,1879880201)</script>
+</head>
+
+<body class="bodyList">
+<div class="dqh-header-top">
+  <div class="dqh-contain-box">
+    <div class="dqh-contain-padding clearfix">
+      <div class="dqh-header-left"><script language="javascript" src="/system/resource/js/dynclicks.js"></script><script language="javascript" src="/system/resource/js/openlink.js"></script>
+<a href="../rczp/zpqs.htm" target="">人才招聘</a><span>|</span>
+
+<a href="../zsjy.htm" target="">招生就业</a><span>|</span>
+
+<a href="../lxwm.htm" target="">联系我们</a>
+</div>
+      <div class="dqh-header-right">
+<a href="javascript:;" class="a1">ENGLISH</a><span>|</span>
+
+
+<a href="#" class="a2">返回旧版</a>
+
+<a href="javascript:;" class="dqh-search-icon"></a>
+        <div class="dqh-search-box clearfix"><!-- 3.1.3版本 -->
+
+
+
+<script language="javascript" src="/system/resource/js/base64.js"></script><script language="javascript" src="/system/resource/js/jquery/jquery-latest.min.js"></script><script language="javascript" src="/system/resource/vue/vue.js"></script><script language="javascript" src="/system/resource/vue/bluebird.min.js"></script><script language="javascript" src="/system/resource/vue/axios.js"></script><script language="javascript" src="/system/resource/vue/polyfill.js"></script><script language="javascript" src="/system/resource/vue/token.js"></script><LINK href="/system/resource/vue/static/element/index.css" type="text/css" rel="stylesheet"><script language="javascript" src="/system/resource/vue/static/element/index.js"></script><script language="javascript" src="/system/resource/vue/static/public.js"></script><script language="javascript" src="/system/resource/openapp/search/js/containsHtmlTags.js"></script><script language="javascript" src="/system/resource/openapp/search/layui/layui.js"></script><style>
+    #appu2 .qwss{
+        height: 31px;
+        font-size: 12px;
+        min-width: 190px;
+        max-width: 600px;
+        width: 60%;
+        margin-top: -15px;
+        outline: none;
+        padding-left: 10px;
+        border-radius: 2px;
+        border: 1px solid #e4e7ed;}
+    #appu2 .tj{
+        padding-left: 6px;
+        letter-spacing: 5px;
+        color: white;
+        min-width: 53px;
+        max-width: 150px;
+        height: 32px;
+        border: 0;
+        border-radius: 2px;
+        background-color: #1890FF;
+        position: relative;
+        top: 1px;
+        width: 20%;
+        margin-top: -15px;}
+</style>
+<div id="divu2"></div>
+<script type="text/html" id="htmlu2">
+    <div id="appu2">
+        <div v-if="!isError">
+            <input type="text" class="dqh-txt" placeholder="全文搜索" autocomplete=off v-model=query.keyWord @keyup.enter="onSubmit">
+            <input class="dqh-btn" name="submit_button" type="button" value="提交" v-on:click="onSubmit()"/>
+        </div>
+        <div v-if="isError" style="color: #b30216; font-size:18px;text-align: center;padding:20px;">
+            应用维护中！
+        </div>
+    </div>
+</script>
+<script>
+    $("#divu2").html($("#htmlu2").text());
+</script>
+<script>
+    var appOwner = "1879880201";
+    var token = 'tourist';
+    var urlPrefix = "/aop_component/";
+
+    jQuery.support.cors = true;
+    $.ajaxSetup({
+        beforeSend: function (request, settings) {
+            request.setRequestHeader("Authorization", token);
+            request.setRequestHeader("owner", appOwner);
+        }
+    });
+
+    new Vue({
+        el: "#appu2",
+        data: function () {
+            return {
+                query: {
+                    keyWord: "",//搜索关键词
+                    owner: appOwner,
+                    token: token,
+                    urlPrefix: urlPrefix,
+                    lang:"i18n_zh_CN"
+                },
+                isError: false
+            }
+        },
+        mounted: function () {
+            var _this = this;
+            // _this.init();
+        },
+        methods: {
+            init: function(){
+                $.ajax({
+                    url: "/aop_component//webber/search/test",
+                    type: "get",
+                    success: function (response) {
+                        if (response.code == "0000") {
+                        } else if (response.code == "220") {
+                            _this.isError = true;
+                            console.log(response);
+                        } else if (!response.code) {
+                            _this.isError = true;
+                            console.log(response);
+                        }
+                    },
+                    error: function (response) {
+                        _this.isError = true;
+                    }
+                });
+            },
+            onSubmit: function (e) {
+                var url = "/aop_views/search/modules/resultpc/soso.html";
+                if ("10" == "1" || "10" == "2") {
+                    url = "" + url;
+                }
+                var _this = this;
+                var query = _this.query;
+                if (url.indexOf("?") > -1) {
+                    url = url.split("?")[0];
+                }
+                if (query.keyWord) {
+                    var query = new Base64().encode(JSON.stringify(query));
+                    window.open(url + "?query=" + query);
+                } else {
+                    alert("请填写搜索内容")
+                }
+            },
+        }
+    })
+</script>
+
+<script>
+   var appElementu2 = document.querySelector("#appu2");
+   if (appElementu2 && appElementu2.__vue__) {
+
+   } else {
+      $("#divu2").html($("#htmlu2").text());
+      var appOwner = "1879880201";   
+      var urlPrefix = "/aop_component/";
+      var ifLogin="";
+      var token = ifLogin=='true'?gettoken(10, true).trim():'tourist';
+      if (containsHtmlTags(token) || !token) { 
+         token = 'tourist';
+      }
+      jQuery.support.cors = true;
+      $.ajaxSetup({
+        beforeSend: function (request, settings) {
+            request.setRequestHeader("Authorization", token);
+            request.setRequestHeader("owner", appOwner);
+        }
+      });
+      var queryInfou2 = {
+        query: {
+            keyWord: "",//搜索关键词
+            owner: appOwner,
+            token: token,
+            urlPrefix: urlPrefix,
+            lang:"i18n_zh_CN"
+        },
+        isError: false
+      };
+      function keyUpFunu2(e){
+        var theEvent = e || window.event;
+        var keyCode = theEvent.keyCode || theEvent.which || theEvent.charCode;
+        if(keyCode == 13){
+          onSubmitu2();
+        }
+      };
+
+      function onSubmitu2(e) {
+        queryInfou2.query.keyWord= $("#appu2  .qwss").val();
+        
+        var url = "/aop_views/search/modules/resultpc/soso.html";      
+        if ("10" == "1" || "10" == "2") {
+           url = "" + url;
+        }
+        var query = queryInfou2.query;
+        if (url.indexOf("?") > -1) {
+            url = url.split("?")[0];
+        }
+        if (query.keyWord) {
+            var query = new Base64().encode(JSON.stringify(query));
+            window.open(url + "?query=" + query);
+        } else {
+            alert("请填写搜索内容")
+        }
+      };
+   }
+</script></div>
+      </div>
+    </div>
+  </div>
+</div>
+<button type="button" class="navbar-toggle"> <span class="icon-bar icon-bar1"></span> <span class="icon-bar icon-bar2"></span> <span class="icon-bar icon-bar3"></span> </button>
+<div class="dqh-header-warp">
+  <div class="dqh-contain-box">
+    <div class="dqh-contain-padding">
+      <div class="clearfix">
+        <div class="dqh-logo"><a href="../index.htm" target=""><img src="../images/logo.png" /></a></div>
+         <div class="dqh-header-right-box clearfix"> 
+          <!--<i class="dqh-search-icon"></i>-->
+          <div class="dqh-nav-box"><ul class="dqh-nav clearfix">
+              <li style="display:none;"><a href="../index.htm">首页</a>
+              </li>
+
+              <li><a href="../xygk/xyjj.htm">学院概况</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../xygk/xyjj.htm" target="_blank">学院简介</a></li>
+                 <li><a href="../xygk/lsyg.htm" target="_blank">历史沿革</a></li>
+                 <li><a href="../xygk/xrld.htm" target="_blank">现任领导</a></li>
+                 <li><a href="../xygk/zzjg.htm" target="_blank">组织机构</a></li>
+                 <li><a href="../xygk/xsjg.htm" target="_blank">学术机构</a></li>
+                 <li><a href="../xygk/gzzd.htm" target="_blank">规章制度</a></li>
+              </ul>
+              </li>
+
+              <li class="on"><a href="rcjh.htm">师资队伍</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="rcjh.htm" target="_blank">人才计划</a></li>
+                 <li><a href="zrjs.htm" target="_blank">专任教师</a></li>
+                 <li><a href="jzjs.htm" target="_blank">兼职教师</a></li>
+              </ul>
+              </li>
+
+              <li><a href="../rcpy/bksjx.htm">人才培养</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../rcpy/bksjx.htm" target="_blank">本科生教学</a></li>
+                 <li><a href="../rcpy/yjsjx.htm" target="_blank">研究生教学</a></li>
+                 <li><a href="../bksxgw/index.htm" href="../rcpy/bksxg.htm" target="_blank">本科生学工</a></li>
+                 <li><a href="../rcpy/yjsxg.htm" target="_blank">研究生学工</a></li>
+              </ul>
+              </li>
+
+              <li><a href="../kxyj.htm">科学研究</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../kxyj/tzgg.htm" target="_blank">通知公告</a></li>
+                 <li><a href="../kxyj/xsky.htm" target="_blank">学术科研</a></li>
+                 <li><a href="../kxyj/kytd.htm" target="_blank">科研团队</a></li>
+                 <li><a href="../kxyj/kycg.htm" target="_blank">科研成果</a></li>
+                 <li><a href="../kxyj/kypt.htm" target="_blank">科研平台</a></li>
+                 <li><a href="../kxyj/gzzd.htm" target="_blank">规章制度</a></li>
+              </ul>
+              </li>
+
+              <li><a href="../hzjl.htm">合作交流</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../hzjl/tzgg.htm" target="_blank">通知公告</a></li>
+                 <li><a href="../hzjl/gzzd.htm" target="_blank">规章制度</a></li>
+                 <li><a href="../hzjl/bszn.htm" target="_blank">办事指南</a></li>
+              </ul>
+              </li>
+
+              <li><a href="../dqgz.htm">党群工作</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../dqgz/jcdj.htm" target="_blank">基层党建</a></li>
+                 <li><a href="../dqgz/ghgz.htm" target="_blank">工会工作</a></li>
+                 <li><a href="../dqgz/twgz.htm" target="_blank">团委工作</a></li>
+                 <li><a href="../dqgz/ltxgz.htm" target="_blank">离退休工作</a></li>
+              </ul>
+              </li>
+
+              <li><a href="../xxgk.htm">信息公开</a>
+              </li>
+
+              <li><a href="https://eea.whu.edu.cn/yyzj/index.htm">校友专栏</a>
+              </li>
+
+              <li style="display:none;"><a href="">快捷导航</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../kjdaohan/xyxw.htm" target="_blank">学院新闻</a></li>
+                 <li><a href="../kjdaohan/tzgg.htm" target="_blank">通知公告</a></li>
+                 <li><a href="../kjdaohan/dzhb.htm" target="_blank">电子海报</a></li>
+                 <li><a href="../kjdaohan/dqfc.htm" target="_blank">电气风采</a></li>
+                 <li><a href="../kjdaohan/kydt.htm" target="_blank">科研动态</a></li>
+                 <li><a href="../kjdaohan/rcpy.htm" target="_blank">人才培养</a></li>
+              </ul>
+              </li>
+
+              <li style="display:none;"><a href="../zsjy.htm">招生就业</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../zsjy/bkszs.htm" target="_blank">本科生招生</a></li>
+                 <li><a href="../zsjy/yjszs.htm" target="_blank">研究生招生</a></li>
+                 <li><a href="../zsjy/jyxx.htm" target="_blank">就业信息</a></li>
+                 <li><a href="../zsjy/syghyjyzd.htm" target="_blank">生涯规划与就业指导</a></li>
+              </ul>
+              </li>
+
+              <li style="display:none;"><a href="../rczp/zpqs.htm">人才招聘</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../rczp/zpqs.htm" target="_blank">招聘启示</a></li>
+                 <li><a href="../rczp/jltd.htm" target="_blank">简历投递</a></li>
+              </ul>
+              </li>
+
+              <li style="display:none;"><a href="../lxwm.htm">联系我们</a>
+              </li>
+
+              <li style="display:none;"><a href="../ttrd.htm">头条热点</a>
+              </li>
+
+              <li style="display:none;"><a href="../bksxgw/index.htm">本科生学工网</a>
+              <ul class="dqh-suNnav">
+                 <li><a href="../bksxgw/index.htm" target="_blank">首页</a></li>
+                 <li><a href="../bksxgw/xgxw.htm" target="_blank">学工新闻</a></li>
+                 <li><a href="../bksxgw/rcpy.htm" target="_blank">人才培养</a></li>
+                 <li><a href="../bksxgw/tzgg.htm" target="_blank">通知公告</a></li>
+                 <li><a href="../bksxgw/xsdj.htm" target="_blank">学生党建</a></li>
+                 <li><a href="../bksxgw/txdt.htm" target="_blank">团学动态</a></li>
+                 <li><a href="../bksxgw/xfjs.htm" target="_blank">学风建设</a></li>
+                 <li><a href="../bksxgw/kjsj.htm" target="_blank">科技实践</a></li>
+                 <li><a href="../bksxgw/jyzd.htm" target="_blank">就业指导</a></li>
+                 <li><a href="../bksxgw/xssw.htm" target="_blank">学生事务</a></li>
+                 <li><a href="../bksxgw/bjfc.htm" target="_blank">班级风采</a></li>
+                 <li><a href="../bksxgw/dqsj.htm" target="_blank">电气视角</a></li>
+                 <li><a href="../bksxgw/lxwm.htm" target="_blank">联系我们</a></li>
+              </ul>
+              </li>
+
+</ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="dqh-ny-banner">
+<div style="background:url(../images/banner-ny.jpg) no-repeat top center; height:100%;background-size: cover;"></div>
+</div>
+<div class="dqh-contain-box">
+  <div class="dqh-bg-color">
+    <div class="dqh-contain-padding">
+      <div class="dqh-place">    <i class="icon"></i>当前位置：
+                        <a href="../index.htm">首页</a>
+                >
+                <a href="rcjh.htm">师资队伍</a>
+                >
+                <a href="zrjs.htm">专任教师</a>
+</div>
+      <div class="clearfix">
+        <div class="dqh-ny-left">
+          <div class="dqh-ny-nav-box">
+            <div class="dqh-ny-nav-bg">
+              <h3 class="dqh-nav-name">
+师资队伍</h3>
+              <h4 class="dqh-nav-en">FACULTY</h4>
+            </div>
+            <div class="dqh-nav-list"><ul>
+                
+<li><a href="rcjh.htm">人才计划</a> </li>
+                
+<li class="on"><a href="zrjs.htm">专任教师</a> </li>
+                
+<li><a href="jzjs.htm">兼职教师</a> </li>
+                
+</ul></div>
+          </div>
+        </div>
+        <div class="dqh-ny-right">
+          <div class="dqh-column-box clearfix">
+            <h3 class="dqh-column-h3">
+专任教师</h3>
+            <span class="order">（按姓氏拼音排序）</span>
+          </div>
+          <div class="dqh-zrjs-box">
+            <ul class="dqh-zrjs-tab clearfix"><li><a href="zrjs/dqgcx.htm"><i class="sj"></i>电气工程系</a>
+<ul class="dqh-zrjs-tab-list clearfix">
+<li><a href="zrjs/dqgcx/dlxtyjs.htm">电力系统研究所</a></li>
+<li><a href="zrjs/dqgcx/gdyyjyjsyjs.htm">高电压与绝缘技术研究所</a></li>
+<li><a href="zrjs/dqgcx/dldzydjyjs.htm">电力电子与电机研究所</a></li>
+</ul>
+</li>                  
+<li><a href="zrjs/cnyxnyx.htm">储能与新能源系</a>
+</li>                  
+<li><a href="zrjs/cxysyjxzx.htm">创新与实验教学中心</a>
+</li>                  
+</ul>
+            <div class="dqh-zrjs-list clearfix"><script language="javascript" src="/system/resource/js/centerCutImg.js"></script><script language="javascript" src="/system/resource/js/ajax.js"></script>              
+              <h4 class="dqh-job-name">正高级</h4>
+              <ul class="clearfix">
+
+              <li> <a href="../info/1115/55091.htm">蔡力</a> </li>
+
+              <li> <a href="../info/1115/66761.htm">曾福平</a> </li>
+
+              <li> <a href="../info/1122/11130.htm">查晓明</a> </li>
+
+              <li> <a href="../info/1108/10425.htm">陈红坤</a> </li>
+
+              <li> <a href="../info/1115/10441.htm">陈剑飞</a> </li>
+
+              <li> <a href="javascript:;">邓长虹</a> </li>
+
+              <li> <a href="../info/1115/10408.htm">杜志叶</a> </li>
+
+              <li> <a href="javascript:;">樊亚东</a> </li>
+
+              <li> <a href="../info/1108/12623.htm">樊友平</a> </li>
+
+              <li> <a href="javascript:;">高文忠</a> </li>
+
+              <li> <a href="../info/1122/77621.htm">高玉婷</a> </li>
+
+              <li> <a href="../info/1122/76691.htm">宫金武</a> </li>
+
+              <li> <a href="../info/1108/12624.htm">龚庆武</a> </li>
+
+              <li> <a href="../info/1115/67731.htm">谷山强</a> </li>
+
+              <li> <a href="../info/1115/84461.htm">何怡刚</a> </li>
+
+              <li> <a href="../info/1108/10381.htm">胡志坚</a> </li>
+
+              <li> <a href="../info/1115/10423.htm">黄道春</a> </li>
+
+              <li> <a href="../info/1122/54981.htm">黄萌</a> </li>
+
+              <li> <a href="../info/1108/77061.htm">柯德平</a> </li>
+
+              <li> <a href="../info/1115/10457.htm">蓝磊</a> </li>
+
+              <li> <a href="../info/1108/10426.htm">林涛</a> </li>
+
+              <li> <a href="../info/1108/12717.htm">刘承锡</a> </li>
+
+              <li> <a href="../info/1122/10400.htm">刘飞</a> </li>
+
+              <li> <a href="../info/1115/83781.htm">鲁海亮</a> </li>
+
+              <li> <a href="../info/1108/79011.htm">路晓庆</a> </li>
+
+              <li> <a href="../info/1122/10439.htm">潘尚智</a> </li>
+
+              <li> <a href="../info/1115/79251.htm">裴学凯</a> </li>
+
+              <li> <a href="../info/1122/83801.htm">秦亮</a> </li>
+
+              <li> <a href="../info/1115/11129.htm">阮江军</a> </li>
+
+              <li> <a href="../info/1115/84061.htm">邵涛</a> </li>
+
+              <li> <a href="../info/1122/10415.htm">孙建军</a> </li>
+
+              <li> <a href="../info/1108/76351.htm">唐飞</a> </li>
+
+              <li> <a href="../info/1115/10402.htm">唐炬</a> </li>
+
+              <li> <a href="javascript:;">王波</a> </li>
+
+              <li> <a href="javascript:;">王建国</a> </li>
+
+              <li> <a href="../info/1122/12656.htm">王军华</a> </li>
+
+              <li> <a href="../info/1115/10403.htm">王力农</a> </li>
+
+              <li> <a href="../info/1108/81931.htm">王逸</a> </li>
+
+              <li> <a href="../info/1115/77041.htm">王羽</a> </li>
+
+              <li> <a href="../info/1108/77011.htm">吴军</a> </li>
+
+              <li> <a href="../info/1115/76881.htm">肖淞</a> </li>
+
+              <li> <a href="../info/1108/84301.htm">徐箭</a> </li>
+
+              <li> <a href="../info/1108/10447.htm">杨军</a> </li>
+
+              <li> <a href="../info/1108/5501.htm">姚良忠</a> </li>
+
+              <li> <a href="../info/1122/10404.htm">应黎明</a> </li>
+
+              <li> <a href="../info/1115/12649.htm">袁佳歆</a> </li>
+
+              <li> <a href="../info/1115/10418.htm">张慧</a> </li>
+
+              <li> <a href="../info/1108/78971.htm">张俊</a> </li>
+
+              <li> <a href="../info/1115/12650.htm">张亚东</a> </li>
+
+              <li> <a href="../info/1115/67021.htm">周蜜</a> </li>
+
+              <li> <a href="../info/1108/78981.htm">专祥涛</a> </li>
+              </ul>
+            
+
+<script>_showDynClickBatch(['dynclicks_u11_55091','dynclicks_u11_66761','dynclicks_u11_11130','dynclicks_u11_10425','dynclicks_u11_10441','dynclicks_u11_12622','dynclicks_u11_10408','dynclicks_u11_12647','dynclicks_u11_12623','dynclicks_u11_67761','dynclicks_u11_77621','dynclicks_u11_76691','dynclicks_u11_12624','dynclicks_u11_67731','dynclicks_u11_84461','dynclicks_u11_10381','dynclicks_u11_10423','dynclicks_u11_54981','dynclicks_u11_77061','dynclicks_u11_10457','dynclicks_u11_10426','dynclicks_u11_12717','dynclicks_u11_10400','dynclicks_u11_83781','dynclicks_u11_79011','dynclicks_u11_10439','dynclicks_u11_79251','dynclicks_u11_83801','dynclicks_u11_11129','dynclicks_u11_84061','dynclicks_u11_10415','dynclicks_u11_76351','dynclicks_u11_10402','dynclicks_u11_12626','dynclicks_u11_12648','dynclicks_u11_12656','dynclicks_u11_10403','dynclicks_u11_81931','dynclicks_u11_77041','dynclicks_u11_77011','dynclicks_u11_76881','dynclicks_u11_84301','dynclicks_u11_10447','dynclicks_u11_5501','dynclicks_u11_10404','dynclicks_u11_12649','dynclicks_u11_10418','dynclicks_u11_78971','dynclicks_u11_12650','dynclicks_u11_67021','dynclicks_u11_78981'],[55091,66761,11130,10425,10441,12622,10408,12647,12623,67761,77621,76691,12624,67731,84461,10381,10423,54981,77061,10457,10426,12717,10400,83781,79011,10439,79251,83801,11129,84061,10415,76351,10402,12626,12648,12656,10403,81931,77041,77011,76881,84301,10447,5501,10404,12649,10418,78971,12650,67021,78981],"wbnews", 1879880201)</script>
+</div>
+            <div class="dqh-zrjs-list clearfix">              
+              <h4 class="dqh-job-name">副高级</h4>
+              <ul class="clearfix">
+
+              <li> <a href="../info/1109/10424.htm">阿部</a> </li>
+
+              <li> <a href="../info/1123/54991.htm">蔡昌松</a> </li>
+
+              <li> <a href="../info/1109/10427.htm">陈磊</a> </li>
+
+              <li> <a href="../info/1116/12720.htm">陈小月</a> </li>
+
+              <li> <a href="../info/1123/10395.htm">崔雪</a> </li>
+
+              <li> <a href="../info/1123/10431.htm">乐健</a> </li>
+
+              <li> <a href="../info/1109/10422.htm">黎雄</a> </li>
+
+              <li> <a href="javascript:;">李涵</a> </li>
+
+              <li> <a href="../info/1109/10410.htm">李蕊</a> </li>
+
+              <li> <a href="javascript:;">李晓萍</a> </li>
+
+              <li> <a href="javascript:;">李勇汇</a> </li>
+
+              <li> <a href="../info/1109/10474.htm">廖清芬</a> </li>
+
+              <li> <a href="../info/1109/12638.htm">廖思阳</a> </li>
+
+              <li> <a href="../info/1123/10401.htm">刘剑</a> </li>
+
+              <li> <a href="../info/1109/5502.htm">刘晓莉</a> </li>
+
+              <li> <a href="javascript:;">罗垚</a> </li>
+
+              <li> <a href="../info/1116/10473.htm">潘成</a> </li>
+
+              <li> <a href="javascript:;">彭辉</a> </li>
+
+              <li> <a href="../info/1109/10433.htm">彭晓涛</a> </li>
+
+              <li> <a href="../info/1109/80381.htm">尚磊</a> </li>
+
+              <li> <a href="../info/1123/10434.htm">宋斌</a> </li>
+
+              <li> <a href="../info/1123/10416.htm">谭甜源</a> </li>
+
+              <li> <a href="../info/1116/12651.htm">陶劲松</a> </li>
+
+              <li> <a href="javascript:;">田翠华</a> </li>
+
+              <li> <a href="../info/1123/76371.htm">田震</a> </li>
+
+              <li> <a href="javascript:;">王建平</a> </li>
+
+              <li> <a href="../info/1116/10438.htm">张博</a> </li>
+
+              <li> <a href="../info/1109/55071.htm">张莲梅</a> </li>
+
+              <li> <a href="../info/1109/12637.htm">赵洁</a> </li>
+
+              <li> <a href="javascript:;">郑鹏</a> </li>
+
+              <li> <a href="../info/1116/67491.htm">郑宇</a> </li>
+              </ul>
+            
+
+<script>_showDynClickBatch(['dynclicks_u12_10424','dynclicks_u12_54991','dynclicks_u12_10427','dynclicks_u12_12720','dynclicks_u12_10395','dynclicks_u12_10431','dynclicks_u12_10422','dynclicks_u12_12652','dynclicks_u12_10410','dynclicks_u12_12653','dynclicks_u12_12640','dynclicks_u12_10474','dynclicks_u12_12638','dynclicks_u12_10401','dynclicks_u12_5502','dynclicks_u12_12654','dynclicks_u12_10473','dynclicks_u12_12661','dynclicks_u12_10433','dynclicks_u12_80381','dynclicks_u12_10434','dynclicks_u12_10416','dynclicks_u12_12651','dynclicks_u12_12655','dynclicks_u12_76371','dynclicks_u12_77081','dynclicks_u12_10438','dynclicks_u12_55071','dynclicks_u12_12637','dynclicks_u12_12668','dynclicks_u12_67491'],[10424,54991,10427,12720,10395,10431,10422,12652,10410,12653,12640,10474,12638,10401,5502,12654,10473,12661,10433,80381,10434,10416,12651,12655,76371,77081,10438,55071,12637,12668,67491],"wbnews", 1879880201)</script>
+</div>
+            <div class="dqh-zrjs-list clearfix">              
+              <h4 class="dqh-job-name">中级</h4>
+              <ul class="clearfix">
+
+              <li> <a href="../info/1124/10452.htm">曹玉胜</a> </li>
+
+              <li> <a href="../info/1110/5818.htm">丁涛</a> </li>
+
+              <li> <a href="javascript:;">郭晓云</a> </li>
+
+              <li> <a href="javascript:;">刘栋</a> </li>
+
+              <li> <a href="javascript:;">刘辉</a> </li>
+
+              <li> <a href="javascript:;">龙志君</a> </li>
+
+              <li> <a href="../info/1124/10446.htm">杨玲君</a> </li>
+              </ul>
+            
+
+<script>_showDynClickBatch(['dynclicks_u13_10452','dynclicks_u13_5818','dynclicks_u13_12664','dynclicks_u13_12643','dynclicks_u13_12672','dynclicks_u13_12645','dynclicks_u13_10446'],[10452,5818,12664,12643,12672,12645,10446],"wbnews", 1879880201)</script>
+</div>
+            <div class="dqh-zrjs-list clearfix">                          
+
+
+</div>
+            <div class="dqh-zrjs-list clearfix">              
+              <h4 class="dqh-job-name">特聘副研究员</h4>
+              <ul class="clearfix">
+
+              <li> <a href="javascript:;">邓冶强</a> </li>
+
+              <li> <a href="javascript:;">李泉新</a> </li>
+
+              <li> <a href="../info/1119/76101.htm">李祎</a> </li>
+
+              <li> <a href="../info/1126/84351.htm">刘浴霜</a> </li>
+
+              <li> <a href="../info/1119/84031.htm">罗毅</a> </li>
+
+              <li> <a href="../info/1119/83991.htm">王航</a> </li>
+
+              <li> <a href="../info/1119/79001.htm">周航</a> </li>
+              </ul>
+            
+
+<script>_showDynClickBatch(['dynclicks_u15_55111','dynclicks_u15_79041','dynclicks_u15_76101','dynclicks_u15_84351','dynclicks_u15_84031','dynclicks_u15_83991','dynclicks_u15_79001'],[55111,79041,76101,84351,84031,83991,79001],"wbnews", 1879880201)</script>
+</div>
+            <div class="dqh-zrjs-list clearfix">                          
+
+
+</div>
+            <div class="dqh-zrjs-list clearfix">              
+              <h4 class="dqh-job-name">博士后</h4>
+              <ul class="clearfix">
+
+              <li> <a href="javascript:;">曹金鑫</a> </li>
+
+              <li> <a href="javascript:;">陈江波</a> </li>
+
+              <li> <a href="javascript:;">陈思远</a> </li>
+
+              <li> <a href="javascript:;">戴宇欣</a> </li>
+
+              <li> <a href="javascript:;">刁晓光</a> </li>
+
+              <li> <a href="javascript:;">韩江北</a> </li>
+
+              <li> <a href="javascript:;">黄怡鋆</a> </li>
+
+              <li> <a href="javascript:;">姜新雄</a> </li>
+
+              <li> <a href="javascript:;">刘晓川</a> </li>
+
+              <li> <a href="javascript:;">潘子君</a> </li>
+
+              <li> <a href="javascript:;">彭长志</a> </li>
+
+              <li> <a href="javascript:;">邱睿</a> </li>
+
+              <li> <a href="javascript:;">邵建伟</a> </li>
+
+              <li> <a href="javascript:;">涂彦昕</a> </li>
+
+              <li> <a href="javascript:;">吴赋章</a> </li>
+
+              <li> <a href="javascript:;">吴强</a> </li>
+
+              <li> <a href="javascript:;">肖非然</a> </li>
+
+              <li> <a href="javascript:;">肖辉</a> </li>
+
+              <li> <a href="javascript:;">许沛东</a> </li>
+
+              <li> <a href="javascript:;">苑朝阳</a> </li>
+              </ul>
+            
+
+<script>_showDynClickBatch(['dynclicks_u17_55121','dynclicks_u17_72451','dynclicks_u17_72361','dynclicks_u17_79071','dynclicks_u17_72471','dynclicks_u17_79081','dynclicks_u17_72431','dynclicks_u17_72381','dynclicks_u17_72441','dynclicks_u17_55131','dynclicks_u17_72401','dynclicks_u17_72411','dynclicks_u17_72461','dynclicks_u17_79051','dynclicks_u17_5883','dynclicks_u17_79061','dynclicks_u17_72421','dynclicks_u17_78991','dynclicks_u17_72371','dynclicks_u17_79101'],[55121,72451,72361,79071,72471,79081,72431,72381,72441,55131,72401,72411,72461,79051,5883,79061,72421,78991,72371,79101],"wbnews", 1879880201)</script>
+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="dqh-footer-box">
+  <div class="dqh-contain-box">
+    <div class="dqh-contain-padding">
+      <div class="dqh-footer-warp clearfix">
+        <div class="dqh-footer-left clearfix">
+          <div class="logo"><a href="../index.htm" target=""><img src="../images/footer-logo.png" /></a></div>
+          <div class="contact">
+
+
+
+
+<script language="javascript" src="/system/resource/js/ajax.js"></script><script language="javascript">_getBatchClickTimes('null',1879880201,'wbnews','u18')</script>
+<script>function seeContenta18(contentid,size,displayid){	document.getElementById(contentid).innerHTML = '[';	for(var i=0;i<=size;i++){		var allcontentid = contentid+(i+1);		if(allcontentid==displayid){			document.getElementById(contentid).innerHTML += " <span id='"+allcontentid+"' name='"+allcontentid+"'  >"+(i+1)+"</span> ";			document.getElementById(displayid).style.display = 'block';		}else{			document.getElementById(contentid).innerHTML += " <span style='cursor:pointer' id='"+allcontentid+"' name='"+allcontentid+"' onclick=seeContenta18('"+contentid+"','"+size+"','"+allcontentid+"')  >"+(i+1)+"</span> ";			document.getElementById(allcontentid).style.display = 'none';		}	}	document.getElementById(contentid).innerHTML += ']';}</script>
+<script language="javascript" src="/system/resource/js/news/mp4video.js"></script>
+<script>_addDynClicks('wbnews',1879880201,1298)</script>
+<div id="vsb_content_1298_u181"><div id="vsb_content"><ul class=" list-paddingleft-2"><li><p>通讯地址：中国湖北省武汉珞珈山</p></li><li><p>邮政编码：430072</p></li><li><p>联系电话：027-68772279</p></li><li><p>学院邮箱：wddqxy@whu.edu.cn</p></li></ul></div></div>
+</div>
+        </div>
+        <div class="dqh-footer-center"><h3 class="dqh-yqlj-title">友情链接</h3>
+          <div class="dqh-link-box">
+            <ul class="dqh-link-list clearfix">
+              
+<li><a href="https://www.whu.edu.cn/" target="_blank">武汉大学</a></li>
+              
+<li><a href="http://www.xsjy.whu.edu.cn/default.html" target="_blank">武汉大学招生就业信息网</a></li>
+              
+<li><a href="https://www.most.gov.cn/index.html" target="_blank">国家科学技术部</a></li>
+              
+<li><a href="https://www.nsfc.gov.cn/" target="_blank">国家自然科学基金会</a></li>
+              
+<li><a href="http://www.moe.gov.cn/" target="_blank">国家教育部</a></li>
+              
+</ul>
+          </div></div>
+        <div class="dqh-footer-right">    <h3 class="dqh-gzwm-title">关注我们</h3>
+<div class="clearfix">
+          <div class="dqh-gzwm-box">
+            <p class="img"><img src="../images/code2.png"></p>
+            <p class="txt">WHU电气青年</p>
+          </div>
+        
+
+          <div class="dqh-gzwm-box">
+            <p class="img"><img src="../images/code1.png"></p>
+            <p class="txt">WHUEEA武大电气</p>
+          </div>
+        
+
+</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="dqh-copyright"><!-- 版权内容请在本组件"内容配置-版权"处填写 -->
+<p>COPYRIGHT 2021 电气与自动化院院友之家. ALL RIGHTS RESERVED.</p></div>
+<div class="dqh-layer-box">
+  <ul class="dqh-layer-nav">    <li><a href="../index.htm">首页</a> 
+    </li>
+    <li><a href="javascript:;">学院概况</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../xygk/xyjj.htm">学院简介</a> 
+       <li><a href="../xygk/lsyg.htm">历史沿革</a> 
+       <li><a href="../xygk/xrld.htm">现任领导</a> 
+       <li><a href="../xygk/zzjg.htm">组织机构</a> 
+       <li><a href="../xygk/xsjg.htm">学术机构</a> 
+       <li><a href="../xygk/gzzd.htm">规章制度</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">师资队伍</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="rcjh.htm">人才计划</a> 
+       <li><a href="zrjs.htm">专任教师</a> 
+       <li><a href="jzjs.htm">兼职教师</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">人才培养</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../rcpy/bksjx.htm">本科生教学</a> 
+       <li><a href="../rcpy/yjsjx.htm">研究生教学</a> 
+       <li><a href="../rcpy/bksxg.htm">本科生学工</a> 
+       <li><a href="../rcpy/yjsxg.htm">研究生学工</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">科学研究</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../kxyj/tzgg.htm">通知公告</a> 
+       <li><a href="../kxyj/xsky.htm">学术科研</a> 
+       <li><a href="../kxyj/kytd.htm">科研团队</a> 
+       <li><a href="../kxyj/kycg.htm">科研成果</a> 
+       <li><a href="../kxyj/kypt.htm">科研平台</a> 
+       <li><a href="../kxyj/gzzd.htm">规章制度</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">合作交流</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../hzjl/tzgg.htm">通知公告</a> 
+       <li><a href="../hzjl/gzzd.htm">规章制度</a> 
+       <li><a href="../hzjl/bszn.htm">办事指南</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">党群工作</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../dqgz/jcdj.htm">基层党建</a> 
+       <li><a href="../dqgz/ghgz.htm">工会工作</a> 
+       <li><a href="../dqgz/twgz.htm">团委工作</a> 
+       <li><a href="../dqgz/ltxgz.htm">离退休工作</a> 
+     </ul>
+    </li>
+    <li><a href="../xxgk.htm">信息公开</a> 
+    </li>
+    <li><a href="https://eea.whu.edu.cn/yyzj/index.htm">校友专栏</a> 
+    </li>
+    <li><a href="javascript:;">快捷导航</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../kjdaohan/xyxw.htm">学院新闻</a> 
+       <li><a href="../kjdaohan/tzgg.htm">通知公告</a> 
+       <li><a href="../kjdaohan/dzhb.htm">电子海报</a> 
+       <li><a href="../kjdaohan/dqfc.htm">电气风采</a> 
+       <li><a href="../kjdaohan/kydt.htm">科研动态</a> 
+       <li><a href="../kjdaohan/rcpy.htm">人才培养</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">招生就业</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../zsjy/bkszs.htm">本科生招生</a> 
+       <li><a href="../zsjy/yjszs.htm">研究生招生</a> 
+       <li><a href="../zsjy/jyxx.htm">就业信息</a> 
+       <li><a href="../zsjy/syghyjyzd.htm">生涯规划与就业指导</a> 
+     </ul>
+    </li>
+    <li><a href="javascript:;">人才招聘</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../rczp/zpqs.htm">招聘启示</a> 
+       <li><a href="../rczp/jltd.htm">简历投递</a> 
+     </ul>
+    </li>
+    <li><a href="../lxwm.htm">联系我们</a> 
+    </li>
+    <li><a href="../ttrd.htm">头条热点</a> 
+    </li>
+    <li style="display:none;"><a href="javascript:;">本科生学工网</a><strong>+</strong> 
+     <ul class="dqh-layer-suNnav">
+       <li><a href="../bksxgw/index.htm">首页</a> 
+       <li><a href="../bksxgw/xgxw.htm">学工新闻</a> 
+       <li><a href="../bksxgw/rcpy.htm">人才培养</a> 
+       <li><a href="../bksxgw/tzgg.htm">通知公告</a> 
+       <li><a href="../bksxgw/xsdj.htm">学生党建</a> 
+       <li><a href="../bksxgw/txdt.htm">团学动态</a> 
+       <li><a href="../bksxgw/xfjs.htm">学风建设</a> 
+       <li><a href="../bksxgw/kjsj.htm">科技实践</a> 
+       <li><a href="../bksxgw/jyzd.htm">就业指导</a> 
+       <li><a href="../bksxgw/xssw.htm">学生事务</a> 
+       <li><a href="../bksxgw/bjfc.htm">班级风采</a> 
+       <li><a href="../bksxgw/dqsj.htm">电气视角</a> 
+       <li><a href="../bksxgw/lxwm.htm">联系我们</a> 
+     </ul>
+    </li>
+</ul>
+  <div class="dqh-layer-search">
+
+
+
+
+
+<form action="../searchList.jsp?wbtreeid=1017" method="post" name="a1062311a" onsubmit="return subsearchdataa1062311a()" style="display: inline;">
+  <input type="hidden" name="Find" value="find"><input type="hidden" name="entrymode" value="1"><input type="hidden" id="INTEXT2" name="INTEXT2" value=""><input type="hidden" name="news_search_code">
+       <input name="INTEXT" type="text" class="dqh-layer-txt" placeholder="请输入搜索关键字" />
+
+       <input type="submit" name="FindButton" value="搜索" class="dqh-layer-btn" />
+</form>
+<script>
+String.prototype.trim　= function()       
+{              
+    var t = this.replace(/(^\s*)|(\s*$)/g, "");     
+    return t.replace(/(^　*)|(　*$)/g, "");     
+}
+function subsearchdataa1062311a()
+{ 
+    if(document.a1062311a.INTEXT.value.trim()=="")
+    {
+         alert("请输入查询关键字！");
+         return false;
+    }
+    if(checkDataa1062311a(document.a1062311a))
+    {
+       return true;  
+    }
+    return false;
+}       
+</script>
+
+    <script language="JavaScript" src="../_dwr/engine.js"></script>
+    <script language="JavaScript" src="../_dwr/util.js"></script>
+    <script language="JavaScript" src="../_dwr/interface/NewsSearchDWR.js"></script>
+    <script language="JavaScript" src="/system/resource/js/vsb_news_search.js"></script>
+    <script language="JavaScript" src="/system/resource/js/vsb_news_search_entry.js"></script>    
+    <script language="JavaScript" src="/system/resource/js/language.js"></script>
+    <script language="JavaScript" src="/system/resource/js/base64.js"></script>
+    <script language="JavaScript" src="/system/resource/js/formfunc.js"></script>    
+    <script>    
+    news_searcha1062311a = new vsb_news_search();
+    news_searcha1062311a.isShowCode=false;
+    news_searcha1062311a.tooltipid = 'tooltipa1062311a';
+    news_searcha1062311a.apptag = 'intextspana1062311a';
+    news_searcha1062311a.frametag = 'intextframea1062311a';
+    news_search_entrya1062311a = new vsb_news_search_entry();
+    news_search_entrya1062311a.formname = "a1062311a";
+    news_search_entrya1062311a.news_search_obj = news_searcha1062311a; 
+    news_search_entrya1062311a.querytxtsize = 155
+    news_search_entrya1062311a.yzmts ="您的查询过于频繁，请输入验证码后继续查询";
+    news_search_entrya1062311a.qdstyle ="";
+    news_search_entrya1062311a.qdname = "确定";
+    news_search_entrya1062311a.qxstyle = "";
+    news_search_entrya1062311a.qxname = "取消";
+    news_search_entrya1062311a.showstr='请输入查询验证码！';    
+    function checkDataa1062311a(formname)
+    {    
+        return news_search_entrya1062311a.checkdata(formname)   
+    }
+    </script>
+ 
+</div>
+</div>
+<script type="text/javascript" src="../js/jquery.min.js"></script> 
+<script type="text/javascript" src="../js/main.js"></script>
+</body>
+</html>

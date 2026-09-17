@@ -67,7 +67,8 @@ def fetch_detail(
         dict: title, advisor_level, email, research_areas, sections, ...
     """
     def _do_fetch() -> str:
-        return session.get(profile_url).text
+        from utils.http import response_text
+        return response_text(session.get(profile_url))
 
     if cache is not None:
         html = cache.get_or_fetch(_do_fetch, profile_url, force=force)

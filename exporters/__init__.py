@@ -45,7 +45,7 @@ def export_jsonl(records: list[dict], output_dir: Path) -> dict:
 @register("xlsx")
 def export_xlsx(records: list[dict], output_dir: Path) -> dict:
     from pipelines.export import export_summary
-    count = export_summary(records, output_dir=output_dir / "summary.xlsx")
+    count = export_summary(records, output_path=output_dir / "summary.xlsx")
     return {"files_written": 1 if count else 0, "total_records": count}
 
 

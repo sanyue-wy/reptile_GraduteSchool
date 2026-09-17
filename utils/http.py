@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,34 @@ import requests
 from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
+
+
+def response_text(resp: "requests.Response") -> str:
+    """按正确编码取响应文本，避免中文页面被 ISO-8859-1 默认解码产生乱码。
+
+    requests 对无 charset 声明的 text/html 响应默认按 ISO-8859-1 解码，
+    而国内高校站点普遍是 UTF-8（meta 声明或实际字节），直接取 resp.text
+    会把中文变乱码。策略：header 显式声明 > meta charset > apparent_encoding。
+    """
+    ct = resp.headers.get("Content-Type", "")
+    if "html" in ct.lower():
+        # header 显式声明的编码可信；requests 未声明时 text/html 会默认 ISO-8859-1，不可信
+        if "charset=" in ct.lower() and resp.encoding:
+            return resp.text
+        head = resp.content[:4096]
+        m = re.search(rb'charset=["\']?([\w-]+)', head, re.I)
+        if m:
+            enc = m.group(1).decode("ascii", "ignore")
+            try:
+                return resp.content.decode(enc)
+            except (LookupError, UnicodeDecodeError):
+                pass
+        if isinstance(resp.apparent_encoding, str):
+            try:
+                return resp.content.decode(resp.apparent_encoding)
+            except (LookupError, UnicodeDecodeError):
+                pass
+    return resp.text
 
 # 常规桌面 Chrome UA 池
 _USER_AGENTS = [
@@ -227,7 +256,7 @@ class PoliteSession:
             else:
                 ext = ".html"
                 # JSON 响应可能没标 Content-Type
-                text = resp.text[:200].strip()
+                text = response_text(resp)[:200].strip()
                 if text.startswith("{") or text.startswith("["):
                     ext = ".json"
 
@@ -236,7 +265,7 @@ class PoliteSession:
             dest = dest_dir / f"{fname}{ext}"
 
             if ext in (".json", ".html"):
-                dest.write_text(resp.text, encoding="utf-8")
+                dest.write_text(response_text(resp), encoding="utf-8")
             else:
                 dest.write_bytes(resp.content)
 

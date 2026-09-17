@@ -9,6 +9,7 @@ Flask API 服务层
 import json
 import logging
 import os
+import queue
 import threading
 import time
 import uuid
@@ -1009,7 +1010,8 @@ def api_config_test():
         sample_title = ""
         if "html" in resp.headers.get("Content-Type", ""):
             from bs4 import BeautifulSoup
-            soup = BeautifulSoup(resp.text, "lxml")
+            from utils.http import response_text
+            soup = BeautifulSoup(response_text(resp), "lxml")
             if soup.title:
                 sample_title = soup.title.string.strip()[:100]
 
@@ -1188,6 +1190,134 @@ def api_cache_clear():
     from utils.cache import CrawlCache
     removed = CrawlCache().clear()
     return jsonify({"code": 0, "data": {"removed": removed, "message": f"已清理 {removed} 个缓存文件"}})
+
+
+# ------------------------------------------------------------------
+# 2.18 SSE 实时日志流
+# ------------------------------------------------------------------
+_log_subscribers: dict[str, list] = {}
+_log_lock = threading.Lock()
+
+
+def _broadcast_log(log_entry: dict):
+    """广播日志到所有订阅者。"""
+    message = f"data: {json.dumps(log_entry, ensure_ascii=False)}\n\n"
+    with _log_lock:
+        # 广播给 "all" 订阅者
+        for queue in _log_subscribers.get("all", []):
+            try:
+                queue.put(message)
+            except Exception:
+                pass
+        # 广播给特定 task_id 订阅者
+        task_id = log_entry.get("task_id")
+        if task_id:
+            for queue in _log_subscribers.get(task_id, []):
+                try:
+                    queue.put(message)
+                except Exception:
+                    pass
+
+
+@app.route("/api/logs/stream")
+def api_logs_stream():
+    """SSE 实时日志流端点。
+
+    Query 参数:
+        task_id: 可选，过滤特定任务的日志。默认 "all" 订阅所有日志。
+    """
+    task_id = request.args.get("task_id", "all")
+
+    def event_stream():
+        q = queue.Queue()
+        with _log_lock:
+            _log_subscribers.setdefault(task_id, []).append(q)
+
+        try:
+            # 发送连接确认
+            yield f"data: {json.dumps({'type': 'connected', 'task_id': task_id}, ensure_ascii=False)}\n\n"
+
+            while True:
+                try:
+                    message = q.get(timeout=30)
+                    yield message
+                except queue.Empty:
+                    # 心跳
+                    yield ": heartbeat\n\n"
+        except GeneratorExit:
+            pass
+        finally:
+            with _log_lock:
+                if queue in _log_subscribers.get(task_id, []):
+                    _log_subscribers[task_id].remove(queue)
+
+    return app.response_class(event_stream(), mimetype="text/event-stream")
+
+
+# ------------------------------------------------------------------
+# 2.19 任务管理扩展端点
+# ------------------------------------------------------------------
+@app.route("/api/tasks", methods=["GET"])
+def api_tasks_list():
+    """获取所有任务列表。"""
+    with _tasks_lock:
+        tasks = list(_tasks.values())
+    return jsonify({"code": 0, "data": {"tasks": tasks}})
+
+
+@app.route("/api/tasks/<task_id>/cancel", methods=["POST"])
+def api_task_cancel(task_id: str):
+    """取消任务。"""
+    task = _get_task(task_id)
+    if not task:
+        return jsonify({"code": 40404, "message": "任务不存在"}), 404
+
+    if task["status"] not in ("running", "queued"):
+        return jsonify({"code": 40001, "message": f"任务状态 {task['status']} 不可取消"}), 400
+
+    _update_task(task_id, status="canceled")
+    return jsonify({"code": 0, "data": {"status": "canceled", "task_id": task_id}})
+
+
+@app.route("/api/tasks/<task_id>/retry", methods=["POST"])
+def api_task_retry(task_id: str):
+    """重试失败任务。"""
+    task = _get_task(task_id)
+    if not task:
+        return jsonify({"code": 40404, "message": "任务不存在"}), 404
+
+    if task["status"] != "failed":
+        return jsonify({"code": 40001, "message": f"任务状态 {task['status']} 不可重试"}), 400
+
+    # 重置任务状态并重新入队
+    params = task.get("params", {})
+    new_task_id = _new_task_id()
+    new_task = {
+        "task_id": new_task_id,
+        "status": "queued",
+        "progress": {
+            "total_steps": 0,
+            "completed_steps": 0,
+            "current_step": "重试任务已加入队列",
+            "percent": 0.0,
+        },
+        "started_at": datetime.now().isoformat(),
+        "estimated_remaining": "计算中...",
+        "params": params,
+    }
+    _set_task(new_task_id, new_task)
+
+    # 启动后台线程
+    threading.Thread(target=_run_crawl_task, args=(new_task_id,), daemon=True).start()
+
+    return jsonify({
+        "code": 0,
+        "data": {
+            "task_id": new_task_id,
+            "status": "queued",
+            "message": f"重试任务已加入队列 (原任务: {task_id})",
+        }
+    })
 
 
 # ------------------------------------------------------------------

@@ -4,22 +4,51 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机械与动力工程学院",
         "category": "mechanical",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "https://me.sjtu.edu.cn/teacher_directory.html",
+          "list_item_selector": "a[href*=\"teacher_directory\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": ".tit p, .js-box-item .name",
+            "title": ".tit span",
+            "department": ".detail p:contains(\"所在系所\")",
+            "phone": ".detail p:contains(\"办公电话\")",
+            "email": ".detail p:contains(\"电子邮件\")",
+            "research": ".js-box-item.on .txt, .js-box-item .txt"
+          }
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "电气工程学院",
         "category": "automation",
         "faculty": {
-          "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_type": "ajax_api",
+          "list_url": "https://see.sjtu.edu.cn/active/ajax_teacher_list.html",
+          "api_params": {
+            "cat_id": "40",
+            "cat_code": "jiaoshiml",
+            "type": "2"
+          },
+          "list_item_selector": "",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": ".tit p",
+            "title": ".tit span",
+            "phone": ".detail p:contains(\"办公电话\")",
+            "email": ".detail p:contains(\"电子邮件\")",
+            "address": ".detail p:contains(\"通讯地址\")",
+            "research": ".js-box-item.on .txt"
+          }
         },
         "notice": {
           "enabled": false
@@ -36,7 +65,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://shisu.上海外国语.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -47,7 +81,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.上海外国语.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -64,7 +103,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://shu.上海.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -75,7 +119,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.上海.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -92,7 +141,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://shucai.上海财经.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -103,7 +157,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.上海财经.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -120,7 +179,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://neau.东北农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -131,7 +195,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.东北农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -148,7 +217,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://东北.东北.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -159,7 +233,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.东北.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -176,7 +255,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nenu.东北师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -187,7 +271,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.东北师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -204,7 +293,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nefu.东北林业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -215,7 +309,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.东北林业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -232,7 +331,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://dhu.东华.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -243,7 +347,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.东华.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -260,7 +369,19 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://me.seu.edu.cn/szdw/list.htm",
+          "list_item_selector": "table.wp_article_list_table td",
+          "list_name_selector": "a",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": ".jsbt",
+            "title": ".carrer .title",
+            "department": ".carrer .text:contains(\"所在院系\")",
+            "phone": ".carrer .text:contains(\"电话\")",
+            "email": ".carrer .text:contains(\"邮箱\")",
+            "research": ".news_box .tit:contains(\"研究方向\") + .con"
+          }
         },
         "notice": {
           "enabled": false
@@ -271,7 +392,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://au.seu.edu.cn/szdw/list.htm",
+          "list_item_selector": "table.wp_article_list_table td",
+          "list_name_selector": "a",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -284,22 +410,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机电工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://me.csu.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "信息科学与工程学院-自动化学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.csu.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -316,7 +452,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://zuel.中南财经政法.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -327,7 +468,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中南财经政法.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -344,7 +490,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://中国中医.中国中医科学院.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -355,7 +506,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国中医科学院.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -372,7 +528,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ruc.中国人民.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -383,7 +544,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国人民.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -400,7 +566,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cuc.中国传媒.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -411,7 +582,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国传媒.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -428,7 +604,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cau.中国农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -439,7 +620,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -456,7 +642,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cugb.中国地质（北京）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -467,7 +658,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国地质（北京）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -484,7 +680,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cug.中国地质（武汉）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -495,7 +696,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国地质（武汉）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -512,7 +718,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cupl.中国政法.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -523,7 +734,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国政法.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -540,7 +756,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ouc.中国海洋.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -551,7 +772,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国海洋.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -568,7 +794,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cupb.中国石油（北京）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -579,7 +810,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国石油（北京）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -596,7 +832,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://upc.中国石油（华东）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -607,7 +848,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国石油（华东）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -624,7 +870,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cumt.中国矿业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -635,7 +886,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国矿业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -652,7 +908,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cumtb.中国矿业（北京）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -663,7 +924,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国矿业（北京）.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -676,22 +942,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "工程科学学院-机械工程系",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://eng.ustc.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "信息科学技术学院-自动化系",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ee.ustc.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -708,7 +984,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cpu.中国药科.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -719,7 +1000,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中国药科.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -736,7 +1022,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://muc.中央民族.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -747,7 +1038,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中央民族.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -764,7 +1060,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cufe.中央财经.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -775,7 +1076,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中央财经.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -792,7 +1098,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ccom.中央音乐学院.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -803,7 +1114,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中央音乐学院.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -820,7 +1136,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://sysu.中山.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -831,7 +1152,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.中山.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -848,7 +1174,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ynu.云南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -859,7 +1190,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.云南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -876,7 +1212,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://lzu.兰州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -887,7 +1228,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.兰州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -904,7 +1250,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://imu.内蒙古.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -915,7 +1266,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.内蒙古.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -932,7 +1288,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bjtu.北京交通.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -943,7 +1304,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京交通.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -960,7 +1326,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bsu.北京体育.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -971,7 +1342,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京体育.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -988,7 +1364,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://buct.北京化工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -999,7 +1380,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京化工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1016,7 +1402,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bfsu.北京外国语.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1027,7 +1418,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京外国语.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1040,22 +1436,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "工学院-机械工程系",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://www.eng.pku.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "信息科学技术学院-电子工程系",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://www.eecs.pku.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1072,7 +1478,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bjut.北京工业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1083,7 +1494,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京工业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1100,7 +1516,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bnu.北京师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1111,7 +1532,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1128,7 +1554,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bjfu.北京林业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1139,7 +1570,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京林业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1152,22 +1588,46 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机械与车辆学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://me.bit.edu.cn/szdw/jsml/jlgcx/index.htm",
+          "list_item_selector": "dd a[href*=\"bssds\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": "h3",
+            "title": "table tr:nth-child(2) td:nth-child(2)",
+            "department": "table tr:nth-child(3) td:nth-child(2)",
+            "email": "table tr:nth-child(9) td:nth-child(2)",
+            "phone": "table tr:nth-child(8) td:nth-child(2)",
+            "research": "table tr:nth-child(11) td:nth-child(2)"
+          }
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "机械与车辆学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://me.bit.edu.cn/szdw/jsml/jlgcx/index.htm",
+          "list_item_selector": "dd a[href*=\"bssds\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": "h3",
+            "title": "table tr:nth-child(2) td:nth-child(2)",
+            "department": "table tr:nth-child(3) td:nth-child(2)",
+            "email": "table tr:nth-child(9) td:nth-child(2)",
+            "phone": "table tr:nth-child(8) td:nth-child(2)",
+            "research": "table tr:nth-child(11) td:nth-child(2)"
+          }
         },
         "notice": {
           "enabled": false
@@ -1184,7 +1644,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ustb.北京科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1195,7 +1660,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1208,22 +1678,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "航空科学与工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://sse.buaa.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "自动化科学与电气工程学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://aae.buaa.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1240,7 +1720,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://bupt.北京邮电.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1251,7 +1736,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.北京邮电.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1268,7 +1758,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ecnu.华东师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1279,7 +1774,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华东师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1296,7 +1796,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ecust.华东理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1307,7 +1812,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华东理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1324,7 +1834,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://hzau.华中农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1335,7 +1850,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华中农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1352,7 +1872,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ccnu.华中师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1363,7 +1888,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华中师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1376,22 +1906,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机械科学与工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://me.hust.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "人工智能与自动化学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://aia.hust.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1408,7 +1948,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ncepu.华北电力.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1419,7 +1964,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华北电力.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1436,7 +1986,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://scnu.华南师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1447,7 +2002,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华南师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1464,7 +2024,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://scut.华南理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1475,7 +2040,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.华南理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1492,7 +2062,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://njau.南京农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1503,7 +2078,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.南京农业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1516,22 +2096,42 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机器人与自动化学院",
         "category": "mechanical",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "https://ra.nju.edu.cn/szll/zzjs/index.html",
+          "list_item_selector": "a[href*=\"i335\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": "h1, .name, .tit",
+            "title": ".job, .title",
+            "education": ".education .nr",
+            "research": ".education .nr p:contains(\"主要\")"
+          }
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "机器人与自动化学院",
         "category": "automation",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "https://ra.nju.edu.cn/szll/zzjs/index.html",
+          "list_item_selector": "a[href*=\"i335\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": "h1, .name, .tit",
+            "title": ".job, .title",
+            "education": ".education .nr",
+            "research": ".education .nr p:contains(\"主要\")"
+          }
         },
         "notice": {
           "enabled": false
@@ -1548,7 +2148,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nju.南京师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1559,7 +2164,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.南京师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1576,7 +2186,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://njut.南京理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1587,7 +2202,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.南京理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1604,7 +2224,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nuaa.南京航空航天.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1615,7 +2240,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.南京航空航天.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1632,7 +2262,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nankai.南开.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1643,7 +2278,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.南开.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1660,7 +2300,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ncu.南昌.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1671,7 +2316,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.南昌.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1688,7 +2338,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://xmu.厦门.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1699,7 +2354,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.厦门.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1716,18 +2376,28 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://jxxy.hfut.edu.cn/szdw/bssds.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "电气与自动化工程学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://ea.hfut.edu.cn/szll/xszx2.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1744,7 +2414,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://jlu.吉林.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1755,7 +2430,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.吉林.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1772,7 +2452,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://tongji.同济.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1783,7 +2468,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.同济.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1796,22 +2486,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机电工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://me.hit.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "控制科学与工程学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.hit.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1824,11 +2524,16 @@
     "level": "211",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机电工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://www.hrbeu.edu.cn/jidian/",
+          "list_item_selector": "",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1839,7 +2544,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://www.hrbeu.edu.cn/auto/",
+          "list_item_selector": "",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1856,7 +2566,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://scu.四川.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1867,7 +2582,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.四川.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1884,7 +2604,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nudt.国防科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1895,7 +2620,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.国防科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1908,22 +2638,36 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "智能机器人与先进制造创新学院",
         "category": "mechanical",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "https://ciram.fudan.edu.cn/cslm/list.htm",
+          "list_item_selector": "a[href*=\"/page.htm\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": ".tit, h1, .name",
+            "title": ".tit span, .title",
+            "research": ".research, .interest"
+          }
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "微电子学院",
         "category": "automation",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "https://sme.fudan.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1940,7 +2684,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://dlmu.大连海事.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1951,7 +2700,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.大连海事.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1968,7 +2722,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://dlut.大连理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1979,7 +2738,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.大连理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -1996,7 +2760,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://tmu.天津医科.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2007,7 +2776,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.天津医科.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2024,18 +2798,28 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://me.tju.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "智能与计算学部-自动化学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.tju.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2052,7 +2836,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://tyut.太原理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2063,7 +2852,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.太原理工.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2080,7 +2874,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nxu.宁夏.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2091,7 +2890,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.宁夏.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2108,7 +2912,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ahu.安徽.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2119,7 +2928,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.安徽.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2136,7 +2950,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://uibe.对外经济贸易.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2147,7 +2966,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.对外经济贸易.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2164,18 +2988,28 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://www.mech.sdu.edu.cn/szdw/xssz.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "控制科学与工程学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://control.sdu.edu.cn/szdw1.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2192,7 +3026,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://gxu.广西.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2203,7 +3042,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.广西.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2220,7 +3064,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://ybu.延边.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2231,7 +3080,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.延边.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2248,7 +3102,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://xju.新疆.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2259,7 +3118,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.新疆.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2276,7 +3140,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://jnu.暨南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2287,7 +3156,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.暨南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2300,22 +3174,32 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "动力与机械学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://pmc.whu.edu.cn/szdw/jsdw.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "电气与自动化学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://eea.whu.edu.cn/szdw/zrjs.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2328,22 +3212,32 @@
     "level": "211",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机电工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://smee.whut.edu.cn/szdw/",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "新能源与电气工程学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://sa.whut.edu.cn/yjspy/dsdw/",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2360,18 +3254,28 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://sme.jiangnan.edu.cn/szdw/rcyj1.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "自动化与智能科学学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://auto.jiangnan.edu.cn/szdw/yxrc.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2388,7 +3292,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://hebut.河北工业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2399,7 +3308,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.河北工业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2412,22 +3326,32 @@
     "level": "211",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机电工程学院",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "http://jidian.hhu.edu.cn/xyjzg",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "人工智能与自动化学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://ai.hhu.edu.cn/15655/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2443,19 +3367,29 @@
         "college": "机械工程学院",
         "category": "mechanical",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "http://www.mech.sdu.edu.cn/szdw/xssz.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "控制科学与工程学院",
         "category": "automation",
         "faculty": {
+          "enabled": true,
           "list_type": "static_html",
-          "enabled": false
+          "list_url": "http://control.sdu.edu.cn/szdw1.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2472,7 +3406,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://hainanu.海南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2483,7 +3422,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.海南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2496,22 +3440,44 @@
     "level": "985",
     "categories": [
       {
-        "college": "机械工程学院",
+        "college": "机械工程系",
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://me.tsinghua.edu.cn/szdw/zzjs.htm",
+          "list_item_selector": "div.tea-text a",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": ".t-info-text .name",
+            "title": ".t-info-text p:contains(\"技术职务\")",
+            "email": ".t-info-text p:contains(\"电子邮件\")",
+            "address": ".t-info-text p:contains(\"通讯地址\")",
+            "research": ".tab-con .list:nth-child(3) .v_news_content"
+          }
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "自动化系",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": true,
+          "list_url": "https://au.tsinghua.edu.cn/szdw/zzjs.htm",
+          "list_item_selector": "div.tea-text a",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {
+            "name": ".t-info-text .name",
+            "title": ".t-info-text p:contains(\"技术职务\")",
+            "email": ".t-info-text p:contains(\"电子邮件\")",
+            "address": ".t-info-text p:contains(\"通讯地址\")",
+            "research": ".tab-con .list:nth-child(3) .v_news_content"
+          }
         },
         "notice": {
           "enabled": false
@@ -2528,7 +3494,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://hnu.湖南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2539,7 +3510,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.湖南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2556,7 +3532,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://hunnu.湖南师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2567,7 +3548,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.湖南师范.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2584,7 +3570,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://uestc.电子科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2595,7 +3586,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.电子科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2612,7 +3608,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://shzu.石河子.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2623,7 +3624,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.石河子.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2640,7 +3646,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://fzu.福州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2651,7 +3662,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.福州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2668,7 +3684,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://suda.苏州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2679,7 +3700,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.苏州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2696,7 +3722,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nwafu.西北农林科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2707,7 +3738,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西北农林科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2724,7 +3760,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nwu.西北.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2735,7 +3776,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西北.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2752,7 +3798,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://nwpu.西北工业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2763,7 +3814,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西北工业.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2780,7 +3836,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://swjtu.西南交通.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2791,7 +3852,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西南交通.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2808,7 +3874,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://swu.西南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2819,7 +3890,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西南.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2836,7 +3912,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://swufe.西南财经.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2847,7 +3928,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西南财经.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2864,18 +3950,28 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://me.xjtu.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       },
       {
-        "college": "自动化学院",
+        "college": "电子与信息学部-自动化学院",
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.xjtu.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2892,7 +3988,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://xidian.西安电子科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2903,7 +4004,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西安电子科技.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2920,7 +4026,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://xizang.西藏.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2931,7 +4042,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.西藏.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2948,7 +4064,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://guu.贵州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2959,7 +4080,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.贵州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2976,7 +4102,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://lnu.辽宁.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -2987,7 +4118,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.辽宁.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3004,7 +4140,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://zzu.郑州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3015,7 +4156,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.郑州.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3032,7 +4178,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://cqu.重庆.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3043,7 +4194,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.重庆.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3060,7 +4216,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://chd.长安.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3071,7 +4232,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.长安.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3088,7 +4254,12 @@
         "category": "mechanical",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://qhu.青海.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3099,7 +4270,12 @@
         "category": "automation",
         "faculty": {
           "list_type": "static_html",
-          "enabled": false
+          "enabled": false,
+          "list_url": "https://auto.青海.edu.cn/szdw/list.htm",
+          "list_item_selector": "a[href*=\"teacher\"]",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
@@ -3108,23 +4284,41 @@
     ]
   },
   {
+    "university": "测试大学",
+    "level": "211",
     "categories": [
       {
         "category": "mechanical",
         "college": "机械学院",
         "faculty": {
           "list_type": "static_html",
-          "list_url": "http://me.seu.edu.cn/xscz/list.htm",
-          "list_item_selector": "ul.xx_zm_nr li",
-          "list_name_selector": "a",
-          "list_research_selector": ".research",
-          "enabled": true
+          "list_url": "https://faculty.seu.edu.cn/teacher",
+          "enabled": false,
+          "list_item_selector": "a",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
+        },
+        "notice": {
+          "enabled": false
+        }
+      },
+      {
+        "category": "automation",
+        "college": "自动化学院",
+        "faculty": {
+          "enabled": false,
+          "list_type": "static_html",
+          "list_url": "https://faculty.seu.edu.cn/teacher",
+          "list_item_selector": "a",
+          "list_name_selector": "text",
+          "list_research_selector": "",
+          "detail_selectors": {}
         },
         "notice": {
           "enabled": false
         }
       }
-    ],
-    "university": "测试大学"
+    ]
   }
 ]

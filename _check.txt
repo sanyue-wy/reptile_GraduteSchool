@@ -1,0 +1,9 @@
+09-16 18:46:01       1418  _.jsonl
+09-16 18:46:01      40105  crawl.log
+09-16 18:24:57       1474  failures.json
+09-16 18:46:01        644  progress.json
+09-16 18:46:01     194991  测试大学_机械学院.jsonl
+09-16 18:46:01    1716664  测试大学_机械学院_faculty.jsonl
+
+merged total=192 ok=192 bad=0 double_enc_markers=0
+names: 陈云飞 | 陈天容 | 刘磊 | 陈震 | 吕之阳 | 薛澄岐 | 毕可东 | 沙菁㛃 | 王建立 | 张艳

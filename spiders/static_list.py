@@ -48,10 +48,12 @@ def fetch_faculty_list(
     if base_url is None:
         from urllib.parse import urlparse
         p = urlparse(list_url)
-        base_url = f"{p.scheme}://{p.netloc}"
+        # Use the full URL up to the last / as base for relative link resolution
+        base_url = f"{p.scheme}://{p.netloc}{p.path.rsplit('/', 1)[0]}/"
 
     def _do_fetch() -> str:
-        return session.get(list_url).text
+        from utils.http import response_text
+        return response_text(session.get(list_url))
 
     if cache is not None:
         html = cache.get_or_fetch(_do_fetch, list_url, force=force)

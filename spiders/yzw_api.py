@@ -68,7 +68,8 @@ class YzwClient:
         # 响应 HTML 包含形如
         #   <a href="/zsml/querySchAction.do?dwdm=10213&dlmc=...">东南大学</a>
         # 或  <a href="/zsml/rs/dws.do?dwdm=10213&...">东南大学</a>
-        html = resp.text
+        from utils.http import response_text
+        html = response_text(resp)
         pattern = re.compile(
             r'dwdm=([^&"\']+)[^>]*>([^<]*)</a>',
             re.IGNORECASE,
