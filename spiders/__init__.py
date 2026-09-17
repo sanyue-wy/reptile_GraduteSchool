@@ -12,10 +12,13 @@ URL 发现：
     spiders.url_resolver → URLResolver
 """
 
-from spiders.static_list import fetch_faculty_list, parse_faculty_html
-from spiders.ajax_api import fetch_faculty_via_api
-from spiders.js_render import fetch_faculty_via_playwright, fetch_faculty_via_playwright_with_detail
-from spiders.pdf_list import parse_pdf_faculty_list, parse_pdf_file_local
+from spiders.engine import SpiderEngine, ENGINE_REGISTRY as SPIDER_ENGINE_REGISTRY, register_engine
+from spiders.static_list import StaticListEngine, fetch_faculty_list, parse_faculty_html
+from spiders.ajax_api import AjaxApiEngine, fetch_faculty_via_api
+from spiders.detail_parser import DetailParserEngine, fetch_detail
+from spiders.yzw_api import YzwEngine, YzwClient
+from spiders.js_render import JSRenderEngine, fetch_faculty_via_playwright, fetch_faculty_via_playwright_with_detail
+from spiders.pdf_list import PDFListEngine, parse_pdf_faculty_list, parse_pdf_file_local
 from spiders.url_resolver import URLResolver, URLCandidate
 
 # 引擎注册表：list_type → 获取函数
@@ -27,6 +30,17 @@ ENGINE_REGISTRY = {
 }
 
 __all__ = [
+    "SpiderEngine",
+    "SPIDER_ENGINE_REGISTRY",
+    "register_engine",
+    "StaticListEngine",
+    "AjaxApiEngine",
+    "YzwEngine",
+    "DetailParserEngine",
+    "JSRenderEngine",
+    "PDFListEngine",
+    "YzwClient",
+    "fetch_detail",
     "fetch_faculty_list",
     "parse_faculty_html",
     "fetch_faculty_via_api",

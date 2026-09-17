@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 
 from utils.http import PoliteSession
 from utils.cache import CrawlCache
+from spiders.engine import SpiderEngine, register_engine
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,26 @@ _SECTION_ALIASES = {
     "科研项目": "projects",
     "专利": "patents",
 }
+
+
+@register_engine
+class DetailParserEngine(SpiderEngine):
+    """详情页适配器；统一接口将旧 dict 结果包装成单条列表。"""
+
+    name = "detail_parser"
+    supported_source = "source_a"
+
+    def fetch(self, url: str, *, detail_type="auto", selectors=None, force=False, **kwargs) -> list[dict]:
+        detail = fetch_detail(
+            self.session, url, detail_type, selectors, cache=self.cache, force=force,
+        )
+        return [detail] if detail else []
+
+    def parse(self, html: str, selectors: dict, *, detail_type="auto", profile_url="",
+              base_url="", **kwargs) -> list[dict]:
+        """沿用旧模板解析；selectors 与旧 fetch 一样为保留参数。"""
+        detail = _parse_detail_html(html, profile_url or base_url or kwargs.get("url", ""), detail_type)
+        return [detail] if detail else []
 
 
 def fetch_detail(
@@ -75,6 +96,11 @@ def fetch_detail(
     else:
         html = _do_fetch()
 
+    return _parse_detail_html(html, profile_url, detail_type)
+
+
+def _parse_detail_html(html: str, profile_url: str, detail_type: str) -> dict:
+    """网络与离线解析共用模板分派。"""
     soup = BeautifulSoup(html, "lxml")
 
     if detail_type == "auto":

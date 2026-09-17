@@ -9,14 +9,13 @@
 - 线程安全操作
 """
 
-import json
 import logging
-import os
-import threading
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
+
+from storage import JSONLStore, ProgressStore, path_lock, read_json
+from storage.progress_store import default_structure, recalc_pipelines
 
 logger = logging.getLogger(__name__)
 
@@ -32,73 +31,62 @@ VALID_SOURCES = {"source_a", "source_b", "merged"}
 class ProgressTracker:
     """进度追踪器，线程安全。"""
 
-    def __init__(self, progress_file: Path = PROGRESS_FILE, log_file: Path = LOG_FILE):
-        self.progress_file = progress_file
-        self.log_file = log_file
-        self._lock = threading.Lock()
-        self._cache: Optional[dict] = None
-        self._cache_time = 0
-        self._cache_ttl = 1.0  # 秒
+    def __init__(self, progress_file: Path = PROGRESS_FILE, log_file: Path = LOG_FILE, cache_ttl: float = 1.0):
+        self.progress_file = Path(progress_file)
+        self.log_file = Path(log_file)
+        self._store = ProgressStore(self.progress_file, cache_ttl=cache_ttl)
+        # Shared reentrant thread lock: nested store calls cannot deadlock.
+        self._lock = self._store._lock
 
-        # 确保目录存在
         self.progress_file.parent.mkdir(parents=True, exist_ok=True)
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+        self._store.initialize()
+        with path_lock(self.log_file):
+            self.log_file.touch(exist_ok=True)
 
-        # 初始化文件
-        if not self.progress_file.exists():
-            self._write_raw(self._default_structure())
-        if not self.log_file.exists():
-            self.log_file.write_text("", encoding="utf-8")
+    # Compatibility aliases for callers that invalidate/tune the old cache.
+    @property
+    def _cache(self):
+        from copy import deepcopy
+        return deepcopy(self._store._cache)
+
+    @_cache.setter
+    def _cache(self, value):
+        from copy import deepcopy
+        with self._lock:
+            self._store._cache = deepcopy(value)
+
+    @property
+    def _cache_time(self):
+        return self._store._cache_time
+
+    @_cache_time.setter
+    def _cache_time(self, value):
+        self._store._cache_time = value
+
+    @property
+    def _cache_ttl(self):
+        return self._store._cache_ttl
+
+    @_cache_ttl.setter
+    def _cache_ttl(self, value):
+        self._store._cache_ttl = value
 
     # ------------------------------------------------------------------
     # 内部工具
     # ------------------------------------------------------------------
 
     def _default_structure(self) -> dict:
-        """默认进度结构。"""
-        return {
-            "version": 1,
-            "updated_at": datetime.now().isoformat(),
-            "schools": {},  # key: "大学|学院" -> {source_a, source_b, merged, last_crawl_at, tutor_count}
-            "pipelines": {
-                "source_a": {"completed": 0, "total": 147},
-                "source_b": {"completed": 0, "total": 147},
-                "merged": {"completed": 0, "total": 147},
-            },
-            "source_breakdown": {
-                "matched": 0,
-                "notice_only": 0,
-                "faculty_only": 0,
-                "unmatched": 0,
-            },
-        }
+        """默认进度结构（version=1，三条流水线总数均为147）。"""
+        return default_structure()
 
     def _read_raw(self) -> dict:
-        """读取原始 JSON（带缓存）。"""
-        now = time.time()
-        if self._cache and (now - self._cache_time) < self._cache_ttl:
-            return self._cache
-
-        with self._lock:
-            try:
-                with open(self.progress_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                data = self._default_structure()
-            self._cache = data
-            self._cache_time = now
-            return data
+        """读取独立的进度快照，外部修改不会污染缓存。"""
+        return self._store.load()
 
     def _write_raw(self, data: dict) -> None:
-        """原子写入：写临时文件再 rename。"""
-        data["updated_at"] = datetime.now().isoformat()
-        with self._lock:
-            tmp = self.progress_file.with_suffix(".tmp")
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            os.replace(tmp, self.progress_file)
-            self._cache = data
-            self._cache_time = time.time()
+        """兼容完整快照写入；读改写操作应使用 store.transaction。"""
+        self._store.save(data)
 
     def _school_key(self, university: str, college: str) -> str:
         return f"{university}|{college}"
@@ -135,46 +123,14 @@ class ProgressTracker:
         tutor_count: Optional[int] = None,
     ) -> None:
         """更新学校/学院状态（部分字段可选）。"""
-        data = self._read_raw()
-        key = self._school_key(university, college)
-        school = data["schools"].get(
-            key,
-            {
-                "source_a": "pending",
-                "source_b": "pending",
-                "merged": "pending",
-                "last_crawl_at": "",
-                "tutor_count": 0,
-            },
+        self._store.update_school_status(
+            university, college, source_a=source_a, source_b=source_b,
+            merged=merged, tutor_count=tutor_count,
         )
-        if source_a is not None:
-            school["source_a"] = source_a
-        if source_b is not None:
-            school["source_b"] = source_b
-        if merged is not None:
-            school["merged"] = merged
-        if tutor_count is not None:
-            school["tutor_count"] = tutor_count
-        if any(v is not None for v in (source_a, source_b, merged, tutor_count)):
-            school["last_crawl_at"] = datetime.now().isoformat()
-        data["schools"][key] = school
-        self._recalc_pipelines(data)
-        self._write_raw(data)
 
     def _recalc_pipelines(self, data: dict) -> None:
         """根据 schools 重新计算三条管道进度。"""
-        total = 147  # 双一流高校总数，后续可从配置读取
-        counts = {"source_a": 0, "source_b": 0, "merged": 0}
-        for school in data["schools"].values():
-            for src in ("source_a", "source_b", "merged"):
-                if school.get(src) == "done":
-                    counts[src] += 1
-        # 容错：pipelines 结构可能不完整（如重置后为空），缺失时自动补全
-        pipelines = data.setdefault("pipelines", {})
-        for src in counts:
-            entry = pipelines.setdefault(src, {})
-            entry["completed"] = counts[src]
-            entry["total"] = total
+        recalc_pipelines(data)
 
     # ------------------------------------------------------------------
     # 概览统计（供 /api/overview 使用）
@@ -212,14 +168,14 @@ class ProgressTracker:
 
     def update_source_breakdown(self, matched: int, notice_only: int, faculty_only: int, unmatched: int) -> None:
         """更新来源占比统计。"""
-        data = self._read_raw()
-        data["source_breakdown"] = {
-            "matched": matched,
-            "notice_only": notice_only,
-            "faculty_only": faculty_only,
-            "unmatched": unmatched,
-        }
-        self._write_raw(data)
+        def update(data):
+            data["source_breakdown"] = {
+                "matched": matched,
+                "notice_only": notice_only,
+                "faculty_only": faculty_only,
+                "unmatched": unmatched,
+            }
+        self._store.transaction(update)
 
     # ------------------------------------------------------------------
     # 最近记录（供 /api/overview 使用）
@@ -238,22 +194,17 @@ class ProgressTracker:
             if len(tutors) >= limit:
                 break
             try:
-                with open(f, "r", encoding="utf-8") as fp:
-                    for line in fp:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        rec = json.loads(line)
-                        tutors.append({
-                            "name": rec.get("name", ""),
-                            "title": rec.get("title", ""),
-                            "level": rec.get("advisor_level", ""),
-                            "school": rec.get("university", ""),
-                            "college": rec.get("college", ""),
-                            "areas": rec.get("research_areas", []),
-                        })
-                        if len(tutors) >= limit:
-                            break
+                for rec in JSONLStore(f).read_all():
+                    tutors.append({
+                        "name": rec.get("name", ""),
+                        "title": rec.get("title", ""),
+                        "level": rec.get("advisor_level", ""),
+                        "school": rec.get("university", ""),
+                        "college": rec.get("college", ""),
+                        "areas": rec.get("research_areas", []),
+                    })
+                    if len(tutors) >= limit:
+                        break
             except Exception as e:
                 logger.warning("读取导师文件失败 %s: %s", f, e)
         return tutors[:limit]
@@ -264,8 +215,7 @@ class ProgressTracker:
         if not failures_file.exists():
             return []
         try:
-            with open(failures_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            data = read_json(failures_file, {})
             items = data.get("items", [])
             return items[:limit]
         except Exception as e:
@@ -306,7 +256,7 @@ class ProgressTracker:
         """追加一条日志到 crawl.log（供爬虫进程调用）。"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
         line = f"{timestamp} - {level.upper()} - {msg}\n"
-        with self._lock:
+        with path_lock(self.log_file):
             with open(self.log_file, "a", encoding="utf-8") as f:
                 f.write(line)
 

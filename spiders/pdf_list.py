@@ -6,16 +6,15 @@
 使用 pdfplumber 解析 PDF 表格，识别"姓名/职称/研究方向"表头行，按表切列。
 """
 
+import base64
 import io
 import logging
 import re
 from typing import Optional
-from pathlib import Path
-
-import pdfplumber
 
 from utils.http import PoliteSession
 from utils.cache import CrawlCache
+from spiders.engine import SpiderEngine, register_engine
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,19 @@ TITLE_VOCABULARY = {
     "研究员", "副研究员", "高级工程师",
     "博士生导师", "硕士生导师",
 }
+
+
+@register_engine
+class PDFListEngine(SpiderEngine):
+    name = "pdf_list"
+    supported_source = "source_a"
+
+    def fetch(self, url: str, *, force=False, **kwargs) -> list[dict]:
+        return parse_pdf_faculty_list(self.session, url, cache=self.cache, force=force)
+
+    def parse(self, html: bytes, selectors: dict, **kwargs) -> list[dict]:
+        """PDF 的原始输入为 bytes；selectors 为统一接口保留参数。"""
+        return _parse_pdf_bytes(html)
 
 
 def parse_pdf_faculty_list(
@@ -53,7 +65,13 @@ def parse_pdf_faculty_list(
         return resp.content
 
     if cache is not None:
-        pdf_bytes = cache.get_or_fetch(_do_fetch, pdf_url, force=force)
+        # CrawlCache 只存 UTF-8 文本，不能直接传 PDF bytes。
+        # 使用独立、带版本的键，避免与旧 URL 对应的文本缓存互相污染。
+        def _fetch_encoded() -> str:
+            return base64.b64encode(_do_fetch()).decode("ascii")
+
+        encoded = cache.get_or_fetch(_fetch_encoded, f"pdf_list:base64:v1:{pdf_url}", force=force)
+        pdf_bytes = base64.b64decode(encoded, validate=True)
     else:
         pdf_bytes = _do_fetch()
 
@@ -89,6 +107,8 @@ def _parse_pdf_bytes(pdf_bytes: bytes) -> list[dict]:
     Returns:
         list[dict]: 每条包含 name, title, research_areas 等字段
     """
+    import pdfplumber  # 可选依赖：仅解析 PDF 字节时加载
+
     results = []
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -209,7 +229,9 @@ def _parse_text_line(line: str) -> Optional[dict]:
     """从单行文本解析教师信息。"""
     # 常见模式：姓名 职称 研究方向
     # 匹配以教授/副教授/讲师/研究员结尾或包含的行
-    for title in TITLE_VOCABULARY:
+    # Longest titles first: 教授 is a substring of 副教授, and the
+    # vocabulary is a set whose iteration order varies across processes.
+    for title in sorted(TITLE_VOCABULARY, key=lambda value: (-len(value), value)):
         if title in line:
             parts = line.split(title)
             name = parts[0].strip() if parts else ""
@@ -248,35 +270,3 @@ def _split_research(text: str) -> list[str]:
     import re
     parts = re.split(r"[；;、，,\n]+", text)
     return [p.strip() for p in parts if p.strip()]
-
-
-# 辅助：pdfplumber 打开字节流（已移除重复定义）
-
-
-def _parse_pdf_bytes(pdf_bytes: bytes) -> list[dict]:
-    """核心 PDF 解析逻辑（使用 io.BytesIO）。"""
-    results = []
-
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            tables = page.extract_tables()
-            if not tables:
-                text = page.extract_text()
-                if text:
-                    results.extend(_parse_text_lines(text, page_num))
-                continue
-
-            for table in tables:
-                parsed = _parse_table(table, page_num)
-                results.extend(parsed)
-
-    seen = set()
-    unique_results = []
-    for r in results:
-        name = r.get("name", "")
-        if name and name not in seen:
-            seen.add(name)
-            unique_results.append(r)
-
-    logger.info("PDF 解析完成，共提取 %d 位教师", len(unique_results))
-    return unique_results

@@ -8,10 +8,11 @@
 3. data/output/failures.json       —— 失败记录清单
 """
 
-import json
+from copy import deepcopy
 import logging
 from pathlib import Path
-from typing import Any
+
+from storage import JSONLStore, atomic_writer, path_lock, read_json, write_json
 
 import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -39,7 +40,8 @@ def export_merged(merged_records: list[dict], output_dir: Path = OUTPUT_DIR) -> 
     Returns:
         {"files_written": N, "total_records": M}
     """
-    ensure_output_dir()
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # 按学校+学院分组
     groups: dict[str, list[dict]] = {}
@@ -53,9 +55,7 @@ def export_merged(merged_records: list[dict], output_dir: Path = OUTPUT_DIR) -> 
     for key, records in groups.items():
         safe_key = key.replace("/", "_").replace("\\", "_")
         out_path = output_dir / f"{safe_key}.jsonl"
-        with open(out_path, "w", encoding="utf-8") as f:
-            for rec in records:
-                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        JSONLStore(out_path).write_all(records)
         files_written += 1
         total_records += len(records)
         logger.info("已写出 %d 条记录到 %s", len(records), out_path)
@@ -69,7 +69,7 @@ def export_summary(merged_records: list[dict], output_path: Path = OUTPUT_DIR / 
 
     列顺序：学校、学院、姓名、职称、招生状态、招生方向、研究方向、来源链接
     """
-    ensure_output_dir()
+    output_path = Path(output_path)
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -118,7 +118,8 @@ def export_summary(merged_records: list[dict], output_path: Path = OUTPUT_DIR / 
     ws.freeze_panes = "A2"
 
     # 保存
-    wb.save(output_path)
+    with atomic_writer(output_path, binary=True) as stream:
+        wb.save(stream)
     logger.info("已生成汇总表 %s，共 %d 行", output_path, len(merged_records))
     return len(merged_records)
 
@@ -135,7 +136,7 @@ def export_failures(failures: list[dict], output_path: Path = OUTPUT_DIR / "fail
     Returns:
         写入的记录数
     """
-    ensure_output_dir()
+    failures = deepcopy(failures)
 
     # 按错误类型统计
     summary = {"http_error": 0, "timeout": 0, "parse_error": 0, "dns_error": 0, "other": 0}
@@ -152,8 +153,7 @@ def export_failures(failures: list[dict], output_path: Path = OUTPUT_DIR / "fail
         "items": failures,
     }
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    write_json(output_path, data)
 
     logger.info("已写出 %d 条失败记录到 %s", len(failures), output_path)
     return len(failures)
@@ -161,12 +161,10 @@ def export_failures(failures: list[dict], output_path: Path = OUTPUT_DIR / "fail
 
 def load_failures(input_path: Path = OUTPUT_DIR / "failures.json") -> list[dict]:
     """读取现有失败记录。"""
-    if not input_path.exists():
-        return []
     try:
-        with open(input_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data.get("items", [])
+        data = read_json(input_path, {})
+        items = data.get("items", [])
+        return items if isinstance(items, list) else []
     except Exception as e:
         logger.warning("读取失败记录失败: %s", e)
         return []
@@ -201,13 +199,14 @@ def add_failure(
 
 def update_failure_status(failure_id: str, status: str, output_path: Path = OUTPUT_DIR / "failures.json") -> bool:
     """更新失败记录状态（resolved/ignored）。"""
-    failures = load_failures(output_path)
-    for f in failures:
-        if f["id"] == failure_id:
-            f["status"] = status
-            export_failures(failures, output_path)
-            return True
-    return False
+    with path_lock(output_path):
+        failures = load_failures(output_path)
+        for f in failures:
+            if f["id"] == failure_id:
+                f["status"] = status
+                export_failures(failures, output_path)
+                return True
+        return False
 
 
 def get_active_failures(output_path: Path = OUTPUT_DIR / "failures.json") -> list[dict]:
@@ -217,10 +216,28 @@ def get_active_failures(output_path: Path = OUTPUT_DIR / "failures.json") -> lis
 
 def clear_failure(failure_id: str, output_path: Path = OUTPUT_DIR / "failures.json") -> bool:
     """删除一条失败记录（忽略后可选清理）。"""
-    failures = load_failures(output_path)
-    original_len = len(failures)
-    failures = [f for f in failures if f["id"] != failure_id]
-    if len(failures) < original_len:
-        export_failures(failures, output_path)
-        return True
-    return False
+    with path_lock(output_path):
+        failures = load_failures(output_path)
+        original_len = len(failures)
+        failures = [f for f in failures if f["id"] != failure_id]
+        if len(failures) < original_len:
+            export_failures(failures, output_path)
+            return True
+        return False
+
+
+def append_failure(failure: dict, output_path: Path = OUTPUT_DIR / "failures.json") -> int:
+    """Atomically append one failure; return the total persisted item count."""
+    return append_failures([failure], output_path)
+
+
+def append_failures(failures: list[dict], output_path: Path = OUTPUT_DIR / "failures.json") -> int:
+    """Append records in one thread-safe JSON transaction (not JSONL).
+
+    Use instead of load_failures() followed by export_failures(), whose separate
+    calls cannot protect a caller's read/modify/write sequence.
+    """
+    with path_lock(output_path):
+        items = load_failures(output_path)
+        items.extend(deepcopy(failures))
+        return export_failures(items, output_path)

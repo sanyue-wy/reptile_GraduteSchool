@@ -7,7 +7,8 @@ API 集成测试
 
 import json
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -15,15 +16,34 @@ from api.server import app
 
 
 @pytest.fixture
-def client():
-    """Flask test client"""
-    app.config["TESTING"] = True
+def client(monkeypatch, route_background):
+    """Flask client exercises routes without launching background collection."""
+    monkeypatch.setitem(app.config, "TESTING", True)
     with app.test_client() as client:
         yield client
 
 
+@pytest.fixture
+def route_background(monkeypatch):
+    import api.server as server
+
+    thread_factory = MagicMock(name="route_thread")
+    # Replace this module's reference, NOT threading.Thread globally: cache and
+    # progress concurrency tests must continue to use real threads.
+    monkeypatch.setattr(server, "threading", SimpleNamespace(Thread=thread_factory))
+    return thread_factory
+
+
 @pytest.fixture(autouse=True)
-def mock_progress(tmp_path, monkeypatch):
+def api_state(isolated_workspace, monkeypatch):
+    import api.server as server
+
+    monkeypatch.setattr(server, "GLOBAL_CONFIG_PATH", isolated_workspace / "config" / "global.json")
+    monkeypatch.setattr(server, "_tasks", {})
+
+
+@pytest.fixture(autouse=True)
+def mock_progress(tmp_path, monkeypatch, isolated_workspace):
     """Mock ProgressTracker 全局单例"""
     from utils.progress import ProgressTracker
 
@@ -37,27 +57,9 @@ def mock_progress(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def mock_output(tmp_path, monkeypatch):
-    """Mock data/output 目录"""
-    output_dir = tmp_path / "output"
-    output_dir.mkdir(exist_ok=True)
-
-    import api.server as server_module
-
-    # Mock _read_all_merged_records to return empty
-    def _empty_records():
-        return []
-
-    def _mock_read_merged(university, college):
-        return []
-
-    monkeypatch.setattr(server_module, "_read_all_merged_records", _empty_records)
-    monkeypatch.setattr(server_module, "_read_merged_records", _mock_read_merged)
-
-    # Mock load_failures to return empty
-    monkeypatch.setattr(server_module, "load_failures", lambda: [])
-
-    yield output_dir
+def mock_output(isolated_workspace):
+    """Keep real API readers; the shared fixture supplies an empty private data/."""
+    return isolated_workspace / "data" / "output"
 
 
 class TestApiOverview:
@@ -208,11 +210,24 @@ class TestApiConfigExtended:
         assert data["code"] == 0
         assert json.loads(target.read_text(encoding="utf-8")) == {"delay_range": [0.5, 1.5]}
 
-    def test_config_test_connection(self, client):
-        """POST /api/config/test 测试连接"""
-        resp = client.post("/api/config/test", json={"url": "http://example.com"})
+    def test_config_test_connection(self, client, monkeypatch):
+        """Exercise real PoliteSession with a mocked requests transport."""
+        from requests import Response
+
+        response = Response()
+        response.status_code = 200
+        response._content = b"<html><title>Offline test</title></html>"
+        response.headers["Content-Type"] = "text/html; charset=utf-8"
+        response.encoding = "utf-8"
+        response.url = "http://example.com"
+        transport = MagicMock(return_value=response)
+        monkeypatch.setattr("requests.sessions.Session.request", transport)
+        resp = client.post("/api/config/test", json={"url": response.url})
         data = resp.get_json()
         assert data["code"] == 0
+        assert data["data"]["reachable"] is True
+        assert data["data"]["sample_title"] == "Offline test"
+        transport.assert_called_once()
 
     def test_config_import_no_file(self, client):
         """POST /api/config/import 无文件返回400"""
@@ -308,7 +323,7 @@ class TestApiExport:
         data = resp.get_json()
         assert data["code"] == 40901
 
-    def test_crawl_all_schools(self, client, monkeypatch):
+    def test_crawl_all_schools(self, client, monkeypatch, route_background):
         """POST /api/crawl 使用 __all__ 创建任务"""
         def mock_load_configs():
             return [{
@@ -325,6 +340,12 @@ class TestApiExport:
         data = resp.get_json()
         assert data["code"] == 0
         assert "task_id" in data["data"]
+        import api.server as server
+        route_background.assert_called_once_with(
+            target=server._run_crawl_task, args=(data["data"]["task_id"],), daemon=True
+        )
+        route_background.return_value.start.assert_called_once_with()
+        assert server._get_task(data["data"]["task_id"])["status"] == "queued"
 
     def test_school_detail(self, client, monkeypatch):
         """GET /api/schools/1 返回学校详情"""
@@ -381,8 +402,12 @@ class TestApiFailuresExtended:
         data = resp.get_json()
         assert data["code"] == 40001
 
-    def test_config_save_success(self, client):
-        """PUT /api/config/schools/xxx 保存成功"""
+    def test_config_save_success(self, client, isolated_workspace):
+        """Save through the real loader, and verify the temporary JSON and cache."""
+        import config.loader as loader
+
+        target = isolated_workspace / "config" / "school_data.json"
+        assert loader._config_path == target
         resp = client.put("/api/config/schools/测试大学", json={
             "university": "测试大学",
             "categories": [{
@@ -394,26 +419,20 @@ class TestApiFailuresExtended:
         })
         data = resp.get_json()
         assert data["code"] == 0
+        saved = json.loads(target.read_text(encoding="utf-8"))
+        school = next(item for item in saved if item["university"] == "测试大学")
+        assert school["categories"][0]["college"] == "机械学院"
+        assert loader.get_school_config("测试大学") == school
 
 
 class TestApiPlugins:
     """插件管理接口单测"""
 
     @pytest.fixture
-    def plugin_api_env(self, monkeypatch, tmp_path):
+    def plugin_api_env(self, isolated_workspace):
+        """Reuse the shared private plugin paths/cache and exact module restoration."""
         import config.plugins as plugins
-        import sys
-
-        config_path = tmp_path / "plugins.json"
-        ext_dir = tmp_path / "plugins_ext"
-        monkeypatch.setattr(plugins, "PLUGIN_CONFIG_PATH", config_path)
-        monkeypatch.setattr(plugins, "EXT_PLUGIN_DIR", ext_dir)
-        plugins._EXTERNAL_CACHE.clear()
-        yield plugins
-        plugins._EXTERNAL_CACHE.clear()
-        for module_name in list(sys.modules):
-            if module_name.startswith("plugins_ext."):
-                sys.modules.pop(module_name, None)
+        return plugins
 
     def test_list_plugins(self, client, plugin_api_env):
         resp = client.get("/api/plugins")
@@ -479,48 +498,55 @@ class TestApiRunCrawlTask:
         from api.server import _run_crawl_task
         _run_crawl_task("nonexistent_task_id")
 
-    def test_run_crawl_task_with_mocked_main(self, monkeypatch):
-        """_run_crawl_task 使用 mock main 模块"""
-        import api.server as server_module
-        import sys
-        from unittest.mock import MagicMock
-
-        task_id = "test_task"
-        server_module._set_task(task_id, {
+    @pytest.mark.parametrize("status", ["success", "failed"])
+    def test_worker_service_injection_success_and_failure(self, monkeypatch, status, mock_progress):
+        import api.server as server
+        from services.crawler_service import CrawlerService, CrawlTask, CrawlResult
+        from services.export_service import ExportService
+        task_id = "service-worker-" + status
+        server._set_task(task_id, {
             "task_id": task_id,
-            "params": {
-                "schools": [],
-                "categories": [],
-                "sources": [],
-                "force": True,
-                "year": 2026,
-            },
+            "params": {"schools": ["测试大学"], "categories": ["mechanical"],
+                       "sources": ["source_a"], "force": True, "year": 2026},
         })
+        child = CrawlTask("测试大学", "机械学院", "mechanical", "source_a", 2026)
+        received = []
+        def build(service, args):
+            assert args.school == ["测试大学"]
+            assert args.category == ["mechanical"] and args.source == ["source_a"]
+            return [child]
+        def execute(service, task):
+            received.append(task)
+            return CrawlResult(task.key(), status, [], [],
+                               "offline failure" if status == "failed" else None,
+                               "timeout" if status == "failed" else "none")
+        monkeypatch.setattr(CrawlerService, "build_tasks", build)
+        monkeypatch.setattr(CrawlerService, "execute_task", execute)
+        monkeypatch.setattr(CrawlerService, "run_merge", lambda service, tasks: [])
+        monkeypatch.setattr(ExportService, "run_export_pipeline", lambda *args: {})
+        server._run_crawl_task(task_id)
+        result = server._get_task(task_id)
+        assert received == [child]
+        # A handled child failure does not abort the batch bookkeeping.
+        assert result["status"] == "completed"
+        assert result["progress"]["completed_steps"] == 1
+        assert result["progress"]["total_steps"] == 1
+        assert result["progress"]["percent"] == 100.0
 
-        mock_main = MagicMock()
-        mock_main.build_tasks.return_value = []
-        mock_main.execute_task.return_value = (True, None)
-        mock_cache = MagicMock()
-        mock_main.CrawlCache = MagicMock(return_value=mock_cache)
-        mock_http = MagicMock()
-        mock_http.PoliteSession = MagicMock
-        mock_progress_mod = MagicMock()
-        mock_progress_mod.get_progress_tracker = MagicMock()
-
-        sys.modules["main"] = mock_main
-        sys.modules["utils.cache"] = mock_cache
-        sys.modules["utils.http"] = mock_http
-        sys.modules["utils.progress"] = mock_progress_mod
-
-        try:
-            server_module._run_crawl_task(task_id)
-            task = server_module._get_task(task_id)
-            assert task["status"] == "completed"
-        finally:
-            del sys.modules["main"]
-            del sys.modules["utils.cache"]
-            del sys.modules["utils.http"]
-            del sys.modules["utils.progress"]
+    def test_worker_service_exception_sets_failed(self, monkeypatch):
+        import api.server as server
+        from services.crawler_service import CrawlerService
+        task_id = "service-worker-exception"
+        server._set_task(task_id, {"task_id": task_id, "params": {
+            "schools": ["测试大学"], "categories": ["mechanical"], "sources": ["source_a"],
+            "force": False, "year": 2026}})
+        def broken(service, args):
+            raise RuntimeError("offline service setup error")
+        monkeypatch.setattr(CrawlerService, "build_tasks", broken)
+        server._run_crawl_task(task_id)
+        result = server._get_task(task_id)
+        assert result["status"] == "failed"
+        assert "offline service setup error" in result["progress"]["current_step"]
 
     def test_write_schools_config(self, monkeypatch, tmp_path):
         """_write_schools_config 原子写入"""

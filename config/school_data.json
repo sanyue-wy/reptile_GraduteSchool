@@ -4284,41 +4284,19 @@
     ]
   },
   {
-    "university": "测试大学",
-    "level": "211",
     "categories": [
       {
         "category": "mechanical",
         "college": "机械学院",
         "faculty": {
           "list_type": "static_html",
-          "list_url": "https://faculty.seu.edu.cn/teacher",
-          "enabled": false,
-          "list_item_selector": "a",
-          "list_name_selector": "text",
-          "list_research_selector": "",
-          "detail_selectors": {}
-        },
-        "notice": {
-          "enabled": false
-        }
-      },
-      {
-        "category": "automation",
-        "college": "自动化学院",
-        "faculty": {
-          "enabled": false,
-          "list_type": "static_html",
-          "list_url": "https://faculty.seu.edu.cn/teacher",
-          "list_item_selector": "a",
-          "list_name_selector": "text",
-          "list_research_selector": "",
-          "detail_selectors": {}
+          "list_url": "https://faculty.seu.edu.cn/teacher"
         },
         "notice": {
           "enabled": false
         }
       }
-    ]
+    ],
+    "university": "测试大学"
   }
 ]

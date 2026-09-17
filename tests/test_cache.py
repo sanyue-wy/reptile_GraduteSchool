@@ -193,3 +193,84 @@ class TestCrawlCache:
         domain, tail = "test.edu.cn", "data"
         files = list((mock_cache.cache_dir / "test.edu.cn").glob("*"))
         assert any(f.suffix == ".json" for f in files)
+
+
+@pytest.mark.parametrize("old_fails", [False, True])
+def test_timed_out_old_owner_cannot_delete_new_generation(mock_cache, monkeypatch, old_fails):
+    from concurrent.futures import ThreadPoolExecutor
+    url = "https://offline.invalid/generation"
+    old_started, release_old = threading.Event(), threading.Event()
+    new_started, release_new = threading.Event(), threading.Event()
+
+    def old_fetch():
+        old_started.set()
+        assert release_old.wait(5)
+        if old_fails:
+            raise RuntimeError("old owner failed")
+        return "old"
+
+    def new_fetch():
+        new_started.set()
+        assert release_new.wait(5)
+        return "new"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        old = pool.submit(mock_cache.get_or_fetch, old_fetch, url)
+        try:
+            assert old_started.wait(5)
+            old_entry = mock_cache._inflight[url]
+            # Simulate only this generation's 300s waiter timeout, not real time.
+            monkeypatch.setattr(old_entry[0], "wait", lambda timeout=None: False)
+            new = pool.submit(mock_cache.get_or_fetch, new_fetch, url)
+            assert new_started.wait(5)
+            new_entry = mock_cache._inflight[url]
+            assert new_entry is not old_entry
+            release_old.set()
+            if old_fails:
+                with pytest.raises(RuntimeError, match="old owner failed"):
+                    old.result(timeout=5)
+            else:
+                assert old.result(timeout=5) == "old"
+            assert mock_cache._inflight[url] is new_entry
+            assert mock_cache.read_text(url) is None  # obsolete owner did not write
+            release_new.set()
+            assert new.result(timeout=5) == "new"
+        finally:
+            release_old.set()
+            release_new.set()
+    assert url not in mock_cache._inflight
+    assert mock_cache.read_text(url) == "new"
+    assert mock_cache.stats["misses"] == 2
+    assert mock_cache.stats["writes"] == 1
+
+
+def test_owner_failure_releases_waiter_and_retry_succeeds(mock_cache):
+    from concurrent.futures import ThreadPoolExecutor
+    started, release = threading.Event(), threading.Event()
+    url = "https://offline.invalid/retry"
+    def failing():
+        started.set()
+        assert release.wait(5)
+        raise ValueError("owner error")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(mock_cache.get_or_fetch, failing, url)
+        try:
+            assert started.wait(5)
+            second = pool.submit(mock_cache.get_or_fetch, lambda: "recovered", url)
+            release.set()
+            with pytest.raises(ValueError, match="owner error"):
+                first.result(timeout=5)
+            assert second.result(timeout=5) == "recovered"
+        finally:
+            release.set()
+    assert mock_cache.read_text(url) == "recovered"
+    assert mock_cache._inflight == {}
+
+
+def test_batch_reads_deduplicate_and_hit_rate(mock_cache):
+    a, b = "https://offline.invalid/a", "https://offline.invalid/b"
+    assert mock_cache.get_hit_rate() == 0
+    assert mock_cache.get_or_fetch(lambda: "A", a) == "A"
+    assert mock_cache.read_many([a, a, b]) == {a: "A", b: None}
+    assert mock_cache.stats["hits"] == 1
+    assert mock_cache.get_hit_rate() == 0.5

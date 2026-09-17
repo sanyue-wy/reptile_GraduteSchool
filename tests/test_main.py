@@ -1,437 +1,156 @@
-# -*- coding: utf-8 -*-
-"""
-主入口模块单元测试
-"""
-
-import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
+"""CLI compatibility contracts. Patch service dependencies, not main internals."""
+import inspect
+import json
 from pathlib import Path
-from dataclasses import dataclass
+from unittest.mock import MagicMock
 
 import pytest
 
 
-class TestCrawlTask:
-    """CrawlTask dataclass 单测"""
+class TestTestIsolation:
+    def test_default_paths_are_temporary(self, isolated_workspace):
+        import config.loader as loader
+        import config.plugins as plugins
+        from storage import ConfigStore
+        assert Path.cwd() == isolated_workspace
+        assert loader.DEFAULT_CONFIG_PATH.is_relative_to(isolated_workspace)
+        assert loader._config_path.is_relative_to(isolated_workspace)
+        assert plugins.PLUGIN_CONFIG_PATH.resolve().is_relative_to(isolated_workspace)
+        assert plugins.EXT_PLUGIN_DIR.resolve().is_relative_to(isolated_workspace)
+        assert ConfigStore()._path.is_relative_to(isolated_workspace)
 
-    def test_key(self):
-        """key 方法返回正确格式"""
+    def test_loader_cache_starts_empty(self):
+        import config.loader as loader
+        assert loader._config_cache is None
+
+    def test_progress_singleton_starts_clean(self, isolated_workspace):
+        import utils.progress as progress
+        assert progress._progress_tracker is None
+        tracker = progress.get_progress_tracker()
+        assert tracker.progress_file.resolve().is_relative_to(isolated_workspace)
+        assert tracker.get_school_status("测试大学", "机械学院").get("source_a") != "done"
+        tracker.update_school_status("测试大学", "机械学院", source_a="done")
+
+    def test_plugin_cache_starts_clean(self):
+        import config.plugins as plugins
+        assert plugins._EXTERNAL_CACHE == {}
+        plugins._EXTERNAL_CACHE["test-only"] = {"loaded": True}
+
+    def test_network_guard_and_local_mock(self, no_real_network, monkeypatch):
+        import socket
+        import requests
+        from requests.adapters import HTTPAdapter
+        assert HTTPAdapter.send is no_real_network
+        assert socket.getaddrinfo is no_real_network
+        assert socket.socket.connect is no_real_network
+        with pytest.raises(pytest.fail.Exception, match="Real network disabled"):
+            requests.get("https://offline.invalid", timeout=0.01)
+        response = MagicMock(status_code=200)
+        monkeypatch.setattr(requests.Session, "request", MagicMock(return_value=response))
+        assert requests.get("https://offline.invalid") is response
+
+    def test_candidates_default_writes_to_temporary_directory(self, isolated_workspace, mock_session):
+        from spiders.url_resolver import CANDIDATES_DIR, URLCandidate, URLResolver
+        assert CANDIDATES_DIR.resolve().is_relative_to(isolated_workspace)
+        URLResolver(session=mock_session)._save_candidates(
+            "测试大学", "机械学院", [URLCandidate(url="https://offline.invalid")])
+        target = isolated_workspace / "data/candidates/测试大学_机械学院_candidates.json"
+        assert json.loads(target.read_text(encoding="utf-8"))["summary"]["total"] == 1
+        mock_session.get.assert_not_called()
+
+
+class TestLegacySignatures:
+    @pytest.mark.parametrize("name,params", [
+        ("build_tasks", ["schools", "categories", "sources", "year", "force", "resume", "retry_failed"]),
+        ("run_merge", ["university", "college", "year", "progress"]),
+        ("run_source_a", ["task", "session", "progress", "cache"]),
+        ("run_source_b", ["task", "session", "progress", "cache"]),
+        ("execute_task", ["task", "session", "progress", "cache"]),
+    ])
+    def test_signatures_unchanged(self, name, params):
+        import main
+        assert list(inspect.signature(getattr(main, name)).parameters) == params
+
+    def test_task_key_unchanged(self):
         from main import CrawlTask
-        task = CrawlTask(university="测试大学", college="机械学院", category="mechanical", source="source_a", year=2026)
+        task = CrawlTask("测试大学", "机械学院", "mechanical", "source_a", 2026, True)
         assert task.key() == "测试大学|机械学院|source_a"
 
-    def test_key_with_force(self):
-        """key 方法包含 force 字段不影响"""
-        from main import CrawlTask
-        task = CrawlTask(university="测试大学", college="机械学院", category="mechanical", source="source_a", year=2026, force=True)
-        assert task.key() == "测试大学|机械学院|source_a"
+    def test_build_wrapper_converts_seven_args_to_service_namespace(self, monkeypatch):
+        from main import build_tasks
+        from services.crawler_service import CrawlerService, CrawlTask
+        task = CrawlTask("测试大学", "机械学院", "mechanical", "source_a", 2026)
+        received = []
+        def build(service, args):
+            received.append(args)
+            return [task]
+        monkeypatch.setattr(CrawlerService, "build_tasks", build)
+        assert build_tasks(["测试大学"], ["mechanical"], ["source_a"], 2026, True, False, True) == [task]
+        assert vars(received[0]) == dict(school=["测试大学"], category=["mechanical"], source=["source_a"],
+                                        year=2026, force=True, resume=False, retry_failed=True)
 
+    @pytest.mark.parametrize("source", ["a", "b"])
+    def test_source_wrapper_returns_old_list(self, source, monkeypatch, mock_progress, mock_session):
+        import main
+        from services.crawler_service import CrawlerService, CrawlResult
+        task = main.CrawlTask("测试大学", "机械学院", "mechanical", f"source_{source}", 2026)
+        records = [{"name": "张三"}]
+        def run(service, actual):
+            assert actual is task
+            return CrawlResult(task.key(), "success", records, [])
+        monkeypatch.setattr(CrawlerService, f"run_source_{source}", run)
+        assert getattr(main, f"run_source_{source}")(task, mock_session, mock_progress) == records
 
-class TestLoadSchoolConfigs:
-    """load_school_configs 单测"""
-
-    @patch("main.load_schools_config")
-    def test_loads_configs(self, mock_load):
-        """正常加载学校配置"""
-        mock_load.return_value = [
-            {"university": "测试大学", "categories": [{"college": "机械学院", "category": "mechanical"}]},
-        ]
-        from main import load_school_configs
-        result = load_school_configs()
-        assert "测试大学" in result
-        assert result["测试大学"].university == "测试大学"
-
-    @patch("main.load_schools_config")
-    def test_empty_configs(self, mock_load):
-        """空配置返回空 dict"""
-        mock_load.return_value = []
-        from main import load_school_configs
-        result = load_school_configs()
-        assert result == {}
-
-    @patch("main.load_schools_config")
-    def test_load_exception(self, mock_load):
-        """加载异常时返回空 dict"""
-        mock_load.side_effect = Exception("load failed")
-        from main import load_school_configs
-        result = load_school_configs()
-        assert result == {}
-
-
-class TestGetCollegeConfig:
-    """get_college_config 单测"""
-
-    def test_finds_config(self):
-        """找到匹配的学院配置"""
-        from main import get_college_config, SchoolConfig
-        configs = {
-            "测试大学": SchoolConfig(
-                university="测试大学",
-                categories=[
-                    {"college": "机械学院", "category": "mechanical", "faculty": {"list_url": "http://test.edu.cn"}},
-                    {"college": "自动化学院", "category": "automation"},
-                ],
-            )
-        }
-        result = get_college_config(configs, "测试大学", "mechanical")
-        assert result is not None
-        assert result["college"] == "机械学院"
-
-    def test_category_not_found(self):
-        """类别不存在返回 None"""
-        from main import get_college_config, SchoolConfig
-        configs = {
-            "测试大学": SchoolConfig(
-                university="测试大学",
-                categories=[{"college": "机械学院", "category": "mechanical"}],
-            )
-        }
-        result = get_college_config(configs, "测试大学", "automation")
-        assert result is None
-
-    def test_university_not_found(self):
-        """学校不存在返回 None"""
-        from main import get_college_config
-        configs = {}
-        result = get_college_config(configs, "不存在", "mechanical")
-        assert result is None
-
-
-class TestBuildTasks:
-    """build_tasks 单测"""
-
-    @patch("main.load_school_configs")
-    @patch("main.get_progress_tracker")
-    def test_builds_tasks_for_all(self, mock_get_progress, mock_load):
-        """构建 __all__ 任务"""
-        from main import build_tasks, SchoolConfig
-        mock_load.return_value = {
-            "测试大学": SchoolConfig(
-                university="测试大学",
-                categories=[
-                    {"college": "机械学院", "category": "mechanical", "faculty": {"list_url": "http://a.com"}},
-                    {"college": "自动化学院", "category": "automation", "faculty": {"list_url": "http://b.com"}},
-                ],
-            )
-        }
-        mock_get_progress.return_value.get_school_status.return_value = {"source_a": "pending", "source_b": "pending"}
-
-        tasks = build_tasks(["__all__"], ["mechanical", "automation"], ["source_a"], 2026, False, False, False)
-        assert len(tasks) >= 2  # mechanical + automation
-
-    @patch("main.load_school_configs")
-    def test_skips_source_a_without_url(self, mock_load):
-        """source_a 缺少 list_url 时跳过"""
-        from main import build_tasks, SchoolConfig
-        from unittest.mock import MagicMock
-
-        mock_load.return_value = {
-            "测试大学": SchoolConfig(
-                university="测试大学",
-                categories=[
-                    {"college": "机械学院", "category": "mechanical", "faculty": {"list_url": ""}},
-                ],
-            )
-        }
-        mock_get_progress = MagicMock()
-        mock_get_progress.get_school_status.return_value = {"source_a": "pending", "source_b": "pending"}
-
-        with patch("main.load_school_configs", mock_load), patch("main.get_progress_tracker", mock_get_progress):
-            tasks = build_tasks(["测试大学"], ["mechanical"], ["source_a"], 2026, False, False, False)
-        # 无 list_url 的 source_a 应被跳过
-        assert len(tasks) == 0
-
-    @patch("main.load_school_configs")
-    def test_skips_source_b_when_disabled(self, mock_load):
-        """source_b 未启用时跳过"""
-        from main import build_tasks, SchoolConfig
-        from unittest.mock import MagicMock
-
-        mock_load.return_value = {
-            "测试大学": SchoolConfig(
-                university="测试大学",
-                categories=[
-                    {"college": "机械学院", "category": "mechanical", "faculty": {"list_url": "http://a.com"},
-                     "notice": {"enabled": False}},
-                ],
-            )
-        }
-        mock_get_progress = MagicMock()
-        mock_get_progress.get_school_status.return_value = {"source_a": "pending", "source_b": "pending"}
-
-        with patch("main.load_school_configs", mock_load), patch("main.get_progress_tracker", mock_get_progress):
-            tasks = build_tasks(["测试大学"], ["mechanical"], ["source_b"], 2026, False, False, False)
-        assert len(tasks) == 0
-
-
-class TestExecuteTask:
-    """execute_task 单测"""
-
-    @patch("main.run_source_a")
-    @patch("main.run_source_b")
-    @patch("main.run_merge")
-    @patch("main.get_progress_tracker")
-    @patch("main.add_failure")
-    @patch("main.export_failures")
-    @patch("main.Path")
-    def test_execute_source_a_success(self, mock_path, mock_export_failures, mock_add_failure,
-                                        mock_progress, mock_run_merge,
-                                        mock_run_source_b, mock_run_source_a):
-        """成功执行 source_a 任务"""
+    @pytest.mark.parametrize("status,error,kind,expected", [
+        ("success", None, "none", (True, None, "none")),
+        ("skipped", None, "none", (True, None, "none")),
+        ("failed", "offline timeout", "timeout", (False, "offline timeout", "timeout")),
+    ])
+    def test_execute_wrapper_old_three_tuple(self, status, error, kind, expected, monkeypatch, mock_progress, mock_session):
         from main import execute_task, CrawlTask
-        from unittest.mock import MagicMock
+        from services.crawler_service import CrawlerService, CrawlResult
+        task = CrawlTask("测试大学", "机械学院", "mechanical", "source_a", 2026)
+        def execute(service, actual):
+            assert actual is task
+            return CrawlResult(task.key(), status, [], [], error, kind)
+        monkeypatch.setattr(CrawlerService, "execute_task", execute)
+        assert execute_task(task, mock_session, mock_progress, None) == expected
 
-        mock_run_source_a.return_value = [{"name": "张三", "title": "教授"}]
-        mock_progress.return_value.get_school_status.return_value = {"source_a": "pending"}
-
-        task = CrawlTask(university="测试大学", college="机械学院", category="mechanical", source="source_a", year=2026)
-        session = MagicMock()
-        progress = mock_progress()
-        cache = MagicMock()
-
-        # Mock Path for file operations
-        mock_path_obj = MagicMock()
-        mock_path_obj.__str__ = MagicMock(return_value="data/output/test.jsonl")
-        mock_path_obj.parent = MagicMock()
-        mock_path_obj.parent.mkdir = MagicMock()
-        mock_path_obj.with_suffix = MagicMock(return_value=MagicMock())
-        mock_file = MagicMock()
-        mock_file.__enter__ = MagicMock(return_value=mock_file)
-        mock_file.__exit__ = MagicMock(return_value=False)
-        mock_path_obj.open = MagicMock(return_value=mock_file)
-        mock_path.return_value = mock_path_obj
-
-        success, error, error_type = execute_task(task, session, progress, cache)
-        assert success is True
-        assert error is None
-
-    @patch("main.run_source_b")
-    @patch("main.run_source_a")
-    @patch("main.run_merge")
-    @patch("main.get_progress_tracker")
-    @patch("main.Path")
-    def test_execute_source_b_disabled(self, mock_path, mock_run_merge, mock_run_source_a,
-                                        mock_run_source_b, mock_progress):
-        """source_b 未启用时返回空列表"""
-        from main import execute_task, CrawlTask
-        from unittest.mock import MagicMock
-
-        mock_run_source_b.return_value = []
-        mock_progress.return_value.get_school_status.return_value = {"source_b": "pending"}
-
-        task = CrawlTask(university="测试大学", college="机械学院", category="mechanical", source="source_b", year=2026)
-        session = MagicMock()
-        progress = mock_progress()
-        cache = MagicMock()
-
-        mock_path_obj = MagicMock()
-        mock_path.return_value = mock_path_obj
-
-        success, error, error_type = execute_task(task, session, progress, cache)
-        assert success is True
-        assert error is None
-
-    @patch("main.run_source_a")
-    @patch("main.run_source_b")
-    @patch("main.get_progress_tracker")
-    def test_execute_skips_completed(self, mock_progress, mock_run_source_b, mock_run_source_a):
-        """断点续抓跳过已完成任务"""
-        from main import execute_task, CrawlTask
-        from unittest.mock import MagicMock
-
-        mock_progress.return_value.get_school_status.return_value = {"source_a": "done"}
-
-        task = CrawlTask(university="测试大学", college="机械学院", category="mechanical", source="source_a", year=2026)
-        session = MagicMock()
-        cache = MagicMock()
-
-        success, error, error_type = execute_task(task, session, mock_progress(), cache)
-        assert success is True
-        assert error is None
-
-    @patch("main.run_source_a")
-    @patch("main.run_source_b")
-    @patch("main.add_failure")
-    @patch("main.export_failures")
-    @patch("main.get_progress_tracker")
-    @patch("main.Path")
-    def test_execute_blocked_error(self, mock_path, mock_progress, mock_export_failures, mock_add_failure,
-                                    mock_run_source_b, mock_run_source_a):
-        """BlockedError 处理"""
-        from main import execute_task, CrawlTask, BlockedError
-        from unittest.mock import MagicMock
-
-        mock_run_source_a.side_effect = BlockedError("测试冷却")
-        mock_progress.return_value.get_school_status.return_value = {"source_a": "pending"}
-
-        task = CrawlTask(university="测试大学", college="机械学院", category="mechanical", source="source_a", year=2026)
-        session = MagicMock()
-        progress = mock_progress()
-        cache = MagicMock()
-
-        mock_path_obj = MagicMock()
-        mock_path.return_value = mock_path_obj
-
-        success, error, error_type = execute_task(task, session, progress, cache)
-        assert success is False
-        assert error is not None
-
-
-class TestRunMerge:
-    """run_merge 单测"""
-
-    @patch("main.Path")
-    @patch("main.merge_sources")
-    @patch("main.json")
-    @patch("main.get_progress_tracker")
-    def test_run_merge_no_data(self, mock_progress, mock_json, mock_merge, mock_path):
-        """无数据时返回空列表"""
+    def test_run_merge_old_four_args_real_storage(self, mock_progress, isolated_workspace):
         from main import run_merge
-        from unittest.mock import MagicMock
+        from storage import JSONLStore
+        path = isolated_workspace / "data/output/测试大学_机械学院_faculty.jsonl"
+        JSONLStore(path).write_all([{"name": "张三", "university": "测试大学", "college": "机械学院"}])
+        merged = run_merge("测试大学", "机械学院", 2026, mock_progress)
+        assert len(merged) == 1
+        assert merged[0]["match_status"] == "partial_faculty"
+        assert JSONLStore(path.with_name("测试大学_机械学院.jsonl")).read_all() == merged
 
-        mock_path.return_value.exists.return_value = False
-        mock_progress.return_value.update_school_status = MagicMock()
-
-        result = run_merge("测试大学", "机械学院", 2026, mock_progress())
-        assert result == []
-
-    @patch("builtins.open")
-    @patch("main.merge_sources")
-    @patch("main.json")
-    @patch("main.get_progress_tracker")
-    def test_run_merge_with_data(self, mock_progress, mock_json, mock_merge, mock_open):
-        """有数据时执行合并"""
+    def test_run_merge_no_data(self, mock_progress):
         from main import run_merge
-        from unittest.mock import MagicMock
-
-        # Mock open to return test data
-        mock_file = MagicMock()
-        mock_file.__enter__ = MagicMock(return_value=mock_file)
-        mock_file.__exit__ = MagicMock(return_value=False)
-        mock_file.read.return_value = '{"name": "张三"}\n'
-        mock_open.return_value = mock_file
-
-        mock_json.loads.return_value = {"name": "张三"}
-        mock_merge.return_value = {"total": 1, "merged": 1, "partial_faculty": 0, "partial_notice": 0}
-        mock_progress.return_value.update_school_status = MagicMock()
-        mock_progress.return_value.update_source_breakdown = MagicMock()
-
-        result = run_merge("测试大学", "机械学院", 2026, mock_progress())
-        assert isinstance(result, list)
-
-
-class TestMainCLIParsing:
-    """main() argparse 解析单测"""
-
-    @patch("main.logger")
-    @patch("main.validate_all_configs")
-    @patch("main.load_schools_config")
-    def test_main_with_no_tasks(self, mock_load, mock_validate, mock_logger):
-        """无任务时正常退出"""
-        from main import main
-        from unittest.mock import MagicMock, patch
-        import sys
-
-        mock_load.return_value = []
-        mock_validate.return_value = {"summary": {"errors": 0, "warnings": 0, "ok": 0}, "errors": [], "warnings": []}
-
-        # 模拟 args.school=None, 但使用默认 __all__
-        with patch.object(sys, "argv", ["main.py"]), \
-             patch("main.build_tasks", return_value=[]), \
-             patch("main.get_progress_tracker"), \
-             patch("main.Path.mkdir"), \
-             patch("main.concurrent.futures.ThreadPoolExecutor") as mock_executor, \
-             patch("main.export_summary"), \
-             patch("main.export_merged"):
-            try:
-                main()
-            except SystemExit:
-                pass
-
-    @patch("main.logger")
-    @patch("main.validate_all_configs")
-    @patch("main.load_schools_config")
-    def test_main_with_config_errors(self, mock_load, mock_validate, mock_logger):
-        """配置校验有错误时退出"""
-        from main import main
-        import sys
-
-        mock_load.return_value = [{"university": "测试", "categories": []}]
-        mock_validate.return_value = {
-            "summary": {"errors": 1, "warnings": 0, "ok": 0},
-            "errors": [MagicMock()],
-            "warnings": [],
-        }
-
-        with patch.object(sys, "argv", ["main.py"]), \
-             patch("main.build_tasks", return_value=[]), \
-             patch("main.get_progress_tracker"), \
-             patch("main.Path.mkdir"):
-            with pytest.raises(SystemExit) as exc_info:
-                main()
-            assert exc_info.value.code == 1
+        assert run_merge("测试大学", "机械学院", 2026, mock_progress) == []
 
 
 class TestCircuitBreaker:
-    """CircuitBreaker 单测"""
-
-    def test_initial_state(self):
-        """初始状态未熔断"""
+    def test_initial_threshold_reset_and_domain_isolation(self):
         from main import CircuitBreaker
         cb = CircuitBreaker(threshold=3)
         assert not cb.is_tripped("example.com")
-        assert len(cb.tripped_domains) == 0
-
-    def test_record_below_threshold(self):
-        """未达阈值不触发熔断"""
-        from main import CircuitBreaker
-        cb = CircuitBreaker(threshold=5)
-        for _ in range(4):
-            assert not cb.record("example.com", "timeout")
-        assert not cb.is_tripped("example.com")
-
-    def test_record_at_threshold(self):
-        """达到阈值触发熔断"""
-        from main import CircuitBreaker
-        cb = CircuitBreaker(threshold=3)
         assert not cb.record("example.com", "timeout")
         assert not cb.record("example.com", "timeout")
-        assert cb.record("example.com", "timeout") is True
+        assert cb.record("example.com", "timeout")
         assert cb.is_tripped("example.com")
+        assert not cb.is_tripped("other.com")
+        cb.reset("example.com")
+        assert cb.tripped_domains == set()
 
     def test_dns_error_fast_trip(self):
-        """DNS 错误立即熔断，不做计数等待"""
         from main import CircuitBreaker
         cb = CircuitBreaker(threshold=5)
         assert cb.record("bad.example", "dns_error") is True
         assert cb.is_tripped("bad.example")
 
-    def test_different_domains_independent(self):
-        """不同域名独立计数"""
-        from main import CircuitBreaker
-        cb = CircuitBreaker(threshold=3)
-        for _ in range(3):
-            cb.record("example.com", "timeout")
-        assert cb.is_tripped("example.com")
-        assert not cb.is_tripped("other.com")
-
-    def test_reset(self):
-        """reset 恢复状态"""
-        from main import CircuitBreaker
-        cb = CircuitBreaker(threshold=3)
-        for _ in range(3):
-            cb.record("example.com", "timeout")
-        assert cb.is_tripped("example.com")
-        cb.reset("example.com")
-        assert not cb.is_tripped("example.com")
-
     def test_extract_domain(self):
-        """_extract_domain 正确提取域名"""
         from main import _extract_domain
-        assert _extract_domain("http://me.seu.edu.cn/path") == "me.seu.edu.cn"
-        assert _extract_domain("https://example.com") == "example.com"
+        assert _extract_domain("https://offline.invalid/path") == "offline.invalid"
         assert _extract_domain("") == ""
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

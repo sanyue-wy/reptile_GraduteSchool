@@ -17,10 +17,10 @@
 """
 
 import difflib
-import json
 import logging
-from pathlib import Path
 from typing import Optional
+
+from storage import JSONLStore
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +173,7 @@ def merge_pair(fac: Optional[dict], not_: Optional[dict], status: str) -> dict:
     Source B（研招网）的招生结构化字段填入 enrollment 子对象。
     """
     base = fac or not_ or {}
-    enr_src = not_ or {}
+    enr_src = (not_ or {}).get("enrollment") or not_ or {}
 
     enrollment = None
     if enr_src.get("directions") or enr_src.get("in_roster") is not None:
@@ -237,7 +237,7 @@ def merge_sources(
     logger.info("Source A（官网师资页）加载 %d 条", len(fac_records))
 
     # 读取 notice（可能不存在）
-    not_records = _read_jsonl(notice_path) if Path(notice_path).exists() else []
+    not_records = _read_jsonl(notice_path)
     logger.info("Source B（研招网）加载 %d 条", len(not_records))
 
     if not fac_records and not not_records:
@@ -301,28 +301,11 @@ def to_summary_row(merged: dict) -> dict:
 # ------------------------------------------------------------------
 
 def _read_jsonl(path: str) -> list[dict]:
-    """逐行读取 JSONL 文件，忽略格式错误行。"""
-    records = []
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            for i, line in enumerate(f, 1):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    records.append(json.loads(line))
-                except json.JSONDecodeError:
-                    logger.warning("JSONL 解析失败，跳过第 %d 行: %s", i, path)
-    except FileNotFoundError:
-        logger.debug("文件不存在: %s", path)
-    return records
+    """兼容入口：空路径/不存在返回空列表，忽略格式错误行。"""
+    return JSONLStore(path).read_all()
 
 
 def _write_jsonl(path: str, records: list[dict]):
-    """写出 JSONL 文件。"""
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w", encoding="utf-8") as f:
-        for rec in records:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    """兼容入口：原子写出 JSONL 文件。"""
+    JSONLStore(path).write_all(records)
     logger.info("已写出 %d 条记录到 %s", len(records), path)

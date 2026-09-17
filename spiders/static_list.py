@@ -15,8 +15,25 @@ from bs4 import BeautifulSoup, Tag
 
 from utils.http import PoliteSession
 from utils.cache import CrawlCache
+from spiders.engine import SpiderEngine, register_engine
 
 logger = logging.getLogger(__name__)
+
+
+@register_engine
+class StaticListEngine(SpiderEngine):
+    """静态师资页适配器；旧函数仍保留独立实现。"""
+
+    name = "static_list"
+    supported_source = "source_a"
+
+    def fetch(self, url: str, *, selectors: dict, base_url=None, force=False, **kwargs) -> list[dict]:
+        return fetch_faculty_list(
+            self.session, url, selectors, base_url=base_url, cache=self.cache, force=force,
+        )
+
+    def parse(self, html: str, selectors: dict, *, base_url="", **kwargs) -> list[dict]:
+        return parse_faculty_html(BeautifulSoup(html, "lxml"), selectors, base_url)
 
 
 def fetch_faculty_list(
@@ -131,6 +148,9 @@ def _get_field(tag: Tag, selector: str) -> Optional[str]:
     """
     通用字段提取：selector 可以是 CSS 选择器或 HTML 属性名。
     """
+    # 配置中 text 表示条目自身文本；链接条目也可用 a 提取姓名。
+    if selector == "text" or selector == tag.name:
+        return tag.get_text(strip=True) or tag.get("title", "")
     # 先尝试作为 CSS 选择器
     found = tag.select_one(selector)
     if found:

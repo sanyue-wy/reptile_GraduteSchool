@@ -15,6 +15,7 @@
 import hashlib
 import logging
 import os
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -39,7 +40,13 @@ def _url_key(url: str) -> tuple[str, str]:
 
 
 class CrawlCache:
-    """URL 级页面缓存，线程安全。"""
+    """URL 级页面缓存，线程安全。
+
+    统计沿用旧口径：hits 仅计成功读出的新鲜磁盘缓存（含 read_many），
+    misses 计实际 fetch_fn 调用（含 force、禁用缓存和失败请求）。读探测
+    未命中和复用 inflight 结果不计数，损坏文件不算命中；命中率因此不是
+    所有 API 调用中的成功比例。writes 仅计成功原子替换。
+    """
 
     def __init__(self, cache_dir: Optional[Path] = None, max_age_days: int = 7):
         self.cache_dir = Path(cache_dir) if cache_dir else CACHE_DIR
@@ -103,32 +110,62 @@ class CrawlCache:
                 pass
         return removed
 
-    def read_text(self, url: str) -> Optional[str]:
-        """读缓存文本；不存在或过期返回 None。"""
-        p, fresh = self._find_cached(url)
-        if not p or not fresh:
-            return None
+    def _read_text_locked(self, url: str) -> Optional[str]:
+        """在持锁状态下读取，仅成功读取才算命中。"""
         try:
-            with self._lock:
-                self.stats["hits"] += 1
-            return p.read_text(encoding="utf-8")
+            p, fresh = self._find_cached(url)
+            if p is None or not fresh:
+                return None
+            text = p.read_text(encoding="utf-8")
         except Exception as e:
             logger.warning("缓存读取失败 %s: %s（将重新抓取）", url, e)
             return None
+        self.stats["hits"] += 1
+        return text
 
-    def write(self, url: str, text: str) -> None:
-        """写缓存（原子替换），扩展名按内容嗅探。"""
-        p = self._path_for(url, self._ext_for(text))
+    def read_text(self, url: str) -> Optional[str]:
+        """读缓存文本；不存在、过期或读取失败返回 None，不计 misses。"""
+        with self._lock:
+            return self._read_text_locked(url)
+
+    def read_many(self, urls: list[str]) -> dict[str, Optional[str]]:
+        """批量读取；每个不同 URL 读取一次，未命中值为 None。"""
+        with self._lock:
+            return {url: self._read_text_locked(url) for url in dict.fromkeys(urls)}
+
+    def get_hit_rate(self) -> float:
+        """成功磁盘读取 / (成功磁盘读取 + 实际 fetch 次数)，空统计为 0。"""
+        with self._lock:
+            total = self.stats["hits"] + self.stats["misses"]
+            return self.stats["hits"] / total if total else 0.0
+
+    def _write_locked(self, url: str, text: str) -> None:
+        """调用方持锁；临时文件唯一，替换失败仍清理。"""
+        tmp = None
         try:
+            p = self._path_for(url, self._ext_for(text))
             p.parent.mkdir(parents=True, exist_ok=True)
-            tmp = p.with_name(p.name + ".tmp")
-            with self._lock:
-                tmp.write_text(text, encoding="utf-8")
-                os.replace(tmp, p)
-                self.stats["writes"] += 1
+            fd, tmp = tempfile.mkstemp(prefix=p.name + ".", suffix=".tmp", dir=p.parent)
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                stream.write(text)
+            os.replace(tmp, p)
+            self.stats["writes"] += 1
             logger.debug("已写入缓存: %s", p)
         except Exception as e:
             logger.warning("缓存写入失败 %s: %s", url, e)
+        finally:
+            if tmp is not None:
+                try:
+                    os.unlink(tmp)
+                except FileNotFoundError:
+                    pass
+                except OSError as e:
+                    logger.warning("缓存临时文件清理失败 %s: %s", tmp, e)
+
+    def write(self, url: str, text: str) -> None:
+        """写缓存（原子替换），扩展名按内容嗅探。"""
+        with self._lock:
+            self._write_locked(url, text)
 
     def get_or_fetch(
         self,
@@ -146,54 +183,50 @@ class CrawlCache:
             force: True 时忽略缓存强制抓取
             use_cache: False 时完全不读不写缓存
         """
-        if use_cache:
-            p, fresh = self._find_cached(url)
-            if p is not None and fresh and not force:
-                # 命中：新鲜直接返回；过期且非 force 时降级使用旧数据（页面改版时再 --force 刷新）
-                try:
-                    with self._lock:
-                        self.stats["hits"] += 1
-                    if not fresh:
-                        logger.info("【缓存过期·降级使用】%s（--force 可强制重抓）", url)
-                    else:
-                        logger.info("【缓存命中】%s", url)
-                    return p.read_text(encoding="utf-8")
-                except Exception as e:
-                    logger.warning("缓存读取失败 %s: %s（将重新抓取）", url, e)
-
-        # 并发去重：同一 URL 已在抓取中则直接复用其结果（避免重复请求）
-        ev = threading.Event()
-        holder: dict = {}
-        with self._lock:
-            existing = self._inflight.get(url)
-            if existing is not None:
-                ev, holder = existing
-                wait = True
-            else:
-                self._inflight[url] = (ev, holder)
-                wait = False
-
-        if wait:
-            ev.wait(timeout=300)
-            if "text" in holder:
-                return holder["text"]
-            # 主线程失败或超时，自己重试一次
-            logger.warning("等待 %s 的在途请求无果，重新抓取", url)
-
-        try:
+        while True:
             with self._lock:
-                self.stats["misses"] += 1
+                # 查询缓存和登记 owner 是同一个临界区，避免前一 owner 刚写完
+                # 并退出后，本线程带着过时的 miss 再次请求。
+                if use_cache and not force:
+                    text = self._read_text_locked(url)
+                    if text is not None:
+                        logger.info("【缓存命中】%s", url)
+                        return text
+                entry = self._inflight.get(url)
+                if entry is None:
+                    entry = (threading.Event(), {})
+                    self._inflight[url] = entry
+                    self.stats["misses"] += 1
+                    break
+
+            ev, holder = entry
+            completed = ev.wait(timeout=300)
+            with self._lock:
+                if "text" in holder:
+                    return holder["text"]
+                # 失败/超时后仅淘汰自己等待的代。多个 waiter 回到循环后，
+                # 只会有一个成为新 owner，其余跟随新代。
+                if self._inflight.get(url) is entry:
+                    del self._inflight[url]
+            logger.warning("等待 %s 的在途请求%s，重新检查缓存", url,
+                           "失败" if completed else "超时")
+
+        ev, holder = entry
+        try:
             logger.info("【缓存未命中】抓取 %s", url)
             text = fetch_fn()
-            holder["text"] = text
-            if use_cache:
-                self.write(url, text)
+            with self._lock:
+                # 过时代 owner 可返回自己的结果，但不能覆盖新代已写入的缓存。
+                if use_cache and self._inflight.get(url) is entry:
+                    self._write_locked(url, text)
+                holder["text"] = text
             return text
-        except Exception:
-            holder["error"] = True
+        except BaseException:
+            with self._lock:
+                holder["error"] = True
             raise
         finally:
-            ev.set()
             with self._lock:
-                if self._inflight.get(url) and self._inflight[url][0] is ev:
+                ev.set()
+                if self._inflight.get(url) is entry:
                     del self._inflight[url]

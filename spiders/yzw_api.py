@@ -20,6 +20,7 @@ from typing import Optional, List, Dict
 
 from utils.http import PoliteSession
 from utils.cache import CrawlCache
+from spiders.engine import SpiderEngine, register_engine
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,28 @@ BASE_URL = "https://yz.chsi.com.cn"
 SCHOOL_CODE_URL = f"{BASE_URL}/zsml/querySchAction.do"
 MAJOR_DIR_URL = f"{BASE_URL}/zsml/rs/dws.do"
 EXAM_SUBJECTS_URL = f"{BASE_URL}/zsml/kskm.do"
+
+
+@register_engine
+class YzwEngine(SpiderEngine):
+    """组合原有客户端，保留其分页、专业过滤和原件保存行为。"""
+
+    name = "yzw_api"
+    supported_source = "source_b"
+
+    def __init__(self, session, cache=None):
+        super().__init__(session, cache)
+        self._client = YzwClient(session, cache)
+
+    def fetch(self, url: str = "", *, school_code: str, year: int,
+              major_codes=None, category=None, university=None, **kwargs) -> list[dict]:
+        return self._client.fetch_major_directory(
+            school_code, year, major_codes, category, university,
+        )
+
+    def parse(self, html: str, selectors: dict, **kwargs) -> list[dict]:
+        """目录结构由 parsers.yzw_major 处理，按契约保留空实现。"""
+        return []
 
 
 class YzwClient:

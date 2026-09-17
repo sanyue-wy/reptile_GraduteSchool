@@ -14,6 +14,7 @@ from typing import Optional
 
 from utils.http import PoliteSession
 from utils.cache import CrawlCache
+from spiders.engine import SpiderEngine, register_engine
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,26 @@ _DEFAULT_PARAMS = {
     "articleType": "1",
     "level": "1",
 }
+
+
+@register_engine
+class AjaxApiEngine(SpiderEngine):
+    """SudyCMS JSON 接口适配器。"""
+
+    name = "ajax_api"
+    supported_source = "source_a"
+
+    def fetch(self, url: str, *, site_id: str, referer: str, extra_params=None,
+              force=False, **kwargs) -> list[dict]:
+        return fetch_faculty_via_api(
+            self.session, url, site_id, referer, extra_params,
+            cache=self.cache, force=force,
+        )
+
+    def parse(self, html: str, selectors: dict, *, api_url="", base_url="", **kwargs) -> list[dict]:
+        """解析 JSON 文本或已解码对象；API 字段固定，不使用 CSS selectors。"""
+        data = json.loads(html) if isinstance(html, (str, bytes, bytearray)) else html
+        return _parse_api_data(data, api_url or base_url or kwargs.get("url", ""))
 
 
 def fetch_faculty_via_api(
@@ -82,6 +103,11 @@ def fetch_faculty_via_api(
         resp = session.post(api_url, data=params, extra_headers=headers)
         data = resp.json()
 
+    return _parse_api_data(data, api_url)
+
+
+def _parse_api_data(data: dict, api_url: str) -> list[dict]:
+    """fetch 和离线 parse 共用同一条教师转换链。"""
     total = data.get("total", 0)
     items = data.get("data", [])
     logger.info("API 返回 total=%d, 实际 %d 条", total, len(items))
@@ -105,7 +131,7 @@ def _parse_teacher_item(item: dict, api_url: str) -> Optional[dict]:
     # 从 API URL 推导 base_url
     from urllib.parse import urlparse
     p = urlparse(api_url)
-    base_url = f"{p.scheme}://{p.netloc}"
+    base_url = f"{p.scheme}://{p.netloc}" if p.netloc else ""
 
     profile_url = item.get("cnUrl", "")
     if profile_url and not profile_url.startswith("http"):

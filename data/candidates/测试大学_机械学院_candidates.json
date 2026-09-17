@@ -1,11 +1,23 @@
 {
   "university": "测试大学",
   "college": "机械学院",
-  "discovered_at": "2026-09-16T19:41:02.035070",
-  "candidates": [],
+  "discovered_at": "2026-09-17T20:40:27.707398",
+  "candidates": [
+    {
+      "url": "http://example.com",
+      "score": 5.0,
+      "list_type": "static_html",
+      "source": "unknown",
+      "title": "",
+      "markers": [],
+      "reachable": null,
+      "status_code": null,
+      "discovered_at": "2026-09-17T20:40:27.707398"
+    }
+  ],
   "summary": {
-    "total": 0,
+    "total": 1,
     "reachable": 0,
-    "top_score": 0
+    "top_score": 5.0
   }
 }

@@ -18,6 +18,15 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
+from security.plugin_validator import (
+    BLOCKED_CALLS,
+    BLOCKED_MODULES,
+    PLUGIN_INTERFACES,
+    PLUGIN_META_FIELDS,
+    _extract_plugin_meta,
+    validate_plugin_source as _validate_source,
+)
+
 logger = logging.getLogger(__name__)
 
 PLUGIN_KINDS = (
@@ -30,19 +39,7 @@ PLUGIN_KINDS = (
     "utility",
 )
 
-PLUGIN_INTERFACES = {
-    "source": "describe",
-    "fetcher": "fetch",
-    "parser": "parse",
-    "processor": "process",
-    "exporter": "export",
-    "presenter": "render",
-    "utility": "setup",
-}
-
-PLUGIN_META_FIELDS = ("name", "kind", "version", "author", "description")
-BLOCKED_MODULES = {"os", "subprocess", "shutil", "socket", "ctypes", "sys"}
-BLOCKED_CALLS = {"eval", "exec", "compile", "input", "__import__"}
+# 校验常量由 security.plugin_validator 定义，在此保留原有导入入口。
 PLUGIN_CONFIG_PATH = Path("config/plugins.json")
 EXT_PLUGIN_DIR = Path("plugins_ext")
 
@@ -259,65 +256,22 @@ def _external_module_name(kind: str, stem: str) -> str:
 
 
 def _check_import_safety(source: str) -> list[str]:
-    warnings: list[str] = []
-    try:
-        tree = ast.parse(source)
-    except SyntaxError as exc:
-        return [f"插件 Python 语法错误: {exc.msg}"]
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                root = alias.name.split(".")[0]
-                if root in BLOCKED_MODULES:
-                    warnings.append(f"插件引入了受限模块 {root}")
-        elif isinstance(node, ast.ImportFrom):
-            root = (node.module or "").split(".")[0]
-            if root in BLOCKED_MODULES:
-                warnings.append(f"插件引入了受限模块 {root}")
-        elif isinstance(node, ast.Call):
-            func = node.func
-            name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", "")
-            if name in BLOCKED_CALLS:
-                warnings.append(f"插件调用了受限函数 {name}")
-    return warnings
+    """保留旧入口：返回受限导入/调用或语法错误的诊断列表。"""
+    return _validate_source(source).errors
 
 
 def _validate_plugin_source(source: str, kind: str, filename: str) -> tuple[dict, list[str]]:
-    safety_warnings = _check_import_safety(source)
-    if safety_warnings:
-        raise ValueError("；".join(safety_warnings))
+    result = _validate_source(source, kind, filename)
+    if not result.ok:
+        raise ValueError("；".join(result.errors))
+    if not kind:
+        # 私有完整校验入口要求完整 META 和接口检查，kind 必须有效。
+        raise ValueError(f"不支持的插件类型: {kind}")
 
-    try:
-        tree = ast.parse(source)
-    except SyntaxError as exc:
-        raise ValueError(f"插件 Python 语法错误: {exc.msg}") from exc
-
-    meta_node = None
-    interface_found = False
-    for node in tree.body:
-        if isinstance(node, (ast.Assign, ast.AnnAssign)):
-            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-            if any(isinstance(target, ast.Name) and target.id == "PLUGIN_META" for target in targets):
-                meta_node = node.value
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == PLUGIN_INTERFACES.get(kind, ""):
-            interface_found = True
-
-    try:
-        meta = ast.literal_eval(meta_node) if meta_node is not None else None
-    except (ValueError, TypeError) as exc:
-        raise ValueError("PLUGIN_META 必须是字面量字典") from exc
-
-    if not isinstance(meta, dict):
-        raise ValueError("插件缺少 PLUGIN_META")
-    missing = [field for field in PLUGIN_META_FIELDS if not meta.get(field)]
-    if missing:
-        raise ValueError(f"PLUGIN_META 缺少字段: {', '.join(missing)}")
-    if meta.get("kind") != kind:
-        raise ValueError(f"PLUGIN_META.kind 必须是 {kind!r}")
-    if not interface_found:
-        raise ValueError(f"插件必须实现 {PLUGIN_INTERFACES.get(kind, '')}()")
-    return meta, safety_warnings
+    # ValidationResult 不携带 META；复用同一提取规则，且不执行源码。
+    tree = ast.parse(source, filename=filename or "<unknown>")
+    meta = _extract_plugin_meta(tree)
+    return meta, result.warnings
 
 
 def _module_from_path(kind: str, path: Path):

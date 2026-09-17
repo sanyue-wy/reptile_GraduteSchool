@@ -124,11 +124,7 @@ def _read_all_merged_records() -> list[dict]:
         if jsonl_file.name.endswith("_faculty.jsonl") or jsonl_file.name.endswith("_notice.jsonl"):
             continue
         try:
-            with open(jsonl_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        records.append(json.loads(line))
+            records.extend(_read_jsonl(str(jsonl_file)))
         except Exception as e:
             logger.warning("读取 %s 失败: %s", jsonl_file, e)
     return records
@@ -406,27 +402,24 @@ def _run_crawl_task(task_id: str) -> None:
     force = params["force"]
     year = params["year"]
 
+    service = None
     try:
         _update_task(task_id, status="running")
 
-        # 导入 main 模块的执行逻辑
-        from main import build_tasks, execute_task, run_export_pipeline
+        from types import SimpleNamespace
+        from services import CrawlerService, ExportService
         from utils.cache import CrawlCache
-        from utils.http import PoliteSession
-        from utils.progress import get_progress_tracker
 
-        tasks = build_tasks(target_schools, categories, sources, year, force, False, False)
+        service = CrawlerService(cache=CrawlCache(max_age_days=7), progress=get_progress_tracker())
+        tasks = service.build_tasks(SimpleNamespace(
+            school=target_schools, category=categories, source=sources,
+            year=year, force=force, resume=False, retry_failed=False))
         _update_task(task_id, progress={
             "total_steps": len(tasks),
             "completed_steps": 0,
             "current_step": f"开始执行 {len(tasks)} 个子任务",
             "percent": 0.0,
         })
-
-        session = PoliteSession()
-        progress = get_progress_tracker()
-        # 页面缓存：首次爬取的数据落盘，后续刷新走本地（force 时强制重新抓取）
-        cache = CrawlCache(max_age_days=7)
 
         completed = 0
         for task in tasks:
@@ -437,11 +430,13 @@ def _run_crawl_task(task_id: str) -> None:
                 "percent": round(completed / len(tasks) * 100, 1),
             })
 
-            success, error, error_type = execute_task(task, session, progress, cache)
+            result = service.execute_task(task)
             completed += 1
 
-            if not success:
-                logger.warning("任务 %s 子任务失败 [%s]: %s / %s / %s — %s", task_id, error_type, task.university, task.college, task.source, error)
+            if result.status == "failed":
+                logger.warning("任务 %s 子任务失败 [%s]: %s", task_id, result.error_type, result.error_message)
+
+        service.run_merge(tasks)
 
         # 全量导出
         _update_task(task_id, progress={
@@ -453,7 +448,7 @@ def _run_crawl_task(task_id: str) -> None:
 
         all_merged = _read_all_merged_records()
         if all_merged:
-            run_export_pipeline(all_merged, Path("data/output"))
+            ExportService().run_export_pipeline(all_merged, Path("data/output"))
 
         _update_task(task_id, status="completed", progress={
             "total_steps": len(tasks),
@@ -470,6 +465,9 @@ def _run_crawl_task(task_id: str) -> None:
             "current_step": f"执行失败: {e}",
             "percent": 0.0,
         })
+    finally:
+        if service is not None:
+            service.session.close()
 
 
 # ------------------------------------------------------------------
@@ -942,22 +940,12 @@ def api_config_school_save(school_name: str):
 
 
 def _write_schools_config(configs: list[dict]) -> None:
-    """将配置写入 config/school_data.json（原子写入）。"""
-    from config.loader import DEFAULT_CONFIG_PATH, _config_cache
-    config_path = DEFAULT_CONFIG_PATH
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-
-    import tempfile, os
-    fd, tmp_path = tempfile.mkstemp(dir=str(config_path.parent), prefix=".tmp_school_", suffix=".json")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(configs, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, config_path)
-        logger.info("已更新 %s，共 %d 所学校", config_path, len(configs))
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        logger.exception("写入配置文件失败: %s", config_path)
+    """将配置写入 config/school_data.json（经 ConfigStore 原子写入）。"""
+    from config.loader import DEFAULT_CONFIG_PATH
+    from storage import ConfigStore
+    store = ConfigStore(config_path=DEFAULT_CONFIG_PATH)
+    store.save_schools(configs)
+    logger.info("已更新 %s，共 %d 所学校", store._path, len(configs))
 
 
 # ------------------------------------------------------------------
@@ -967,8 +955,8 @@ def _write_schools_config(configs: list[dict]) -> None:
 def api_config_global_save():
     data = request.get_json() or {}
 
-    GLOBAL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    GLOBAL_CONFIG_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    from storage import ConfigStore
+    ConfigStore(global_path=GLOBAL_CONFIG_PATH).save_global(data)
 
     return jsonify({
         "code": 0,

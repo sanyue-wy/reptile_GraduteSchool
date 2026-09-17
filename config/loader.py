@@ -13,6 +13,8 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from copy import deepcopy
+from storage import ConfigStore, path_lock
 from config.validator import validate_school_config
 
 logger = logging.getLogger(__name__)
@@ -63,8 +65,7 @@ def load_schools_config(path: Optional[str] = None) -> List[Dict]:
             logger.error("config.schools 也不可用，使用空配置")
             return []
     else:
-        with open(config_path, "r", encoding="utf-8") as f:
-            configs = json.load(f)
+        configs = ConfigStore(config_path=config_path).load_schools()
 
     # 填充 level 字段（如果缺失）
     try:
@@ -129,46 +130,13 @@ def save_school_config(university: str, config: Dict) -> bool:
         logger.error("保存学校 %s 配置失败，校验错误: %s", university, [str(e) for e in errors])
         return False
 
-    # 2. 更新内存缓存
-    if _config_cache is None:
-        _config_cache = load_schools_config()
-
-    existing_idx = None
-    for i, cfg in enumerate(_config_cache):
-        if cfg.get("university") == university:
-            existing_idx = i
-            break
-
-    if existing_idx is not None:
-        _config_cache[existing_idx] = config
-    else:
-        _config_cache.append(config)
-
-    # 3. 原子写入文件（临时文件 + rename）
-    config_path = _config_path
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # 确保 config 字典的 university 字段正确
-    config["university"] = university
-
-    # 写入临时文件，然后原子替换
-    fd, tmp_path = tempfile.mkstemp(
-        dir=str(config_path.parent),
-        prefix=".tmp_school_",
-        suffix=".json",
-    )
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(_config_cache, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, config_path)
-    except Exception:
-        # 清理临时文件
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        logger.exception("写入配置文件失败: %s", config_path)
-        return False
-
-    logger.info("保存学校 %s 配置到 %s", university, config_path)
+    # Persist before publishing the cache; failed writes leave both untouched.
+    store = ConfigStore(config_path=_config_path)
+    with path_lock(_config_path):
+        if not store.save_school(university, config):
+            return False
+        _config_cache = store.load_schools()
+    logger.info("保存学校 %s 配置到 %s", university, _config_path)
     return True
 
 

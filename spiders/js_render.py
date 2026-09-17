@@ -8,15 +8,50 @@
 
 import logging
 from typing import Optional
-from pathlib import Path
 
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright, Browser, Page
 
 from utils.http import PoliteSession
 from utils.cache import CrawlCache
+from spiders.engine import SpiderEngine, register_engine
 
 logger = logging.getLogger(__name__)
+
+
+def sync_playwright():
+    """仅渲染时导入可选依赖，同时保留旧模块的 mock 入口。"""
+    from playwright.sync_api import sync_playwright as factory
+    return factory()
+
+
+@register_engine
+class JSRenderEngine(SpiderEngine):
+    name = "js_render"
+    supported_source = "source_a"
+
+    def fetch(self, url: str, *, selectors: dict, wait_selector=None, timeout=30000,
+              force=False, **kwargs) -> list[dict]:
+        return fetch_faculty_via_playwright(
+            self.session, url, selectors, wait_selector=wait_selector, timeout=timeout,
+            cache=self.cache, force=force,
+        )
+
+    def parse(self, html: str, selectors: dict, *, base_url="", **kwargs) -> list[dict]:
+        """解析已渲染 HTML，无需安装或启动 Playwright。"""
+        return _parse_rendered_html(html, selectors, base_url or kwargs.get("url", ""))
+
+
+def _parse_rendered_html(html: str, selectors: dict, base_url: str) -> list[dict]:
+    """将学院配置和标准选择器统一为静态解析器的 item/name/profile/research。"""
+    from spiders.static_list import parse_faculty_html
+
+    faculty_cfg = {
+        "item": selectors.get("item") or selectors.get("list_item_selector") or "li",
+        "name": selectors.get("name") or selectors.get("list_name_selector") or "a",
+        "profile": selectors.get("profile") or selectors.get("list_profile_selector") or "href",
+        "research": selectors.get("research") or selectors.get("list_research_selector"),
+    }
+    return parse_faculty_html(BeautifulSoup(html, "lxml"), faculty_cfg, base_url)
 
 
 def fetch_faculty_via_playwright(
@@ -43,34 +78,33 @@ def fetch_faculty_via_playwright(
     Returns:
         list[dict]: 每条包含 name, profile_url 等字段
     """
-    from spiders.detail_parser import fetch_detail
-    from spiders.static_list import parse_faculty_html
-
     cache_key = f"js_render:{list_url}"
 
     def _do_fetch() -> str:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(list_url, timeout=timeout, wait_until="networkidle")
+            try:
+                page = browser.new_page()
+                page.goto(list_url, timeout=timeout, wait_until="networkidle")
 
-            # 等待目标元素出现
-            if wait_selector:
-                try:
-                    page.wait_for_selector(wait_selector, timeout=10000)
-                except Exception:
-                    logger.warning("等待选择器 %s 超时，继续获取页面内容", wait_selector)
-            else:
-                # 默认等待常见列表元素
-                for sel in [".faculty-list", "li[class*='teacher']", ".teacher-item", "table"]:
+                # 等待目标元素出现
+                if wait_selector:
                     try:
-                        page.wait_for_selector(sel, timeout=5000)
-                        break
+                        page.wait_for_selector(wait_selector, timeout=10000)
                     except Exception:
-                        continue
+                        logger.warning("等待选择器 %s 超时，继续获取页面内容", wait_selector)
+                else:
+                    # 默认等待常见列表元素
+                    for sel in [".faculty-list", "li[class*='teacher']", ".teacher-item", "table"]:
+                        try:
+                            page.wait_for_selector(sel, timeout=5000)
+                            break
+                        except Exception:
+                            continue
 
-            content = page.content()
-            browser.close()
+                content = page.content()
+            finally:
+                browser.close()
         return content
 
     if cache is not None:
@@ -78,15 +112,8 @@ def fetch_faculty_via_playwright(
     else:
         html = _do_fetch()
 
-    # 复用现有 BS4 解析链
-    soup = BeautifulSoup(html, "lxml")
-    faculty_cfg = {
-        "list_item_selector": selectors.get("list_item_selector", "li"),
-        "list_research_selector": selectors.get("list_research_selector", ""),
-    }
-    # 静态列表的选择器配置
-    base_url = f"{list_url.split('//')[0]}//{list_url.split('/')[2]}" if '//' in list_url else list_url
-    results = parse_faculty_html(soup, faculty_cfg, base_url)
+    # 以完整页面 URL 解析相对链接，与离线 parse(base_url=list_url) 一致。
+    results = _parse_rendered_html(html, selectors, list_url)
 
     logger.info("Playwright 渲染提取到 %d 位教师", len(results))
     return results

@@ -5,11 +5,96 @@
 """
 
 import pytest
+import socket
+import sys
 import tempfile
 import shutil
 import json
 from pathlib import Path
 from unittest.mock import MagicMock
+
+
+# Read the checked-in configuration only to seed private copies. Never copy data/.
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(scope="session")
+def _school_config_seed():
+    return (_PROJECT_ROOT / "config" / "school_data.json").read_bytes()
+
+
+@pytest.fixture(autouse=True)
+def isolated_workspace(tmp_path, monkeypatch, _school_config_seed):
+    """Keep real loaders, stores and pipelines, but put all default I/O in tmp_path.
+
+    Changing cwd covers relative defaults captured in function signatures (export,
+    progress, cache, raw files and URLResolver candidates). The loader's absolute
+    paths and mutable module state need separate patches, restored after each test.
+    """
+    root = tmp_path / "workspace"
+    root.mkdir()
+    monkeypatch.chdir(root)
+    config_dir = root / "config"
+    config_dir.mkdir()
+    school_path = config_dir / "school_data.json"
+    school_path.write_bytes(_school_config_seed)
+    (config_dir / "global.json").write_text("{}", encoding="utf-8")
+    for directory in ("output", "cache", "raw", "candidates"):
+        (root / "data" / directory).mkdir(parents=True)
+
+    import config.loader as loader
+    import config.plugins as plugins
+    import utils.progress as progress
+
+    monkeypatch.setattr(loader, "DEFAULT_CONFIG_PATH", school_path)
+    monkeypatch.setattr(loader, "_config_path", school_path)
+    monkeypatch.setattr(loader, "_config_cache", None)
+    # The storage layer is being introduced concurrently. When present it has
+    # its own absolute default, independent of config.loader's compatibility API.
+    if (_PROJECT_ROOT / "storage" / "config_store.py").is_file():
+        from storage import config_store
+        monkeypatch.setattr(config_store, "DEFAULT_CONFIG_PATH", school_path)
+    monkeypatch.setattr(progress, "_progress_tracker", None)
+    monkeypatch.setattr(plugins, "PLUGIN_CONFIG_PATH", config_dir / "plugins.json")
+    monkeypatch.setattr(plugins, "EXT_PLUGIN_DIR", root / "plugins_ext")
+    monkeypatch.setattr(plugins, "_EXTERNAL_CACHE", {})
+
+    # Local plugin fixtures used to delete every plugins_ext.* entry. Preserve
+    # modules present before the test, while removing only this test's imports.
+    external_modules = {
+        name: module for name, module in sys.modules.items()
+        if name == "plugins_ext" or name.startswith("plugins_ext.")
+    }
+    try:
+        yield root
+    finally:
+        for name in list(sys.modules):
+            if name == "plugins_ext" or name.startswith("plugins_ext."):
+                if name not in external_modules:
+                    sys.modules.pop(name, None)
+        sys.modules.update(external_modules)
+
+
+@pytest.fixture(autouse=True)
+def no_real_network(monkeypatch):
+    """Fail at transport/DNS, not PoliteSession.get or Session.request.
+
+    Existing request/session mocks still work; real HTTP logic and parsing remain
+    testable. pytest.fail also escapes application-level ``except Exception`` so
+    an accidentally unmocked request cannot masquerade as an expected failure.
+    """
+    from requests.adapters import HTTPAdapter
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Real network disabled in tests; mock the HTTP transport", pytrace=False)
+
+    monkeypatch.setattr(HTTPAdapter, "send", forbidden)
+    monkeypatch.setattr(socket, "getaddrinfo", forbidden)
+    monkeypatch.setattr(socket, "create_connection", forbidden)
+    monkeypatch.setattr(socket.socket, "connect", forbidden)
+    monkeypatch.setattr(socket.socket, "connect_ex", forbidden)
+    monkeypatch.setattr(socket.socket, "sendto", forbidden)
+    return forbidden
 
 
 @pytest.fixture
@@ -141,6 +226,100 @@ def sample_yzw_json():
             },
         ],
     }
+
+
+@pytest.fixture(autouse=True)
+def protect_checked_in_files(monkeypatch):
+    """Reject writes to real data/config even if a default escapes cwd isolation."""
+    import builtins
+    import io
+    import os
+
+    protected = [(_PROJECT_ROOT / name).resolve() for name in ("data", "config")]
+
+    def check(path):
+        if isinstance(path, (str, bytes, os.PathLike)):
+            resolved = Path(os.fsdecode(path)).resolve()
+            if any(resolved.is_relative_to(root) for root in protected):
+                pytest.fail(f"Attempted write to protected project path: {resolved}", pytrace=False)
+
+    for module in (builtins, io):
+        original = module.open
+
+        def guarded_open(file, mode="r", *args, _open=original, **kwargs):
+            if any(flag in mode for flag in "wax+"):
+                check(file)
+            return _open(file, mode, *args, **kwargs)
+
+        monkeypatch.setattr(module, "open", guarded_open)
+
+    original_open = os.open
+
+    def guarded_os_open(path, flags, *args, **kwargs):
+        if flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND):
+            check(path)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", guarded_os_open)
+    for name in ("replace", "rename"):
+        original = getattr(os, name)
+
+        def guarded_move(src, dst, *args, _move=original, **kwargs):
+            check(src)
+            check(dst)
+            return _move(src, dst, *args, **kwargs)
+
+        monkeypatch.setattr(os, name, guarded_move)
+    for name in ("unlink", "remove", "rmdir", "mkdir"):
+        original = getattr(os, name)
+
+        def guarded_change(path, *args, _change=original, **kwargs):
+            check(path)
+            return _change(path, *args, **kwargs)
+
+        monkeypatch.setattr(os, name, guarded_change)
+
+
+@pytest.fixture
+def tmp_output_dir(tmp_path):
+    output = tmp_path / "service-output"
+    output.mkdir()
+    return output
+
+
+@pytest.fixture
+def offline_transport(monkeypatch):
+    """Real PoliteSession over deterministic in-memory requests responses."""
+    from requests import Response
+    from utils.http import PoliteSession
+
+    calls = []
+    routes = {}
+
+    def request(session, method, url, **kwargs):
+        calls.append((method, url, kwargs))
+        if url not in routes:
+            pytest.fail(f"No offline response registered for {method} {url}")
+        body = routes[url]
+        if callable(body):
+            body = body(method, url, kwargs)
+        if isinstance(body, BaseException):
+            raise body
+        response = Response()
+        response.status_code = 200
+        response.url = url
+        response.encoding = "utf-8"
+        if isinstance(body, (dict, list)):
+            response.headers["Content-Type"] = "application/json; charset=utf-8"
+            response._content = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        else:
+            response.headers["Content-Type"] = "text/html; charset=utf-8"
+            response._content = body.encode("utf-8")
+        return response
+
+    monkeypatch.setattr("requests.sessions.Session.request", request)
+    session = PoliteSession(delay_range=(0, 0), max_retries=0)
+    return session, routes, calls
 
 
 @pytest.fixture
