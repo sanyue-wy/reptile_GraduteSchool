@@ -1,0 +1,26 @@
+{
+  "name": "jsonl_store",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "storage",
+  "input_schema": "StoreRequest.v1",
+  "output_schema": "StoreReceipt.v1",
+  "entry_point": "plugins.storage.jsonl_store.plugin:JsonlStorePlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "format": {
+        "type": "string",
+        "enum": ["legacy_education_v1", "generic_record"]
+      },
+      "output_dir": {
+        "type": "string"
+      }
+    },
+    "required": ["format", "output_dir"],
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

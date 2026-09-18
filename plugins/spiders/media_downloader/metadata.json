@@ -1,0 +1,22 @@
+{
+  "name": "media_downloader",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "spider",
+  "input_schema": "TaskConfigDTO.v1",
+  "output_schema": "RawDataBatch.v1",
+  "entry_point": "plugins.spiders.media_downloader.plugin:MediaDownloaderSpiderPlugin",
+  "dependencies": ["requests"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "max_size_mb": {"type": "integer", "minimum": 1, "maximum": 100, "default": 10},
+      "allowed_domains": {"type": "array", "items": {"type": "string"}, "default": []},
+      "allowed_mime_types": {"type": "array", "items": {"type": "string"}, "default": ["image/*", "audio/*", "video/*", "application/pdf", "application/octet-stream"]},
+      "urls": {"type": "array", "items": {"type": "string", "format": "uri"}}
+    },
+    "additionalProperties": false,
+    "required": ["urls"]
+  }
+}

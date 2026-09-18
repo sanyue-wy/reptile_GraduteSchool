@@ -1,0 +1,185 @@
+# V3.0 插件实例配置示例
+# 与 pipeline.yaml 配套，描述具名实例
+# 研招来源应单独声明 yzw_api + yzw_major_parser 分支
+
+schema_version: 1
+instances:
+  # Spider: 静态 HTML 采集
+  static_fetch:
+    plugin: spider:static_html
+    enabled: true
+    params:
+      max_pages: 20
+      delay_range: [1.0, 3.0]
+
+  # Spider: AJAX API 采集
+  ajax_fetch:
+    plugin: spider:ajax_api
+    enabled: true
+    params:
+      max_pages: 20
+      delay_range: [1.0, 3.0]
+
+  # Spider: JS 渲染采集 (可选依赖)
+  js_fetch:
+    plugin: spider:js_render
+    enabled: false
+    params:
+      max_pages: 10
+      headless: true
+
+  # Spider: PDF 列表采集
+  pdf_fetch:
+    plugin: spider:pdf_list
+    enabled: true
+    params:
+      max_pages: 20
+
+  # Spider: 研招网 API
+  yzw_fetch:
+    plugin: spider:yzw_api
+    enabled: true
+    params:
+      max_pages: 50
+
+  # Spider: 媒体下载示例
+  media_downloader:
+    plugin: spider:media_downloader
+    enabled: true
+    params:
+      max_size_mib: 10
+      allowed_domains: []
+      mime_whitelist:
+        - "image/*"
+        - "audio/*"
+        - "video/*"
+        - "application/pdf"
+
+  # Processor: 师资解析
+  faculty_parse:
+    plugin: processor:faculty_parser
+    enabled: true
+    params:
+      profile: education.tutor.v1
+
+  # Processor: 研招专业解析
+  yzw_major_parse:
+    plugin: processor:yzw_major_parser
+    enabled: true
+    params:
+      profile: education.major.v1
+
+  # Processor: 通用归一化
+  normalize_records:
+    plugin: processor:normalize
+    enabled: true
+    params: {}
+
+  # Processor: 教育合并
+  merge_records:
+    plugin: processor:education_merge
+    enabled: true
+    params:
+      group_by: [university, college, year]
+
+  # Processor: 统计
+  statistics:
+    plugin: processor:statistics
+    enabled: true
+    params:
+      group_by: [university]
+
+  # Storage: JSONL 输出
+  jsonl_output:
+    plugin: storage:jsonl_store
+    enabled: true
+    params:
+      format: legacy_education_v1
+      output_dir: data/output
+
+  # Storage: Excel 输出
+  excel_output:
+    plugin: storage:xlsx_store
+    enabled: true
+    params:
+      format: legacy_education_v1
+      output_dir: data/output
+
+  # Storage: SQLite
+  sql_store:
+    plugin: storage:sql_store
+    enabled: true
+    params:
+      db_path: data/runs/{run_id}/storage.db
+      format: generic_v1
+
+  # Storage: 进度快照
+  progress_store:
+    plugin: storage:progress_store
+    enabled: true
+    params:
+      output_dir: data/runs/{run_id}/progress
+
+  # Storage: 媒体存储
+  media_store:
+    plugin: storage:media_store
+    enabled: true
+    params:
+      output_dir: data/runs/{run_id}/assets
+
+  # UI: 表格组件
+  table_view:
+    plugin: ui:table_component
+    enabled: true
+    params: {}
+
+  # UI: 图表组件
+  chart_view:
+    plugin: ui:chart_component
+    enabled: true
+    params: {}
+
+  # UI: 卡片组件
+  card_view:
+    plugin: ui:card_component
+    enabled: true
+    params: {}
+
+  # UI: 筛选组件
+  filter_view:
+    plugin: ui:filter_component
+    enabled: true
+    params: {}
+
+  # Presenter: HTML 报告
+  html_report:
+    plugin: presenter:html_presenter
+    enabled: true
+    params:
+      template: minimal-light
+      theme: light
+
+  # Presenter: 文本/Markdown
+  text_report:
+    plugin: presenter:text_presenter
+    enabled: false
+    params:
+      format: markdown
+
+  # Presenter: JSONL
+  jsonl_report:
+    plugin: presenter:jsonl_presenter
+    enabled: false
+    params: {}
+
+  # Presenter: CSV
+  csv_report:
+    plugin: presenter:csv_presenter
+    enabled: false
+    params: {}
+
+  # Presenter: PDF
+  pdf_report:
+    plugin: presenter:pdf_presenter
+    enabled: false
+    params: {}

@@ -1,0 +1,20 @@
+{
+  "name": "yzw_api",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "spider",
+  "input_schema": "TaskConfigDTO.v1",
+  "output_schema": "RawDataBatch.v1",
+  "entry_point": "plugins.spiders.yzw_api.plugin:YzwApiSpiderPlugin",
+  "dependencies": ["requests"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "max_pages": {"type": "integer", "minimum": 1, "maximum": 50, "default": 20},
+      "delay": {"type": "number", "minimum": 0.5, "maximum": 10.0, "default": 1.5},
+      "page_size": {"type": "integer", "minimum": 100, "maximum": 1000, "default": 500}
+    },
+    "additionalProperties": false
+  }
+}

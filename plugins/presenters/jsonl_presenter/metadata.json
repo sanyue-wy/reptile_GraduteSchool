@@ -1,0 +1,32 @@
+{
+  "name": "jsonl_presenter",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "presenter",
+  "input_schema": "PresentationRequest.v1",
+  "output_schema": "RenderedOutputDTO.v1",
+  "entry_point": "plugins.presenters.jsonl_presenter.plugin:JsonlPresenterPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "output_dir": {
+        "type": "string",
+        "description": "Directory to write JSONL output files"
+      },
+      "include_fields": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Optional list of fields to include in output (whitelist)"
+      },
+      "exclude_fields": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Optional list of fields to exclude from output (blacklist)"
+      }
+    },
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

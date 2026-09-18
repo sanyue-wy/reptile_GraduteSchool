@@ -1,0 +1,28 @@
+{
+  "name": "text_presenter",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "presenter",
+  "input_schema": "PresentationRequest.v1",
+  "output_schema": "RenderedOutputDTO.v1",
+  "entry_point": "plugins.presenters.text_presenter.plugin:TextPresenterPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": ["text", "markdown"],
+        "default": "text",
+        "description": "Output format mode: 'text' for plain text table, 'markdown' for markdown table"
+      },
+      "output_dir": {
+        "type": "string",
+        "description": "Optional output directory for rendered files"
+      }
+    },
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

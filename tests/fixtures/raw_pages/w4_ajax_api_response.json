@@ -1,0 +1,21 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "title": "张三",
+      "post": "教授",
+      "degree": "博士",
+      "exField1": "博士生导师",
+      "cnUrl": "/faculty/zhang.html",
+      "headerPic": "/images/zhang.jpg"
+    },
+    {
+      "title": "李四",
+      "post": "副教授",
+      "degree": "博士",
+      "exField1": "硕士生导师",
+      "cnUrl": "/faculty/li.html",
+      "headerPic": "/images/li.jpg"
+    }
+  ]
+}

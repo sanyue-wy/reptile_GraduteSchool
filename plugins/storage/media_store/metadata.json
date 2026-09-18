@@ -1,0 +1,32 @@
+{
+  "name": "media_store",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "storage",
+  "input_schema": "StoreRequest.v1",
+  "output_schema": "StoreReceipt.v1",
+  "entry_point": "plugins.storage.media_store.plugin:MediaStorePlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "output_dir": {
+        "type": "string"
+      },
+      "max_inline_size": {
+        "type": "integer",
+        "default": 10485760,
+        "description": "Max size in bytes for inline storage (10 MiB default)"
+      },
+      "allowed_domains": {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": []
+      }
+    },
+    "required": ["output_dir"],
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,30 @@
+{
+  "name": "xlsx_store",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "storage",
+  "input_schema": "StoreRequest.v1",
+  "output_schema": "StoreReceipt.v1",
+  "entry_point": "plugins.storage.xlsx_store.plugin:XlsxStorePlugin",
+  "dependencies": ["openpyxl"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "output_dir": {
+        "type": "string"
+      },
+      "filename": {
+        "type": "string",
+        "default": "summary.xlsx"
+      },
+      "sheet_name": {
+        "type": "string",
+        "default": "导师汇总"
+      }
+    },
+    "required": ["output_dir"],
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

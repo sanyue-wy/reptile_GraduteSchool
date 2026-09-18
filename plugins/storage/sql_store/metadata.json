@@ -1,0 +1,26 @@
+{
+  "name": "sql_store",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "storage",
+  "input_schema": "StoreRequest.v1",
+  "output_schema": "StoreReceipt.v1",
+  "entry_point": "plugins.storage.sql_store.plugin:SqlStorePlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "database_path": {
+        "type": "string"
+      },
+      "table_name": {
+        "type": "string",
+        "default": "records"
+      }
+    },
+    "required": ["database_path"],
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

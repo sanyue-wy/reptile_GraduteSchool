@@ -1,0 +1,30 @@
+# V3.0 静态垂直切片配置示例
+# 计划书 §6.2 原文为基础，修正使其自洽
+# URL/学校/年份和选择器来自任务与已校验的教育配置快照，不重复硬编码
+
+schema_version: 1
+pipeline:
+  id: education_default
+  sources:
+    source_a:
+      acquire: static_fetch
+      parse: [faculty_parse]
+      required: true
+  process:
+    steps: [normalize_records, merge_records, statistics]
+  store:
+    targets:
+      - instance: jsonl_output
+        required: true
+      - instance: excel_output
+        required: false
+      - instance: sql_store
+        required: false
+      - instance: progress_store
+        required: false
+  present:
+    required: false
+    components: [table_view, chart_view, card_view, filter_view]
+    outputs:
+      - instance: html_report
+        required: false

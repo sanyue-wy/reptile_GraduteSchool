@@ -7,15 +7,25 @@
 - 三条管道（Source A / Source B / 合并）的整体进度聚合
 - 运行日志的追加与尾部读取
 - 线程安全操作
+- V3.0 新增：导出快照、TaskRunState 映射、进程锁协作协议
 """
 
 import logging
+import threading
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 from storage import JSONLStore, ProgressStore, path_lock, read_json
 from storage.progress_store import default_structure, recalc_pipelines
+
+# V3.0 新增导入
+try:
+    from contracts.task import TaskRunState
+    from contracts.result import ErrorDTO
+except ImportError:
+    TaskRunState = None
+    ErrorDTO = None
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +33,22 @@ logger = logging.getLogger(__name__)
 PROGRESS_FILE = Path("data/output/progress.json")
 LOG_FILE = Path("data/output/crawl.log")
 
-# 状态枚举
+# 状态枚举（V2.2 兼容）
 VALID_STATUSES = {"done", "partial", "running", "pending", "failed"}
 VALID_SOURCES = {"source_a", "source_b", "merged"}
+
+# V3.0 状态映射（只读常量，不改变既有行为）
+V30_TO_V22_STATUS = {
+    "pending": "pending",
+    "running": "running",
+    "succeeded": "done",
+    "failed": "failed",
+    "partial": "partial",
+    "cancelled": "cancelled",
+    "skipped": "skipped",
+}
+
+V22_TO_V30_STATUS = {v: k for k, v in V30_TO_V22_STATUS.items()}
 
 
 class ProgressTracker:
@@ -298,6 +321,94 @@ class ProgressTracker:
                 "status": overall,
             })
         return result
+
+    # ------------------------------------------------------------------
+    # V3.0 新增接口（仅追加，不改变既有行为）
+    # ------------------------------------------------------------------
+
+    def export_snapshot(self, run_id: str, output_path: Optional[Path] = None) -> Path:
+        """导出当前进度快照到文件（供 progress_store 插件调用）。
+
+        Args:
+            run_id: 当前运行 ID
+            output_path: 可选输出路径，默认为 data/output/progress_<run_id>.json
+
+        Returns:
+            实际写入的文件路径
+        """
+        if output_path is None:
+            output_path = self.progress_file.parent / f"progress_{run_id[:8]}.json"
+
+        data = self._read_raw()
+        data["exported_at"] = datetime.now().isoformat()
+        data["run_id"] = run_id
+
+        # 使用原子写入
+        from infra.storage.atomic_io import atomic_write_json
+        atomic_write_json(output_path, data)
+
+        logger.info("Progress snapshot exported to %s", output_path)
+        return output_path
+
+    def to_task_run_state(self, run_id: str, task_id: str) -> "TaskRunState":
+        """将当前进度转换为 V3.0 TaskRunState（供存储层快照使用）。
+
+        如果 contracts 不可用，返回字典兼容模式。
+        """
+        data = self._read_raw()
+
+        # 计算整体状态
+        stats = self.get_overview_stats()
+        if stats["failed"] > 0:
+            overall_status = "failed"
+        elif stats["running"] > 0:
+            overall_status = "running"
+        elif stats["partial"] > 0:
+            overall_status = "partial"
+        elif stats["pending"] == stats["total_schools"]:
+            overall_status = "pending"
+        else:
+            overall_status = "succeeded"
+
+        if TaskRunState is not None:
+            return TaskRunState(
+                run_id=run_id,
+                task_id=task_id,
+                status=overall_status,
+                retry_count=0,
+                last_attempt_at=datetime.now().isoformat(),
+                checkpoint=data,
+                started_at=data.get("started_at", datetime.now().isoformat()),
+                completed_at=datetime.now().isoformat() if overall_status in ("succeeded", "failed", "cancelled") else None,
+            )
+
+        # 兼容模式：返回字典
+        return {
+            "run_id": run_id,
+            "task_id": task_id,
+            "status": overall_status,
+            "retry_count": 0,
+            "checkpoint": data,
+            "started_at": data.get("started_at", datetime.now().isoformat()),
+        }
+
+    @staticmethod
+    def map_status_v30_to_v22(status: str) -> str:
+        """V3.0 状态映射到 V2.2 兼容枚举（只读操作）。"""
+        return V30_TO_V22_STATUS.get(status, status)
+
+    @staticmethod
+    def map_status_v22_to_v30(status: str) -> str:
+        """V2.2 兼容枚举映射到 V3.0 状态（只读操作）。"""
+        return V22_TO_V30_STATUS.get(status, status)
+
+    def get_lock(self) -> threading.RLock:
+        """获取底层文件锁（供跨进程/跨插件协作使用）。
+
+        返回 storage.file_utils 中的同一把锁，用于与 W2 引擎侧进程锁协作。
+        协作协议详见 INTERFACES.md。
+        """
+        return self._lock
 
 
 # 全局单例

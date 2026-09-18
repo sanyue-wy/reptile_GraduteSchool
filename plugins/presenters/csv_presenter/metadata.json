@@ -1,0 +1,37 @@
+{
+  "name": "csv_presenter",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "presenter",
+  "input_schema": "PresentationRequest.v1",
+  "output_schema": "RenderedOutputDTO.v1",
+  "entry_point": "plugins.presenters.csv_presenter.plugin:CsvPresenterPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "output_dir": {
+        "type": "string",
+        "description": "Optional output directory for CSV files"
+      },
+      "include_header": {
+        "type": "boolean",
+        "default": true,
+        "description": "Whether to include header row in CSV output"
+      },
+      "delimiter": {
+        "type": "string",
+        "default": ",",
+        "description": "CSV delimiter character"
+      },
+      "encoding": {
+        "type": "string",
+        "default": "utf-8",
+        "description": "Output file encoding"
+      }
+    },
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,49 @@
+{
+  "name": "pdf_presenter",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "presenter",
+  "input_schema": "PresentationRequest.v1",
+  "output_schema": "RenderedOutputDTO.v1",
+  "entry_point": "plugins.presenters.pdf_presenter.plugin:PdfPresenterPlugin",
+  "dependencies": [],
+  "optional_dependencies": ["weasyprint"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "output_dir": {
+        "type": "string",
+        "description": "Optional output directory for generated PDF files"
+      },
+      "template": {
+        "type": "string",
+        "default": "default",
+        "description": "HTML template name (default: 'default')"
+      },
+      "page_size": {
+        "type": "string",
+        "enum": ["A4", "Letter", "Legal", "A3", "A5"],
+        "default": "A4",
+        "description": "Page size for PDF output"
+      },
+      "margin": {
+        "type": "string",
+        "default": "2cm",
+        "description": "Page margins (e.g., '2cm', '1in', '20mm')"
+      },
+      "include_header": {
+        "type": "boolean",
+        "default": true,
+        "description": "Include header with dataset info"
+      },
+      "include_footer": {
+        "type": "boolean",
+        "default": true,
+        "description": "Include footer with page numbers"
+      }
+    },
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

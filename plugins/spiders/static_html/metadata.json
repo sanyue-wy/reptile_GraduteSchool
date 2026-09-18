@@ -1,0 +1,19 @@
+{
+  "name": "static_html",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "spider",
+  "input_schema": "TaskConfigDTO.v1",
+  "output_schema": "RawDataBatch.v1",
+  "entry_point": "plugins.spiders.static_html.plugin:StaticHtmlSpiderPlugin",
+  "dependencies": ["requests", "beautifulsoup4"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "max_pages": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20},
+      "delay": {"type": "number", "minimum": 0.5, "maximum": 10.0, "default": 1.5}
+    },
+    "additionalProperties": false
+  }
+}
