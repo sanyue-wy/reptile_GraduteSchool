@@ -332,17 +332,22 @@ class PresenterPlugin(BasePlugin):
     output_schema = "RenderedOutputDTO.v1"
 
     def execute(self, request: PresentationRequest, context) -> RenderedOutputDTO:
-        # 抽象方法，必须实现
-        ...
+        # 具体方法（非抽象）：调用 render() 并包装结果
+        rendered = self.render(request, context)
+        if isinstance(rendered, RenderedOutputDTO):
+            return rendered
+        if isinstance(rendered, str):
+            return RenderedOutputDTO(path=rendered, ...)
+        raise TypeError(...)
 
     def render(self, request: PresentationRequest, context) -> RenderedOutputDTO | str:
-        # 可选钩子：模板渲染分离时使用
-        # 默认 execute() 调用 render() 并包装
+        # 抽象钩子：子类必须实现此方法
         raise NotImplementedError
 ```
 
-> **设计决议**：PresenterPlugin 继承 BasePlugin，execute() 为抽象方法；
-> 子类可提供非抽象 render() 辅助钩子，默认 execute() 调用 render()。
+> **设计决议**：PresenterPlugin.execute() 为具体方法（非抽象），
+> 内部调用 render() 钩子并统一包装为 RenderedOutputDTO。
+> 子类只需实现 render() 即可；如需完全自定义逻辑，可同时覆盖 execute()。
 > 保证任何具体 Presenter 只需实现一个入口即可实例化。
 
 ### 3.7 UIPlugin
@@ -554,6 +559,7 @@ print(len(r['errors']))
 |------|------|------|--------|
 | 3.0.0 | 2026-09-18 | 初始冻结 | W1 |
 | 3.0.1 | 2026-09-20 | 契约验收复核：迁移器映射表对齐示例 YAML 实例名（纯脚本，不改契约）；裁决仲裁提案 #1–#4 | W1 |
+| 3.0.2 | 2026-09-21 | B2 PresenterPlugin 契约对齐：execute() 为具体方法（调用 render() 钩子），更新 §3.6 描述与代码一致；B3 RawDataDTO assets 加入 v1_schema() required 列表（§2.4） | W1 |
 
 ---
 

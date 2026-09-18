@@ -272,3 +272,26 @@
 - `python -c "from plugins.base import ParserPlugin, RecordProcessorPlugin, StoragePlugin, UIPlugin; print('OK')"` → OK
 - `python -m pytest tests/test_contracts.py -q` → 44 passed
 - `python -m pytest tests/ -q --ignore=tests/test_filter_component.py` → 917 passed, 3 skipped
+
+### B2 已修复：PresenterPlugin 契约对齐（2026-09-21）
+
+**问题**：INTERFACES.md §3.6 声明 execute() 为抽象方法，但代码中 execute() 是具体方法（调用 render() 钩子并包装结果）。
+
+**决策**：保留代码设计 — execute() 具体 + render() 抽象钩子。这是更优的设计：
+- 子类只需实现 render() 即可（一个入口）
+- 需要完全自定义逻辑时可覆盖 execute()
+- 保证 PresenterPlugin 可直接实例化测试
+
+**修复**：
+- 更新 INTERFACES.md §3.6：将 execute() 从"抽象方法"改为"具体方法"，render() 从"可选钩子"改为"抽象钩子"
+- 更新设计决议说明，明确 execute() → render() 调用链
+
+### B3 已修复：RawDataDTO assets 加入 required（2026-09-21）
+
+**问题**：INTERFACES.md §2.4 标记 assets 为必需字段，但 contracts/raw.py RawDataDTO.v1_schema() 的 required 列表中缺少 assets。
+
+**修复**：
+- `contracts/raw.py` RawDataDTO.v1_schema() required 列表新增 'assets'
+
+**验收**：
+- `python -m pytest tests/test_contracts.py -q` → 44 passed（assets 在 fixture 中已提供）

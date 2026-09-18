@@ -66,7 +66,7 @@ class RawDataDTO:
                 "content": {"type": ["string", "null"]},
                 "raw_ref": {"type": ["string", "null"]},
             },
-            "required": ["source_id", "url", "content_type", "encoding", "fetched_at"],
+            "required": ["source_id", "url", "content_type", "encoding", "fetched_at", "assets"],
             "definitions": {
                 "MediaAsset": MediaAsset.v1,
             },
