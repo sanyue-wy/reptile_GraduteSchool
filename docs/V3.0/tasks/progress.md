@@ -295,3 +295,17 @@
 
 **验收**：
 - `python -m pytest tests/test_contracts.py -q` → 44 passed（assets 在 fixture 中已提供）
+
+### B2 更新：PresenterPlugin schema 补全（2026-09-21）
+
+**问题**：PresenterPlugin 缺少 input_schema / output_schema 类属性，导致 registry 校验可绕过。
+
+**修复**：
+- `plugins/base.py` PresenterPlugin 新增：
+  - `input_schema = "PresentationRequest.v1"`
+  - `output_schema = "RenderedOutputDTO.v1"`
+- 与 INTERFACES.md §3.6 一致
+
+**验收**：
+- `python -m pytest tests/test_presentation_plugins.py -q` → 25 passed, 1 skipped
+- `python -m pytest tests/test_contracts.py -q` → 44 passed

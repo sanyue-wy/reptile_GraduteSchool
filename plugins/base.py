@@ -146,6 +146,8 @@ class PresenterPlugin(BasePlugin):
     the render() hook, which is called by the default execute() implementation.
     """
     plugin_type = "presenter"
+    input_schema = "PresentationRequest.v1"
+    output_schema = "RenderedOutputDTO.v1"
 
     def execute(self, data: Any, context: PluginContext) -> Any:
         """Execute presenter: render data to output format.
