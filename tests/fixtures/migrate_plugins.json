@@ -1,0 +1,118 @@
+{
+  "overrides": {},
+  "pipeline": {
+    "processors": {
+      "merge": 300
+    },
+    "exporters": {
+      "jsonl": 100,
+      "xlsx": 200
+    }
+  },
+  "plugins": [
+    {
+      "name": "static_list",
+      "kind": "fetcher",
+      "enabled": true,
+      "params": {
+        "max_pages": 15
+      }
+    },
+    {
+      "name": "ajax_api",
+      "kind": "fetcher",
+      "enabled": true
+    },
+    {
+      "name": "js_render",
+      "kind": "fetcher",
+      "enabled": false
+    },
+    {
+      "name": "pdf_list",
+      "kind": "fetcher",
+      "enabled": true
+    },
+    {
+      "name": "yzw_api",
+      "kind": "fetcher",
+      "enabled": true
+    },
+    {
+      "name": "faculty_parser",
+      "kind": "parser",
+      "enabled": true
+    },
+    {
+      "name": "yzw_major_parser",
+      "kind": "parser",
+      "enabled": true
+    },
+    {
+      "name": "normalize",
+      "kind": "processor",
+      "enabled": true
+    },
+    {
+      "name": "education_merge",
+      "kind": "processor",
+      "enabled": true,
+      "params": {}
+    },
+    {
+      "name": "statistics",
+      "kind": "processor",
+      "enabled": true
+    },
+    {
+      "name": "jsonl_store",
+      "kind": "exporter",
+      "enabled": true
+    },
+    {
+      "name": "xlsx_store",
+      "kind": "exporter",
+      "enabled": true
+    },
+    {
+      "name": "table_component",
+      "kind": "presenter",
+      "enabled": true
+    },
+    {
+      "name": "chart_component",
+      "kind": "presenter",
+      "enabled": true
+    },
+    {
+      "name": "card_component",
+      "kind": "presenter",
+      "enabled": true
+    },
+    {
+      "name": "filter_component",
+      "kind": "presenter",
+      "enabled": true
+    },
+    {
+      "name": "cache",
+      "kind": "utility",
+      "enabled": true
+    },
+    {
+      "name": "progress",
+      "kind": "utility",
+      "enabled": true
+    },
+    {
+      "name": "http_session",
+      "kind": "utility",
+      "enabled": true
+    },
+    {
+      "name": "mystery_fetcher",
+      "kind": "fetcher",
+      "enabled": true
+    }
+  ]
+}

@@ -32,27 +32,27 @@ KIND_MAPPING = {
 
 # 旧插件名称 → 新插件名称/实例映射
 PLUGIN_NAME_MAPPING = {
-    # fetcher → spider
-    "static_list": {"new_name": "static_html", "v3_type": "spider", "params": {"max_pages": 20}},
-    "ajax_api": {"new_name": "ajax_api", "v3_type": "spider", "params": {"max_pages": 20}},
-    "js_render": {"new_name": "js_render", "v3_type": "spider", "params": {"max_pages": 10, "headless": True}},
-    "pdf_list": {"new_name": "pdf_list", "v3_type": "spider", "params": {"max_pages": 20}},
-    "yzw_api": {"new_name": "yzw_api", "v3_type": "spider", "params": {"max_pages": 50}},
+    # fetcher → spider（new_name 为 V3.0 插件名，instance 为新 YAML 实例名）
+    "static_list": {"new_name": "static_html", "v3_type": "spider", "instance": "static_fetch", "params": {"max_pages": 20}},
+    "ajax_api": {"new_name": "ajax_api", "v3_type": "spider", "instance": "ajax_fetch", "params": {"max_pages": 20}},
+    "js_render": {"new_name": "js_render", "v3_type": "spider", "instance": "js_fetch", "params": {"max_pages": 10, "headless": True}},
+    "pdf_list": {"new_name": "pdf_list", "v3_type": "spider", "instance": "pdf_fetch", "params": {"max_pages": 20}},
+    "yzw_api": {"new_name": "yzw_api", "v3_type": "spider", "instance": "yzw_fetch", "params": {"max_pages": 50}},
     # parser → processor.parse
-    "faculty_parser": {"new_name": "faculty_parser", "v3_type": "processor", "params": {"profile": "education.tutor.v1"}},
-    "yzw_major_parser": {"new_name": "yzw_major_parser", "v3_type": "processor", "params": {"profile": "education.major.v1"}},
+    "faculty_parser": {"new_name": "faculty_parser", "v3_type": "processor", "instance": "faculty_parse", "params": {"profile": "education.tutor.v1"}},
+    "yzw_major_parser": {"new_name": "yzw_major_parser", "v3_type": "processor", "instance": "yzw_major_parse", "params": {"profile": "education.major.v1"}},
     # processor → processor.post
-    "normalize": {"new_name": "normalize", "v3_type": "processor", "params": {}},
-    "education_merge": {"new_name": "education_merge", "v3_type": "processor", "params": {"group_by": ["university", "college", "year"]}},
-    "statistics": {"new_name": "statistics", "v3_type": "processor", "params": {"group_by": ["university"]}},
+    "normalize": {"new_name": "normalize", "v3_type": "processor", "instance": "normalize_records", "params": {}},
+    "education_merge": {"new_name": "education_merge", "v3_type": "processor", "instance": "merge_records", "params": {"group_by": ["university", "college", "year"]}},
+    "statistics": {"new_name": "statistics", "v3_type": "processor", "instance": "statistics", "params": {"group_by": ["university"]}},
     # exporter → storage
-    "jsonl_store": {"new_name": "jsonl_store", "v3_type": "storage", "params": {"format": "legacy_education_v1", "output_dir": "data/output"}},
-    "xlsx_store": {"new_name": "xlsx_store", "v3_type": "storage", "params": {"format": "legacy_education_v1", "output_dir": "data/output"}},
+    "jsonl_store": {"new_name": "jsonl_store", "v3_type": "storage", "instance": "jsonl_output", "params": {"format": "legacy_education_v1", "output_dir": "data/output"}},
+    "xlsx_store": {"new_name": "xlsx_store", "v3_type": "storage", "instance": "excel_output", "params": {"format": "legacy_education_v1", "output_dir": "data/output"}},
     # presenter → ui/presenter
-    "table_component": {"new_name": "table_component", "v3_type": "ui", "params": {}},
-    "chart_component": {"new_name": "chart_component", "v3_type": "ui", "params": {}},
-    "card_component": {"new_name": "card_component", "v3_type": "ui", "params": {}},
-    "filter_component": {"new_name": "filter_component", "v3_type": "ui", "params": {}},
+    "table_component": {"new_name": "table_component", "v3_type": "ui", "instance": "table_view", "params": {}},
+    "chart_component": {"new_name": "chart_component", "v3_type": "ui", "instance": "chart_view", "params": {}},
+    "card_component": {"new_name": "card_component", "v3_type": "ui", "instance": "card_view", "params": {}},
+    "filter_component": {"new_name": "filter_component", "v3_type": "ui", "instance": "filter_view", "params": {}},
 }
 
 
@@ -64,11 +64,11 @@ def load_old_plugins(json_path: Path) -> dict[str, Any]:
         return json.load(f)
 
 
-def analyze_mapping(old_config: dict[str, Any]) -> dict[str, Any]:
+def analyze_mapping(old_config: dict[str, Any], source_file: str = "unknown") -> dict[str, Any]:
     """Analyze old config and produce mapping report."""
     report = {
         "timestamp": datetime.now().isoformat(),
-        "source_file": str(json_path) if "json_path" in locals() else "unknown",
+        "source_file": source_file,
         "mappings": [],
         "conflicts": [],
         "unmapped": [],
@@ -93,6 +93,7 @@ def analyze_mapping(old_config: dict[str, Any]) -> dict[str, Any]:
                 "old_kind": old_kind,
                 "new_name": mapping["new_name"],
                 "v3_type": mapping["v3_type"],
+                "instance": mapping["instance"],
                 "params": {**mapping["params"], **params},  # new params as base, old params override
                 "note": KIND_MAPPING.get(old_kind, {}).get("note", ""),
             })
@@ -117,51 +118,37 @@ def analyze_mapping(old_config: dict[str, Any]) -> dict[str, Any]:
 def generate_pipeline_yaml(report: dict[str, Any]) -> dict[str, Any]:
     """Generate pipeline.yaml from mapping report."""
     # Determine which processors are mapped
-    processors = [m for m in report["mappings"] if m["v3_type"] == "processor"]
     spiders = [m for m in report["mappings"] if m["v3_type"] == "spider"]
-    storages = [m for m in report["mappings"] if m["v3_type"] == "storage"]
-    uis = [m for m in report["mappings"] if m["v3_type"] == "ui"]
 
-    # Build sources - assume source_a uses first spider, source_b uses yzw if present
+    # Build sources - source_a 用 static spider + faculty_parse，source_b 用 yzw（可选）
     sources = {}
-    parse_steps = []
-
-    # Find static_html spider for source_a
-    static_spider = next((s for s in spiders if s["new_name"] == "static_html"), None)
-    if static_spider:
+    if any(s["new_name"] == "static_html" for s in spiders):
         sources["source_a"] = {
             "acquire": "static_fetch",
             "parse": ["faculty_parse"],
             "required": True,
         }
-        parse_steps.append("faculty_parse")
-
-    # Find yzw_api spider for source_b
-    yzw_spider = next((s for s in spiders if s["new_name"] == "yzw_api"), None)
-    if yzw_spider:
+    if any(s["new_name"] == "yzw_api" for s in spiders):
         sources["source_b"] = {
             "acquire": "yzw_fetch",
             "parse": ["yzw_major_parse"],
             "required": False,
         }
-        parse_steps.append("yzw_major_parse")
 
-    # Build process steps
-    process_steps = ["normalize_records", "merge_records", "statistics"]
-    # Only include steps that have mappings
-    available_processor_names = {p["new_name"] for p in processors}
-    process_steps = [s for s in process_steps if s in available_processor_names]
+    # Build process steps — 只保留已映射实例的 processor 实例名
+    process_steps = [
+        m["instance"] for m in report["mappings"]
+        if m["v3_type"] == "processor" and m["old_kind"] == "processor"
+    ]
 
     # Build store targets
-    store_targets = []
-    for storage in storages:
-        store_targets.append({
-            "instance": storage["new_name"] + "_output",
-            "required": storage["new_name"] == "jsonl_store",
-        })
+    store_targets = [
+        {"instance": m["instance"], "required": m["new_name"] == "jsonl_store"}
+        for m in report["mappings"] if m["v3_type"] == "storage"
+    ]
 
     # Build present components
-    present_components = [ui["new_name"] for ui in uis]
+    present_components = [m["instance"] for m in report["mappings"] if m["v3_type"] == "ui"]
 
     return {
         "schema_version": 1,
@@ -183,30 +170,10 @@ def generate_plugins_yaml(report: dict[str, Any]) -> dict[str, Any]:
     instances = {}
 
     for mapping in report["mappings"]:
-        old_name = mapping["old_name"]
-        new_name = mapping["new_name"]
-        v3_type = mapping["v3_type"]
-        params = mapping["params"]
-
-        # Determine instance name
-        if v3_type == "spider":
-            instance_name = f"{new_name}_fetch" if new_name != "media_downloader" else "media_downloader"
-        elif v3_type == "processor":
-            instance_name = new_name
-        elif v3_type == "storage":
-            instance_name = f"{new_name}_output"
-        elif v3_type == "ui":
-            instance_name = new_name.replace("_component", "_view")
-        else:
-            instance_name = new_name
-
-        # Plugin reference format: type:name
-        plugin_ref = f"{v3_type}:{new_name}"
-
-        instances[instance_name] = {
-            "plugin": plugin_ref,
+        instances[mapping["instance"]] = {
+            "plugin": f"{mapping['v3_type']}:{mapping['new_name']}",
             "enabled": True,
-            "params": params,
+            "params": mapping["params"],
         }
 
     return {
@@ -240,7 +207,6 @@ def main():
 
     args = parser.parse_args()
 
-    global json_path
     json_path = Path(args.source)
 
     if not json_path.exists():
@@ -248,7 +214,7 @@ def main():
         return 1
 
     old_config = load_old_plugins(json_path)
-    report = analyze_mapping(old_config)
+    report = analyze_mapping(old_config, source_file=str(json_path))
 
     # Print summary
     print(f"Migration Analysis Report")

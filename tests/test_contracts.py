@@ -481,5 +481,96 @@ class TestSchemaConstants:
         assert isinstance(ErrorDTO.v1_schema(), dict)
 
 
+class TestPluginBase:
+    """plugins/base.py 契约测试（W1 可写范围）。"""
+
+    def test_metadata_auto_build(self):
+        from plugins.base import BasePlugin, PluginContext
+
+        class P(BasePlugin[str, str]):
+            name = "p_test"
+            plugin_type = "spider"
+            input_schema = "TaskConfigDTO.v1"
+            output_schema = "RawDataBatch.v1"
+
+            def execute(self, data, context):
+                return data
+
+        p = P()
+        m = p.metadata
+        assert isinstance(m, type(P().metadata))
+        assert m.name == "p_test"
+        assert m.plugin_type == "spider"
+        assert m.license == "MIT"
+        assert m.entry_point.endswith(":P")
+        assert p.metadata is m  # cached
+
+    def test_context_defaults_and_cancel(self):
+        from plugins.base import PluginContext
+
+        ctx = PluginContext(task_id="t1", run_id="r1")
+        assert ctx.allowed_paths == []
+        assert ctx.config_snapshot == {}
+        assert ctx.check_cancelled() is False
+
+        class Token:
+            def __init__(self, flag):
+                self._flag = flag
+            def is_set(self):
+                return self._flag
+
+        assert PluginContext(cancel_token=Token(True)).check_cancelled() is True
+        assert PluginContext(cancel_token=Token(False)).check_cancelled() is False
+        assert PluginContext(task_id="x").task_id == "x"
+
+    def test_presenter_execute_wraps_path_string(self, tmp_path):
+        from plugins.base import PresenterPlugin, PluginContext
+        from contracts.output import RenderedOutputDTO
+
+        out = tmp_path / "report.html"
+        out.write_text("<html></html>", encoding="utf-8")
+
+        class HtmlPresenter(PresenterPlugin):
+            name = "html_presenter"
+            output_schema = "RenderedOutputDTO.v1"
+
+            def render(self, data, context):
+                return str(out)
+
+        dto = HtmlPresenter().execute(None, PluginContext())
+        assert isinstance(dto, RenderedOutputDTO)
+        assert dto.path == str(out)
+        assert dto.output_format == "html"
+        assert validate_rendered_output(dto)
+
+    def test_presenter_execute_passthrough_dto(self, tmp_path):
+        from plugins.base import PresenterPlugin, PluginContext
+        from contracts.output import RenderedOutputDTO
+
+        dto_in = RenderedOutputDTO(
+            output_id="o1", output_format="csv", path=str(tmp_path / "a.csv"),
+        )
+
+        class CsvPresenter(PresenterPlugin):
+            name = "csv_presenter"
+
+            def render(self, data, context):
+                return dto_in
+
+        assert CsvPresenter().execute(None, PluginContext()) is dto_in
+
+    def test_presenter_bad_render_return_raises(self):
+        from plugins.base import PresenterPlugin, PluginContext
+
+        class BadPresenter(PresenterPlugin):
+            name = "bad_presenter"
+
+            def render(self, data, context):
+                return 42
+
+        with pytest.raises(TypeError):
+            BadPresenter().execute(None, PluginContext())
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
