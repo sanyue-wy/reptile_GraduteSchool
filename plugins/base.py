@@ -4,6 +4,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar
 
+from contracts.raw import RawDataBatch
+from contracts.record import RecordBatch
+from contracts.result import StoreRequest, StoreReceipt
+from contracts.ui import ViewModel, UIComponentDTO
+
 
 InputT = TypeVar("InputT")
 OutputT = TypeVar("OutputT")
@@ -195,10 +200,54 @@ class PresenterPlugin(BasePlugin):
         return self.name.replace("_presenter", "").replace("presenter_", "")
 
 
+class ParserPlugin(BasePlugin[RawDataBatch, RecordBatch]):
+    """Base class for parser plugins.
+
+    Parsers convert raw crawl data (HTML, JSON, PDF) into structured records.
+    """
+    plugin_type = "parser"
+    input_schema = "RawDataBatch.v1"
+    output_schema = "RecordBatch.v1"
+
+
+class RecordProcessorPlugin(BasePlugin[RecordBatch, RecordBatch]):
+    """Base class for record processor plugins.
+
+    Processors transform, filter, merge, or enrich record batches.
+    """
+    plugin_type = "processor"
+    input_schema = "RecordBatch.v1"
+    output_schema = "RecordBatch.v1"
+
+
+class StoragePlugin(BasePlugin[StoreRequest, StoreReceipt]):
+    """Base class for storage plugins.
+
+    Storage plugins persist records to files, databases, or other sinks.
+    """
+    plugin_type = "storage"
+    input_schema = "StoreRequest.v1"
+    output_schema = "StoreReceipt.v1"
+
+
+class UIPlugin(BasePlugin[ViewModel, UIComponentDTO]):
+    """Base class for UI component plugins.
+
+    UI plugins render interactive view components (tables, charts, filters, cards).
+    """
+    plugin_type = "ui"
+    input_schema = "ViewModel.v1"
+    output_schema = "UIComponentDTO.v1"
+
+
 # Re-export for convenience
 __all__ = [
     "PluginMetadata",
     "PluginContext",
     "BasePlugin",
     "PresenterPlugin",
+    "ParserPlugin",
+    "RecordProcessorPlugin",
+    "StoragePlugin",
+    "UIPlugin",
 ]
