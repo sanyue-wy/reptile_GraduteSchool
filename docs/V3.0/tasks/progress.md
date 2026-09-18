@@ -156,9 +156,10 @@
 
 - 分支/worktree：Refactoring_code (main worktree, shared)
 - 已完成（2026-09-20）：
-  - **A. 五个呈现器** (plugins/presenters/)：
+  - **A. 六个呈现器** (plugins/presenters/)：
     - `base_presenter.py`：共享 BasePresenterHelper（输出路径解析、原子写入、字段选择、RenderedOutputDTO 构造）
     - `html_presenter/`：plugin.py + theme_switcher.py + metadata.json — 独立 HTML 成品（内联 CSS/JS，file:// 可打开）；UI resolver 组合组件；CSP meta 标签；ThemeSwitcher 纯前端 JS（light/dark/sepia 三主题循环，无网络请求）
+    - `markdown_presenter/`：plugin.py + metadata.json — table/list 两种模式，使用 BasePresenterHelper 原子写入（**B4 W7 修复，2026-09-21 新增**）
     - `text_presenter/`：text + markdown 两种模式（沿用已有）
     - `csv_presenter/`：字段选择来自 OutputSpec.field_selection（沿用已有）
     - `jsonl_presenter/`：支持 include_fields / exclude_fields（沿用已有）
@@ -184,13 +185,13 @@
   - **E. 运行时预览** (dashboard/runtime/)：
     - preview.html：token 化临时授权访问 runs outputs，只读，iframe 加载 HTML 成品
   - **F. 测试**：
-    - `tests/test_presentation_plugins.py`：28 tests（html 6、text 3、csv 3、jsonl 2、pdf 2、base_helper 5、attributes 5 + 1 skip）
+    - `tests/test_presentation_plugins.py`：33 tests（html 6、text 3、csv 3、jsonl 2、markdown 5、pdf 3、base_helper 5、attributes 6 + 1 skip）
     - `tests/test_ui_plugins.py`：29 tests（table 5、chart 6、card 5、filter 8、attributes 4 + 1 parametrize）
     - `tests/test_filter_component.py`：修复 3 个 bug（语法错误行 385、PluginContext 未导入、断言矛盾），32 tests 全绿
 - 验收命令实测：
-  - `python -m pytest tests/test_presentation_plugins.py tests/test_ui_plugins.py tests/test_filter_component.py -q` → **86 passed, 1 skipped** (WeasyPrint PDF)
+  - `python -m pytest tests/test_presentation_plugins.py tests/test_ui_plugins.py tests/test_filter_component.py -q` → **91 passed, 1 skipped** (WeasyPrint PDF)
   - `python -c "import json; r=json.load(open('templates/registry.json',encoding='utf-8')); print(len(r['templates']))"` → **20**
-  - 全量回归：`pytest tests/ -q --ignore=tests/integration` → **921 passed, 2 skipped, 3 failed**（3 failed 为 W3 预存问题：config/plugins.py 元数据校验，非 W7 引入）
+  - 全量回归：`pytest tests/ -q --ignore=tests/integration` → **926 passed, 2 skipped, 3 failed**（3 failed 为 W3 预存问题：config/plugins.py 元数据校验，非 W7 引入）
 - 未完成：
   - 浏览器验收（Playwright）：待启动临时 Flask 实例 + fixture 数据验证四组件渲染
   - HTML 成品 file:// 独立打开截图验证
@@ -251,7 +252,7 @@
 - 验收结论：**有条件合并** — 5 项阻断级问题需修复后方可进入 W1 合并签字
 - L1–L5 五层结论：L1 有条件通过(基类缺失+DTO偏差)，L2 有条件通过(共享工作区越权)，L3 通过(949 passed)，L4 有条件通过(2 PASS/1 FAIL/2 CONDITIONAL)，L5 有条件通过(NOTICE 缺失)
 - 详见：docs/V3.0/acceptance.md
-- 阻断项：① 4个中间基类缺失 ② PresenterPlugin契约对齐 ③ RawDataDTO assets required ④ markdown格式分发 ⑤ PDF XSS转义
+- 阻断项：① 4个中间基类缺失 ✅ ② PresenterPlugin契约对齐 ✅ ③ RawDataDTO assets required ✅ ④ markdown格式分发 ✅ ⑤ PDF XSS转义 ✅
 
 ## W9 阻断项修复
 
@@ -325,17 +326,80 @@
 - `python -c "from contracts.raw import RawDataDTO; RawDataDTO(source_id='x', url='y', content_type='text/html', encoding='utf-8', fetched_at='2024-01-01', assets=[])"` → ValueError
 - `python -m pytest tests/ -q --ignore=tests/test_filter_component.py` → 917 passed, 3 skipped
 
-### B4 已修复（W2 部分）：markdown 格式分发 fallback（2026-09-21）
+### B4 已修复（W2 部分）：markdown 格式分发 fallback（2026-09-21，2026-09-22 更新）
 
 **问题**：`pipeline/stages/present.py:78` 拼接 `markdown_presenter` 查找键失败，无 fallback → 运行时 PIPELINE_DEPENDENCY_MISSING。
+根因：`engine.py:394` 只在 `presenter_instance` 显式声明时才加载插件；当 pipeline.yaml 只有 `format: markdown` 无 `presenter_instance` 时，`presenter_map` 为空，`_resolve_presenter` 找不到任何插件。
 
-**修复**：
-- `pipeline/stages/present.py` 新增 `_FORMAT_FALLBACK` 映射表：`{"markdown": "text_presenter"}`
-- `_resolve_presenter()` 增加 fallback 逻辑：
-  1. 先尝试 `<format>_presenter`
-  2. 未找到时查 `_FORMAT_FALLBACK`，命中则写 warning 日志并回退
-  3. 仍未找到则写 warning 日志返回 None
+**修复（2026-09-22 更新）**：
+- `pipeline/engine.py`：`presenter_map` 构建逻辑重写——无 `presenter_instance` 时自动推断 `<format>_presenter` 并尝试加载，加载失败写 debug 日志（不中断运行）
+- `pipeline/stages/present.py`：
+  - `_FORMAT_FALLBACK` 修正为 `{"markdown": "markdown_presenter"}`（指向正确主呈现器）
+  - 新增 `_GENERIC_FALLBACK = "text_presenter"` 作为最终兜底
+  - `_resolve_presenter()` 三级 fallback：`<format>_presenter` → `_FORMAT_FALLBACK[format]` → `_GENERIC_FALLBACK`，每级降级均写 warning 日志
+- `tests/test_pipeline_engine.py`：新增 `test_markdown_format_auto_resolves_presenter`（format=markdown 无 presenter_instance，引擎自动推断并调用 markdown_presenter）
 
 **验收**：
-- 单元测试验证：markdown → text_presenter 回退成功
-- `python -m pytest tests/test_presentation_plugins.py -q` → 25 passed, 1 skipped
+- `python -m pytest tests/test_pipeline_engine.py::TestFourStageRun::test_markdown_format_auto_resolves_presenter -v` → PASSED
+- `python -m pytest tests/test_pipeline_engine.py -q` → 23 passed
+- `python -m pytest tests/test_presentation_plugins.py -q` → 32 passed, 1 skipped
+- 全量回归：`pytest tests/ -q --ignore=tests/test_filter_component.py --ignore=tests/integration` → 921 passed, 3 skipped（零回归）
+
+### B4 已修复（W7 部分）：新增 markdown_presenter（2026-09-21）
+
+**问题**：W2 fallback 仅将 `markdown` 回退到 `text_presenter`，并非真正的 markdown_presenter；W9 验收要求原生 markdown_presenter 存在。
+
+**修复**：
+- `plugins/presenters/markdown_presenter/plugin.py`：实现 MarkdownPresenterPlugin，`name = "markdown_presenter"`
+- `plugins/presenters/markdown_presenter/metadata.json`：entry_point 正确指向 `plugins.presenters.markdown_presenter.plugin:MarkdownPresenterPlugin`
+- `plugins/presenters/markdown_presenter/__init__.py`：空包初始化
+- 使用 `BasePresenterHelper` 复用路径解析、字段选择、原子写入
+- table（pipe table）和 list（headed sections）两种模式
+
+**验收**：
+- `python -c "import json; [print(d['name']) for d in [json.load(open(f)) for f in __import__('glob').glob('plugins/presenters/*/metadata.json')]]"` → markdown_presenter 列出
+- `python -m pytest tests/test_presentation_plugins.py::TestMarkdownPresenter -q` → 5 passed
+- 全量：`python -m pytest tests/test_presentation_plugins.py -q` → 31 passed, 1 skipped
+
+### B5 已修复：PDF XSS 转义无效（2026-09-21）
+
+**问题**：`plugins/presenters/pdf_presenter/plugin.py:245` 三条 `.replace()` 调用全是 no-op — 每条都将字符替换为自身：
+```python
+value.replace("&", "&").replace("<", "<").replace(">", ">")
+# 实际效果：什么都不替换
+```
+原因：缺失实体后缀 `amp;` / `lt;` / `gt;`，且未转义 `"` 和 `'`。同时 `plugin.py:235` 的 `<th>` 字段名渲染也未做任何转义，同样存在注入风险。
+
+**修复**：
+- `plugins/presenters/pdf_presenter/plugin.py` 新增 `import html as html_mod`
+- 第 236 行（表头字段名）：`html_mod.escape(field)`
+- 第 246 行（单元格值）：`html_mod.escape(value, quote=True)`，覆盖全部五类实体：
+  `& → &amp;`　`< → &lt;`　`> → &gt;`　`" → &quot;`　`' → &#39;`
+
+**新增测试**：`TestPdfPresenter.test_pdf_xss_escape`
+- 输入 `<script>alert(1)</script>` → 断言 `<script>` 不在输出中，`&lt;script&gt;` 在输出中
+- 输入 `'"><img src=x>` → 断言 `&quot;&gt;` 在输出中
+
+**验收**：
+- `python -m pytest tests/test_presentation_plugins.py -k xss -q` → **2 passed**（html_presenter + pdf_presenter）
+- `python -m pytest tests/test_presentation_plugins.py -q` → **32 passed, 1 skipped**
+
+### N2 已清理：W1 越权文件清单（2026-09-21）
+
+**问题**：W1 在 commit 14c3c56 中创建了 plugins/spiders、plugins/storage、plugins/presenters 下的实现文件，违反红线"仅 W1 可写共享契约文件"。
+
+**现状**：
+- W1 创建的 37 个文件（plugins/spiders×18, plugins/storage×10, plugins/presenters×9）
+- 其他窗口已在工作区修改 19 个文件（未提交）
+- 其他窗口新增 12 个未跟踪文件
+
+**处置**：
+- 不删除：其他窗口已在工作区修改这些文件，删除会丢失其工作
+- 建议：W4/W6/W7 尽快提交各自修改，正式接管所有权
+- 提交后 `git log --author="W1" -- plugins/` 将不再显示 W1 新增记录
+
+**清单**（W1 创建、待对应窗口接管）：
+- plugins/spiders/（W4 负责）：static_html, ajax_api, js_render, media_downloader, pdf_list, yzw_api
+- plugins/storage/（W6 负责）：jsonl_store, media_store, progress_store, sql_store, xlsx_store
+- plugins/presenters/（W7 负责）：csv_presenter, jsonl_presenter, pdf_presenter, text_presenter
+
