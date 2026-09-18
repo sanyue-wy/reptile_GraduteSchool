@@ -437,3 +437,16 @@ value.replace("&", "&").replace("<", "<").replace(">", ">")
 - L4 实验：A(安全) B(分发) C(脚手架) 全部 PASS
 - 修复提交：`9c48d90` B2+B3 / `9dccdd1` schema 补全 / `deac88a` assets 运行时校验 / `320a603` B4 fallback / `2e0aec8` N2 越权登记
 - 详见：docs/V3.0/acceptance.md §7 复验记录
+
+## W1 合并签字
+
+- 合并时间：2026-09-22
+- 合并状态：✅ **合并完成**
+- Tag：v3.0.0
+- 分支：Refactoring_code
+- 全量回归：956 passed, 0 failed, 3 skipped
+- 验收依据：W9 独立验收 + 复验（全部阻断项已修复）
+- 合并报告：docs/V3.0/merge_report.md
+
+**签字结论**：V3.0 通用网络数据采集平台合并完成，主分支可发布。
+
