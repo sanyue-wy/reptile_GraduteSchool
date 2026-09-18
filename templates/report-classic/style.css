@@ -1,0 +1,66 @@
+/* report-classic - Classic report format, light theme */
+:root {
+  --color-primary: #1e3a5f;
+  --color-secondary: #2c5282;
+  --bg-primary: #ffffff;
+  --bg-secondary: #edf2f7;
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --border-color: #a0aec0;
+  --font-family: "Cambria", "Georgia", "Book Antiqua", serif;
+  --font-size-base: 13px;
+  --border-radius: 0px;
+  --spacing-unit: 8px;
+}
+
+.tpl-report-classic {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 4) calc(var(--spacing-unit) * 5);
+  border: 1px solid var(--border-color);
+}
+
+.tpl-report-classic .tpl-header {
+  text-align: center;
+  border-bottom: 3px double var(--border-color);
+  padding-bottom: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-report-classic .tpl-report-title {
+  font-size: 2em;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tpl-report-classic .tpl-report-subtitle {
+  font-size: 1em;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: var(--spacing-unit);
+}
+
+.tpl-report-classic .tpl-stats-table {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-report-classic .tpl-report-body {
+  line-height: 1.8;
+  text-align: justify;
+}
+
+.tpl-report-classic .tpl-report-body h2 {
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--spacing-unit);
+  margin-top: calc(var(--spacing-unit) * 3);
+}

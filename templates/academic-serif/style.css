@@ -1,0 +1,47 @@
+/* academic-serif - Serif fonts for academic data, light theme */
+:root {
+  --color-primary: #1a3c5e;
+  --color-secondary: #4a6f8a;
+  --bg-primary: #faf8f5;
+  --bg-secondary: #f0ede8;
+  --text-primary: #2c2c2c;
+  --text-secondary: #5a5a5a;
+  --border-color: #c9c3b8;
+  --font-family: "Georgia", "Times New Roman", "Palatino Linotype", serif;
+  --font-size-base: 15px;
+  --border-radius: 0px;
+  --spacing-unit: 10px;
+}
+
+.tpl-academic-serif {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 4);
+  line-height: 1.8;
+}
+
+.tpl-academic-serif .tpl-header h1 {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: var(--spacing-unit);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-academic-serif .tpl-stats {
+  background: var(--bg-secondary);
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+  border-left: 3px solid var(--color-primary);
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.tpl-academic-serif .tpl-content {
+  text-align: justify;
+}

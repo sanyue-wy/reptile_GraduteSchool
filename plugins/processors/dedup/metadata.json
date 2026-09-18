@@ -1,0 +1,24 @@
+{
+  "name": "dedup",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RecordBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.dedup.plugin:DedupPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "key_fields": {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": ["university", "college", "name", "title"],
+        "description": "Fields used to build the dedup key"
+      }
+    },
+    "additionalProperties": false
+  }
+}

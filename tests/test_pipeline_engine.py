@@ -368,7 +368,32 @@ class TestFourStageRun:
         store_stage = next(s for s in result.stages if s.stage == "store")
         assert store_stage.status == "succeeded"
 
-    def test_acquire_setup_failure_fails_run(self, tmp_path, definition, plan_input):
+    def test_markdown_format_auto_resolves_presenter(self, tmp_path, definition, plan_input):
+        """format=markdown 无 presenter_instance 时，引擎自动推断 markdown_presenter。"""
+        from pipeline.stages.present import PresentPlan
+        md_definition = PipelineDefinition(
+            pipeline_id=definition.pipeline_id,
+            sources=definition.sources,
+            process=definition.process,
+            store=definition.store,
+            present=PresentPlan(
+                outputs=[{"output_id": "out_md", "format": "markdown",
+                          "presenter_instance": None, "params": {}, "required": False}],
+                required=False),
+            instances=definition.instances,
+        )
+        md_presenter = SpyPresenter()
+        md_presenter.name = "markdown_presenter"
+        engine = make_engine(tmp_path, md_definition, {
+            "static_fetch": SpySpider(), "faculty_parse": SpyParser(),
+            "normalize_records": SpyPostStep(), "jsonl_output": SpyStorage(),
+            "excel_output": SpyStorage(), "markdown_presenter": md_presenter,
+        })
+        result = engine.run(plan_input)
+        assert result.status == "succeeded"
+        present_stage = next(s for s in result.stages if s.stage == "present")
+        assert present_stage.status == "succeeded"
+        assert len(md_presenter.requests) == 1
         engine = make_engine(tmp_path, definition, {
             "static_fetch": SpySpider(fail=True), "faculty_parse": SpyParser(),
             "normalize_records": SpyPostStep(), "jsonl_output": SpyStorage(),

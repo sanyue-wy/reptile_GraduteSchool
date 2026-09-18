@@ -8,7 +8,6 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from contracts.result import StoreRequest, StoreReceipt, ErrorDTO
 from plugins.base import BasePlugin, PluginContext
@@ -30,20 +29,10 @@ class ProgressStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
         self._config = {}
 
     def setup(self, context: PluginContext) -> None:
-        """Initialize configuration."""
         self._context = context
         self._config = context.config_snapshot.get("plugins", {}).get("progress_store", {})
 
     def execute(self, request: StoreRequest, context: PluginContext) -> StoreReceipt:
-        """Export progress snapshot.
-
-        Args:
-            request: StoreRequest with state_snapshot containing TaskRunState
-            context: PluginContext with progress tracker
-
-        Returns:
-            StoreReceipt with export result
-        """
         try:
             if not self._config.get("enabled", True):
                 return StoreReceipt(
@@ -55,18 +44,31 @@ class ProgressStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
                     output_ref="disabled",
                 )
 
-            # Get progress data from state_snapshot or context.progress
-            progress_data = self._get_progress_data(request, context)
+            from infra.storage import check_and_reserve, commit as idem_commit
 
-            # Determine output path
+            # Idempotency check
+            base_dir = Path("data")
+            if context.storage and hasattr(context.storage, "workspace"):
+                base_dir = context.storage.workspace.base_dir
+            cached = check_and_reserve(base_dir, request.run_id, request.idempotency_key)
+            if cached is not None:
+                return StoreReceipt(
+                    target_id=cached.get("target_id", request.target_id),
+                    written=0,
+                    skipped=1,
+                    failed=0,
+                    records_written=0,
+                    output_ref=cached.get("output_ref", ""),
+                )
+
+            progress_data = self._get_progress_data(request, context)
             output_path = self._resolve_output_path(request)
 
-            # Write snapshot atomically
             output_path.parent.mkdir(parents=True, exist_ok=True)
             from infra.storage.atomic_io import atomic_write_json
             atomic_write_json(output_path, progress_data)
 
-            return StoreReceipt(
+            receipt = StoreReceipt(
                 target_id=request.target_id,
                 written=1,
                 skipped=0,
@@ -74,6 +76,14 @@ class ProgressStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
                 records_written=1,
                 output_ref=str(output_path),
             )
+
+            idem_commit(base_dir, request.run_id, request.idempotency_key, {
+                "target_id": receipt.target_id,
+                "records_written": receipt.records_written,
+                "output_ref": receipt.output_ref,
+            })
+
+            return receipt
 
         except Exception as e:
             logger.exception("Progress snapshot export failed for target %s", request.target_id)
@@ -89,25 +99,20 @@ class ProgressStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
                     message=str(e),
                     stage="store",
                     task_id=request.state_snapshot.get("task_id", ""),
-                    retryable=True,
                 ),
             )
 
     def _get_progress_data(self, request: StoreRequest, context: PluginContext) -> dict:
-        """Get progress data from state_snapshot or context.progress."""
-        # Priority 1: state_snapshot from request (TaskRunState)
         if request.state_snapshot:
-            data = dict(request.state_snapshot)  # Copy to avoid modifying original
+            data = dict(request.state_snapshot)
             data["exported_at"] = datetime.now().isoformat()
             return data
 
-        # Priority 2: context.progress (ProgressTracker)
         if context.progress and hasattr(context.progress, "_read_raw"):
             data = context.progress._read_raw()
             data["exported_at"] = datetime.now().isoformat()
             return data
 
-        # Priority 3: Empty structure
         return {
             "version": 1,
             "updated_at": datetime.now().isoformat(),
@@ -127,13 +132,10 @@ class ProgressStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
         }
 
     def _resolve_output_path(self, request: StoreRequest) -> Path:
-        """Resolve output file path."""
         output_dir = self._config.get("output_dir", "data/output")
         base = Path(output_dir)
         base.mkdir(parents=True, exist_ok=True)
-        # Use run_id in filename for traceability
         return base / f"progress_{request.run_id[:8]}.json"
 
     def close(self) -> None:
-        """Cleanup resources."""
         pass

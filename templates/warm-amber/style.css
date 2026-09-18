@@ -1,0 +1,49 @@
+/* warm-amber - Warm amber palette, light theme */
+:root {
+  --color-primary: #b45309;
+  --color-secondary: #f59e0b;
+  --bg-primary: #fffbeb;
+  --bg-secondary: #fef3c7;
+  --text-primary: #451a03;
+  --text-secondary: #78522a;
+  --border-color: #fcd34d;
+  --font-family: "Merriweather Sans", "Nunito", sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 8px;
+  --spacing-unit: 8px;
+}
+
+.tpl-warm-amber {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-warm-amber .tpl-amber-banner {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: #ffffff;
+  padding: calc(var(--spacing-unit) * 2.5) calc(var(--spacing-unit) * 3);
+  border-radius: var(--border-radius);
+  font-size: 1.5em;
+  font-weight: 700;
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-warm-amber .tpl-stats-warm {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-warm-amber .tpl-content {
+  line-height: 1.7;
+}

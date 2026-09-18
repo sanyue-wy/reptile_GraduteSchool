@@ -1,0 +1,62 @@
+/* magazine-style - Magazine column layout, light theme */
+:root {
+  --color-primary: #be185d;
+  --color-secondary: #ec4899;
+  --bg-primary: #fdf2f8;
+  --bg-secondary: #ffffff;
+  --text-primary: #1f1f1f;
+  --text-secondary: #525252;
+  --border-color: #f9a8d4;
+  --font-family: "Playfair Display", "Lora", Georgia, serif;
+  --font-size-base: 15px;
+  --border-radius: 2px;
+  --spacing-unit: 10px;
+}
+
+.tpl-magazine-style {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-magazine-style .tpl-magazine-cover {
+  font-size: 2.5em;
+  font-weight: 900;
+  color: var(--color-primary);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  border-bottom: 4px solid var(--color-primary);
+  padding-bottom: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-magazine-style .tpl-stats-mag {
+  display: flex;
+  gap: calc(var(--spacing-unit) * 3);
+  padding: calc(var(--spacing-unit) * 2) 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.tpl-magazine-style .tpl-columns {
+  column-count: 2;
+  column-gap: calc(var(--spacing-unit) * 4);
+  column-rule: 1px solid var(--border-color);
+  line-height: 1.7;
+  text-align: justify;
+}
+
+@media (max-width: 768px) {
+  .tpl-magazine-style .tpl-columns {
+    column-count: 1;
+  }
+}

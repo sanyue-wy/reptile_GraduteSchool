@@ -1,0 +1,66 @@
+/* data-grid - Dense data grid layout, light theme */
+:root {
+  --color-primary: #0369a1;
+  --color-secondary: #0ea5e9;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0f9ff;
+  --text-primary: #0c1425;
+  --text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --font-family: "IBM Plex Sans", "Arial Narrow", Arial, sans-serif;
+  --font-size-base: 12px;
+  --border-radius: 4px;
+  --spacing-unit: 6px;
+}
+
+.tpl-data-grid {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-data-grid .tpl-header-bar {
+  background: var(--color-primary);
+  color: #ffffff;
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 1.1em;
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+}
+
+.tpl-data-grid .tpl-stats-strip {
+  display: flex;
+  gap: var(--spacing-unit);
+  padding: var(--spacing-unit) 0;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.tpl-data-grid .tpl-content table,
+.tpl-data-grid .tpl-content .data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tpl-data-grid .tpl-content th {
+  background: var(--bg-secondary);
+  padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+  border: 1px solid var(--border-color);
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tpl-data-grid .tpl-content td {
+  padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+  border: 1px solid var(--border-color);
+}

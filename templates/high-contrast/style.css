@@ -1,0 +1,91 @@
+/* high-contrast - High contrast accessibility, both themes */
+:root {
+  --color-primary: #0000ee;
+  --color-secondary: #551a8b;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --border-color: #000000;
+  --font-family: "Arial", "Helvetica", sans-serif;
+  --font-size-base: 16px;
+  --border-radius: 0px;
+  --spacing-unit: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tpl-high-contrast {
+    --color-primary: #ffff00;
+    --color-secondary: #00ffff;
+    --bg-primary: #000000;
+    --bg-secondary: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --border-color: #ffffff;
+  }
+}
+
+.tpl-high-contrast {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+  line-height: 1.8;
+}
+
+.tpl-high-contrast .tpl-hc-header {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--color-primary);
+  border: 3px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-high-contrast .tpl-stats-hc {
+  border: 2px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+  background: var(--bg-secondary);
+}
+
+.tpl-high-contrast .tpl-content {
+  line-height: 1.8;
+}
+
+.tpl-high-contrast .tpl-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.tpl-high-contrast .tpl-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tpl-high-contrast .tpl-content th,
+.tpl-high-contrast .tpl-content td {
+  border: 2px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+  text-align: left;
+}
+
+.tpl-high-contrast .tpl-content th {
+  background: var(--bg-secondary);
+  font-weight: 700;
+}
+
+.tpl-high-contrast .tpl-content button,
+.tpl-high-contrast .tpl-content .btn {
+  border: 2px solid var(--border-color);
+  background: var(--color-primary);
+  color: var(--bg-primary);
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
+  font-weight: 700;
+  cursor: pointer;
+}

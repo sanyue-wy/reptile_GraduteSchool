@@ -16,5 +16,6 @@
       "page_size": {"type": "integer", "minimum": 100, "maximum": 1000, "default": 500}
     },
     "additionalProperties": false
-  }
+  },
+  "license": "MIT"
 }

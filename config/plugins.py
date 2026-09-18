@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """插件配置与扩展加载。
 
-插件清单以代码注册表为真值，``plugins.json`` 只保存用户覆盖项和流水线权重。
+V3.0: registry 是唯一能力表，旧七类视图从 registry 派生。
+plugins.json 只保存用户覆盖项和流水线权重。
+BUILTIN_METADATA 保留为迁移输入，不再作为真值。
 """
 
 from __future__ import annotations
@@ -347,6 +349,20 @@ def list_plugin_ids(kind: str) -> set[str]:
 
 
 def list_plugins() -> list[dict[str, Any]]:
+    """返回插件列表，保持旧七类兼容形状。
+
+    V3.0: 优先从 registry 快照派生；
+    registry 不可用时降级为旧 BUILTIN_METADATA + plugins_ext 方式。
+    """
+    # 尝试从 registry 派生
+    try:
+        registry_plugins = _derive_legacy_plugins_from_registry()
+        if registry_plugins:
+            return registry_plugins
+    except Exception:
+        logger.debug("registry 不可用，降级为旧发现方式", exc_info=True)
+
+    # 旧方式：BUILTIN_METADATA + plugins_ext
     config = load_plugin_config()
     overrides = config.get("overrides", {})
     pipeline = config.get("pipeline", {})
@@ -431,6 +447,12 @@ def update_pipeline(pipeline_type: str, weights: dict[str, int]) -> Optional[dic
 
 
 def upload_plugin(kind: str, filename: str, source: str) -> dict[str, Any]:
+    """上传插件。
+
+    V2.2 兼容行为：写入 plugins_ext/ 并立即加载。
+    V3.0 增强：同时写入待审区 data/plugin_uploads/。
+    返回完整插件 dict（与 get_plugin 形状一致）。
+    """
     if kind not in PLUGIN_KINDS:
         raise ValueError(f"不支持的插件类型: {kind}")
     meta, _ = _validate_plugin_source(source, kind, filename)
@@ -450,7 +472,86 @@ def upload_plugin(kind: str, filename: str, source: str) -> dict[str, Any]:
     plugin = get_plugin(kind, meta["name"])
     if plugin is None:
         raise ValueError("插件已保存但无法注册")
+
+    # V3.0: 同时写入待审区（不影响返回值）
+    try:
+        _write_to_pending_area(kind, meta, source, safe_name)
+    except Exception:
+        logger.debug("写入待审区失败（不影响上传）", exc_info=True)
+
     return plugin
+
+
+def _write_to_pending_area(
+    kind: str,
+    meta: dict[str, Any],
+    source: str,
+    safe_name: str,
+) -> None:
+    """将上传的插件同时写入待审区。"""
+    import json as _json
+
+    pending_dir = Path("data/plugin_uploads") / meta.get("name", "unknown")
+    pending_dir.mkdir(parents=True, exist_ok=True)
+
+    target = pending_dir / safe_name
+    fd, tmp_path = tempfile.mkstemp(
+        dir=str(pending_dir), prefix=".tmp_upload_", suffix=".py"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(source)
+        os.replace(tmp_path, target)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+    # 构建 V3 metadata 并写入
+    v3_meta = _build_v3_metadata(meta, kind)
+    meta_path = pending_dir / "metadata.json"
+    fd, tmp_meta = tempfile.mkstemp(
+        dir=str(pending_dir), prefix=".tmp_meta_", suffix=".json"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            _json.dump(v3_meta, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_meta, meta_path)
+    except Exception:
+        if os.path.exists(tmp_meta):
+            os.unlink(tmp_meta)
+        raise
+
+
+def _build_v3_metadata(meta: dict[str, Any], kind: str) -> dict[str, Any]:
+    """将旧 PLUGIN_META 转为 V3 metadata 格式。"""
+    kind_to_type = {
+        "source": "spider",
+        "fetcher": "spider",
+        "parser": "processor",
+        "processor": "processor",
+        "exporter": "storage",
+        "presenter": "presenter",
+        "utility": "processor",
+    }
+    plugin_type = kind_to_type.get(kind, kind)
+    name = meta.get("name", "unknown")
+    entry_point = meta.get("entry_point", f"plugins.{kind}.{name}.plugin:{name.title().replace('_', '')}Plugin")
+
+    return {
+        "name": name,
+        "version": meta.get("version", "1.0.0"),
+        "author": meta.get("author", "unknown"),
+        "plugin_type": plugin_type,
+        "input_schema": meta.get("input_schema", "TaskConfigDTO.v1"),
+        "output_schema": meta.get("output_schema", "RawDataBatch.v1"),
+        "entry_point": entry_point,
+        "dependencies": meta.get("dependencies", []),
+        "min_core_version": meta.get("min_core_version", "3.0.0"),
+        "config_schema": meta.get("config_schema", {}),
+        "license": meta.get("license", ""),
+        "description": meta.get("description", ""),
+    }
 
 
 def delete_plugin(kind: str, plugin_id: str) -> bool:
@@ -484,6 +585,136 @@ def plugin_config(kind: str, plugin_id: str) -> dict[str, Any]:
     return dict(plugin.get("config", {})) if plugin else {}
 
 
+# ── V3.0 Registry 适配层 ──
+# registry 是唯一能力表；旧函数表/类表从其派生兼容视图。
+
+# 旧 kind → V3.0 plugin_type 映射（计划书 §6.1）
+_KIND_TO_PLUGIN_TYPE: dict[str, str] = {
+    "source": "spider",       # source 配置，实际不作为独立插件类型
+    "fetcher": "spider",
+    "parser": "processor",
+    "processor": "processor",
+    "exporter": "storage",
+    "presenter": "presenter",
+    "utility": "processor",   # utility 映射为受管基础服务
+}
+
+# V3.0 plugin_type → 旧 kind（反向，用于兼容视图）
+_PLUGIN_TYPE_TO_KINDS: dict[str, list[str]] = {
+    "spider": ["fetcher"],
+    "processor": ["parser", "processor"],
+    "storage": ["exporter"],
+    "presenter": ["presenter"],
+    "ui": ["presenter"],  # 旧 presenter 包含 UI 组件
+}
+
+# fetcher↔spider 的 static_html 与旧 static_list 别名
+_FETCHER_ALIASES: dict[str, str] = {
+    "static_list": "static_html",
+}
+
+_REGISTRY_SINGLETON: Any = None  # plugin_manager.registry.PluginRegistry
+
+
+def _get_registry() -> Any:
+    """获取或创建全局 PluginRegistry 实例。"""
+    global _REGISTRY_SINGLETON
+    if _REGISTRY_SINGLETON is None:
+        from plugin_manager.registry import PluginRegistry
+        _REGISTRY_SINGLETON = PluginRegistry()
+        # 自动扫描一次
+        _REGISTRY_SINGLETON.scan()
+    return _REGISTRY_SINGLETON
+
+
+def _registry_to_legacy_kind(plugin_type: str) -> str:
+    """V3.0 plugin_type → 旧 kind（返回主要映射）。"""
+    mapping = {
+        "spider": "fetcher",
+        "processor": "processor",
+        "storage": "exporter",
+        "presenter": "presenter",
+        "ui": "presenter",
+    }
+    return mapping.get(plugin_type, plugin_type)
+
+
+def _derive_legacy_plugins_from_registry() -> list[dict[str, Any]]:
+    """从 registry 快照派生旧七类兼容视图。"""
+    registry = _get_registry()
+    snapshot = registry.current_snapshot
+    if snapshot is None:
+        return []
+
+    config = load_plugin_config()
+    overrides = config.get("overrides", {})
+    pipeline = config.get("pipeline", {})
+    plugins: list[dict[str, Any]] = []
+
+    for pid, entry in snapshot.plugins.items():
+        desc = entry.descriptor
+        kind = _registry_to_legacy_kind(desc.plugin_type)
+
+        # 跳过非可执行状态的插件
+        from plugin_manager.registry import PluginState
+        if entry.state not in (PluginState.APPROVED, PluginState.LOADED):
+            continue
+
+        key = f"{kind}:{desc.name}"
+        # 应用别名
+        actual_name = desc.name
+        for alias, canonical in _FETCHER_ALIASES.items():
+            if desc.name == canonical and kind == "fetcher":
+                # 保留原始名，但建立别名映射
+                pass
+
+        override = overrides.get(key, {})
+        plugin_dict = {
+            "id": desc.name,
+            "name": desc.name,
+            "kind": kind,
+            "version": desc.version,
+            "author": desc.author,
+            "description": desc.description,
+            "builtin": True,  # registry 中的默认视为内置
+            "enabled": bool(override.get("enabled", True)),
+            "config": override.get("config", {}) if isinstance(override, dict) else {},
+            "interface": PLUGIN_INTERFACES.get(kind, ""),
+            "config_schema": desc.config_schema,
+        }
+        plugins.append(plugin_dict)
+
+        # 为 fetcher↔spider 建立别名条目
+        for alias, canonical in _FETCHER_ALIASES.items():
+            if desc.name == canonical and kind == "fetcher":
+                alias_dict = dict(plugin_dict)
+                alias_dict["id"] = alias
+                alias_dict["name"] = alias
+                alias_key = f"{kind}:{alias}"
+                alias_override = overrides.get(alias_key, {})
+                alias_dict["enabled"] = bool(alias_override.get("enabled", True))
+                plugins.append(alias_dict)
+
+    # 添加 weight（processor/exporter）
+    for plugin in plugins:
+        if plugin["kind"] in ("processor", "exporter"):
+            plugin["weight"] = pipeline.get(
+                f"{plugin['kind']}s", {}
+            ).get(plugin["id"])
+
+    # 旧 weight 按 (weight, id) 排序
+    return sorted(
+        plugins,
+        key=lambda p: (PLUGIN_KINDS.index(p["kind"]), p.get("weight") or 0, p["id"]),
+    )
+
+
+def refresh_registry() -> None:
+    """强制刷新 registry（用于测试或手动重载）。"""
+    global _REGISTRY_SINGLETON
+    _REGISTRY_SINGLETON = None
+
+
 __all__ = [
     "PLUGIN_KINDS",
     "PLUGIN_INTERFACES",
@@ -500,4 +731,5 @@ __all__ = [
     "reload_external_plugins",
     "is_enabled",
     "plugin_config",
+    "refresh_registry",
 ]

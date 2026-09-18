@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <title>Task Definition - Console</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
+        .header { background: #2c3e50; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+        .header h1 { font-size: 1.3rem; }
+        .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
+        .header a:hover { color: #fff; }
+        .form-container { max-width: 720px; margin: 2rem auto; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; }
+        .form-container h2 { font-size: 1.2rem; color: #2c3e50; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
+        .form-group .hint { font-size: 0.75rem; color: #999; margin-bottom: 0.3rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .actions button { padding: 0.6rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .btn-primary { background: #2c3e50; color: #fff; }
+        .btn-primary:hover { background: #34495e; }
+        .btn-secondary { background: #fff; color: #2c3e50; border: 1px solid #2c3e50; }
+        .status { margin-top: 1rem; padding: 0.75rem; border-radius: 4px; display: none; font-size: 0.85rem; }
+        .status.success { display: block; background: #d4edda; color: #155724; }
+        .status.error { display: block; background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html">&larr; Console</a>
+        <h1>Task Definition</h1>
+    </header>
+    <div class="form-container">
+        <h2>Define New Task</h2>
+        <form id="task-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dataset">Dataset</label>
+                    <div class="hint">Unique dataset identifier</div>
+                    <input type="text" id="dataset" name="dataset" required placeholder="e.g., education_tutors_2026" />
+                </div>
+                <div class="form-group">
+                    <label for="source_id">Source ID</label>
+                    <div class="hint">Data source identifier</div>
+                    <input type="text" id="source_id" name="source_id" required placeholder="e.g., static_faculty" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="target_url">Target URL</label>
+                <div class="hint">Entry point URL for crawling</div>
+                <input type="url" id="target_url" name="target_url" required placeholder="https://example.edu/faculty" />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="profile_id">Profile</label>
+                    <select id="profile_id" name="profile_id">
+                        <option value="education.tutor.v1">Education Tutor v1</option>
+                        <option value="education.major.v1">Education Major v1</option>
+                        <option value="generic">Generic</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="spider">Spider Plugin</label>
+                    <select id="spider" name="spider">
+                        <option value="static_html">Static HTML</option>
+                        <option value="ajax_api">AJAX API</option>
+                        <option value="js_render">JS Render</option>
+                        <option value="pdf_list">PDF List</option>
+                        <option value="yzw_api">YZW API</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="params">Additional Parameters (JSON)</label>
+                <div class="hint">Plugin-specific configuration overrides</div>
+                <textarea id="params" name="params" placeholder='{"max_pages": 20, "selectors": {...}}'></textarea>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn-primary">Validate &amp; Create</button>
+                <button type="button" class="btn-secondary" onclick="validateOnly()">Validate Only</button>
+            </div>
+        </form>
+        <div id="status" class="status"></div>
+    </div>
+    <script>
+    (function() {
+        'use strict';
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function showStatus(msg, isError) {
+            var el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + (isError ? 'error' : 'success');
+        }
+
+        function buildPayload() {
+            var form = document.getElementById('task-form');
+            var params = {};
+            var paramsStr = form.params.value.trim();
+            if (paramsStr) {
+                try { params = JSON.parse(paramsStr); } catch(e) { throw new Error('Invalid JSON in parameters'); }
+            }
+            return {
+                dataset: form.dataset.value,
+                source_id: form.source_id.value,
+                target_url: form.target_url.value,
+                profile_id: form.profile_id.value,
+                spider: form.spider.value,
+                params: params
+            };
+        }
+
+        document.getElementById('task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            try {
+                var payload = buildPayload();
+                fetch('/api/pipeline/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
+                }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+                .then(function(result) {
+                    if (result.ok) {
+                        showStatus('Task created: run_id=' + (result.data.run_id || 'unknown'), false);
+                    } else {
+                        showStatus('Error: ' + (result.data.error || result.data.message || 'Validation failed'), true);
+                    }
+                }).catch(function(err) { showStatus('Request failed: ' + err.message, true); });
+            } catch(err) { showStatus(err.message, true); }
+        });
+
+        window.validateOnly = function() {
+            try {
+                var payload = buildPayload();
+                fetch('/api/pipeline/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
+                }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+                .then(function(result) {
+                    if (result.ok) {
+                        showStatus('Validation passed', false);
+                    } else {
+                        showStatus('Validation failed: ' + JSON.stringify(result.data.errors || result.data.message), true);
+                    }
+                }).catch(function(err) { showStatus('Request failed: ' + err.message, true); });
+            } catch(err) { showStatus(err.message, true); }
+        };
+    })();
+    </script>
+</body>
+</html>

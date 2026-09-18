@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#a3e635", "description": "Primary accent color (green terminal)"},
+  "color-secondary": {"type": "color", "default": "#84cc16", "description": "Secondary accent color"},
+  "bg-primary": {"type": "color", "default": "#1a1a2e", "description": "Main background"},
+  "bg-secondary": {"type": "color", "default": "#16213e", "description": "Alternate background"},
+  "text-primary": {"type": "color", "default": "#c8d6e5", "description": "Primary text color"},
+  "text-secondary": {"type": "color", "default": "#7f8fa6", "description": "Secondary text color"},
+  "border-color": {"type": "color", "default": "#2c3e6d", "description": "Border color"},
+  "font-family": {"type": "font", "default": "JetBrains Mono, Fira Code, Cascadia Code, Consolas, monospace", "description": "Monospace code font"},
+  "font-size-base": {"type": "size", "default": "13px", "description": "Base font size"},
+  "border-radius": {"type": "size", "default": "0px", "description": "Sharp terminal-style corners"},
+  "spacing-unit": {"type": "size", "default": "8px", "description": "Base spacing unit"}
+}

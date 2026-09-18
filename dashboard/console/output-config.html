@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <title>Output Definition - Console</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
+        .header { background: #2c3e50; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+        .header h1 { font-size: 1.3rem; }
+        .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
+        .header a:hover { color: #fff; }
+        .form-container { max-width: 800px; margin: 2rem auto; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; }
+        .form-container h2 { font-size: 1.2rem; color: #2c3e50; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
+        .form-group .hint { font-size: 0.75rem; color: #999; margin-bottom: 0.3rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .checkbox-group label { display: flex; align-items: center; gap: 0.3rem; font-weight: normal; font-size: 0.85rem; }
+        .template-preview { border: 1px solid #eee; border-radius: 4px; padding: 0.75rem; margin-top: 0.5rem; background: #fafafa; font-size: 0.8rem; color: #666; min-height: 60px; }
+        .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .actions button { padding: 0.6rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .btn-primary { background: #2c3e50; color: #fff; }
+        .btn-primary:hover { background: #34495e; }
+        .btn-secondary { background: #fff; color: #2c3e50; border: 1px solid #2c3e50; }
+        .btn-accent { background: #27ae60; color: #fff; }
+        .btn-accent:hover { background: #219a52; }
+        .status { margin-top: 1rem; padding: 0.75rem; border-radius: 4px; display: none; font-size: 0.85rem; }
+        .status.success { display: block; background: #d4edda; color: #155724; }
+        .status.error { display: block; background: #f8d7da; color: #721c24; }
+        .divider { border: none; border-top: 1px solid #eee; margin: 1.5rem 0; }
+        .rerender-section { background: #f8f9fa; padding: 1.5rem; border-radius: 6px; margin-top: 1rem; }
+        .rerender-section h3 { font-size: 1rem; color: #2c3e50; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html">&larr; Console</a>
+        <h1>Output Definition</h1>
+    </header>
+    <div class="form-container">
+        <h2>Configure Output</h2>
+        <form id="output-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="run_id">Run ID</label>
+                    <div class="hint">Pipeline run to render output from</div>
+                    <input type="text" id="run_id" name="run_id" required placeholder="32-char hex run ID" />
+                </div>
+                <div class="form-group">
+                    <label for="output_format">Output Format</label>
+                    <select id="output_format" name="output_format">
+                        <option value="html">HTML (standalone)</option>
+                        <option value="text">Plain Text</option>
+                        <option value="markdown">Markdown</option>
+                        <option value="jsonl">JSONL</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" id="template-group">
+                <label for="template">Template</label>
+                <div class="hint">HTML template from registry (HTML format only)</div>
+                <select id="template" name="template">
+                    <option value="minimal-light">Minimal Light (default)</option>
+                </select>
+                <div id="template-preview" class="template-preview">Select a template to see preview</div>
+            </div>
+            <div class="form-group">
+                <label>Field Selection</label>
+                <div class="hint">Choose which fields to include in output</div>
+                <div id="field-list" class="checkbox-group">
+                    <span style="color:#999; font-size:0.85rem;">Fields will load after entering a Run ID</span>
+                </div>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn-primary">Generate Output</button>
+                <button type="button" class="btn-secondary" id="load-fields-btn">Load Fields</button>
+            </div>
+        </form>
+
+        <hr class="divider">
+        <div class="rerender-section">
+            <h3>Re-render from Existing Records</h3>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:1rem;">Generate output from a completed run without re-crawling.</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="rerun_id">Source Run ID</label>
+                    <input type="text" id="rerun_id" name="rerun_id" placeholder="Completed run ID" />
+                </div>
+                <div class="form-group">
+                    <label for="rerun_format">Format</label>
+                    <select id="rerun_format">
+                        <option value="html">HTML</option>
+                        <option value="csv">CSV</option>
+                        <option value="jsonl">JSONL</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn-accent" id="rerender-btn">Re-render Output</button>
+        </div>
+        <div id="status" class="status"></div>
+    </div>
+    <script>
+    (function() {
+        'use strict';
+
+        var TEMPLATES = [];
+        var FIELDS = [];
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function showStatus(msg, isError) {
+            var el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + (isError ? 'error' : 'success');
+        }
+
+        // Load templates from registry
+        function loadTemplates() {
+            fetch('/templates/registry.json', { credentials: 'same-origin' })
+                .then(function(r) { return r.ok ? r.json() : { templates: [] }; })
+                .then(function(data) {
+                    TEMPLATES = data.templates || [];
+                    var sel = document.getElementById('template');
+                    sel.innerHTML = '';
+                    TEMPLATES.forEach(function(t) {
+                        var opt = document.createElement('option');
+                        opt.value = t.name;
+                        opt.textContent = t.name + ' - ' + (t.description || '');
+                        sel.appendChild(opt);
+                    });
+                })
+                .catch(function() { /* keep default options */ });
+        }
+
+        document.getElementById('template').addEventListener('change', function() {
+            var name = this.value;
+            var tmpl = TEMPLATES.find(function(t) { return t.name === name; });
+            var preview = document.getElementById('template-preview');
+            if (tmpl) {
+                preview.textContent = tmpl.description + ' | Theme: ' + (tmpl.theme || 'light') + ' | Version: ' + (tmpl.version || '1.0.0');
+            }
+        });
+
+        // Load fields from run data
+        document.getElementById('load-fields-btn').addEventListener('click', function() {
+            var runId = document.getElementById('run_id').value.trim();
+            if (!runId) { showStatus('Enter a Run ID first', true); return; }
+
+            fetch('/api/pipeline/runs/' + encodeURIComponent(runId), { credentials: 'same-origin' })
+                .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('Run not found')); })
+                .then(function(data) {
+                    FIELDS = data.fields || data.record_fields || ['name', 'title', 'university', 'college'];
+                    var container = document.getElementById('field-list');
+                    container.innerHTML = '';
+                    FIELDS.forEach(function(f) {
+                        var label = document.createElement('label');
+                        var cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.name = 'fields';
+                        cb.value = f;
+                        cb.checked = true;
+                        label.appendChild(cb);
+                        label.appendChild(document.createTextNode(' ' + f));
+                        container.appendChild(label);
+                    });
+                })
+                .catch(function(err) { showStatus('Could not load fields: ' + err.message, true); });
+        });
+
+        // Generate output
+        document.getElementById('output-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var form = document.getElementById('output-form');
+            var selectedFields = [];
+            form.querySelectorAll('input[name="fields"]:checked').forEach(function(cb) {
+                selectedFields.push(cb.value);
+            });
+
+            var payload = {
+                run_id: form.run_id.value,
+                output_format: form.output_format.value,
+                template: form.template.value,
+                field_selection: selectedFields.length ? selectedFields : undefined
+            };
+
+            fetch('/api/pipeline/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+            .then(function(result) {
+                if (result.ok) {
+                    showStatus('Output generated: ' + (result.data.output_path || result.data.run_id || 'success'), false);
+                } else {
+                    showStatus('Error: ' + (result.data.error || result.data.message || 'Failed'), true);
+                }
+            }).catch(function(err) { showStatus('Request failed: ' + err.message, true); });
+        });
+
+        // Re-render
+        document.getElementById('rerender-btn').addEventListener('click', function() {
+            var runId = document.getElementById('rerun_id').value.trim();
+            var format = document.getElementById('rerun_format').value;
+            if (!runId) { showStatus('Enter a source Run ID', true); return; }
+
+            fetch('/api/pipeline/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ source_run_id: runId, output_format: format, rerender: true })
+            }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+            .then(function(result) {
+                if (result.ok) {
+                    showStatus('Re-render complete: ' + (result.data.output_path || result.data.run_id || 'done'), false);
+                } else {
+                    showStatus('Re-render failed: ' + (result.data.error || result.data.message), true);
+                }
+            }).catch(function(err) { showStatus('Request failed: ' + err.message, true); });
+        });
+
+        // Toggle template group visibility based on format
+        document.getElementById('output_format').addEventListener('change', function() {
+            document.getElementById('template-group').style.display = this.value === 'html' ? '' : 'none';
+        });
+
+        loadTemplates();
+    })();
+    </script>
+</body>
+</html>

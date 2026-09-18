@@ -1,0 +1,31 @@
+{
+  "name": "education_merge",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RecordBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.education_merge.plugin:EducationMergePlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "group_by": {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": ["university", "college", "year"],
+        "description": "Fields to group records before merging"
+      },
+      "fuzzy_threshold": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "default": 0.85,
+        "description": "Fuzzy match threshold (from V2.2 fixture)"
+      }
+    },
+    "additionalProperties": false
+  }
+}

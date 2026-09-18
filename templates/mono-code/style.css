@@ -1,0 +1,68 @@
+/* mono-code - Monospace code-style layout, dark theme */
+:root {
+  --color-primary: #a3e635;
+  --color-secondary: #84cc16;
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --text-primary: #c8d6e5;
+  --text-secondary: #7f8fa6;
+  --border-color: #2c3e6d;
+  --font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  --font-size-base: 13px;
+  --border-radius: 0px;
+  --spacing-unit: 8px;
+}
+
+.tpl-mono-code {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 2);
+  line-height: 1.6;
+}
+
+.tpl-mono-code .tpl-code-header {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  color: var(--color-primary);
+  font-size: 1.2em;
+  font-weight: 700;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.tpl-mono-code .tpl-stats-terminal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  font-size: 0.85em;
+  color: var(--color-secondary);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-mono-code .tpl-stats-terminal::before {
+  content: "$ ";
+  color: var(--color-primary);
+}
+
+.tpl-mono-code .tpl-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-mono-code .tpl-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tpl-mono-code .tpl-content td,
+.tpl-mono-code .tpl-content th {
+  padding: var(--spacing-unit);
+  border-bottom: 1px solid var(--border-color);
+}

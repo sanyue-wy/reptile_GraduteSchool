@@ -1,0 +1,71 @@
+# paper_collection 预设 —— 论文收集（非教育领域，验证通用性）
+# 用途：从学术网站采集论文元数据（标题、作者、摘要、DOI 等）
+# 验证：非教育场景的通用数据采集能力
+
+dataset: paper_collection
+source_id: journal_api
+profile_id: custom
+target_url: "https://arxiv.org/list/cs/pastweek"
+max_pages: 50
+
+fields:
+  - name: title
+    type: string
+    required: true
+    description: "论文标题"
+  - name: authors
+    type: array
+    required: true
+    description: "作者列表"
+  - name: abstract
+    type: string
+    required: false
+    description: "摘要"
+  - name: doi
+    type: string
+    required: true
+    description: "数字对象标识符"
+  - name: journal
+    type: string
+    required: false
+    description: "期刊名称"
+  - name: year
+    type: integer
+    required: true
+    description: "发表年份"
+    minimum: 1900
+    maximum: 2030
+  - name: volume
+    type: string
+    required: false
+    description: "卷号"
+  - name: issue
+    type: string
+    required: false
+    description: "期号"
+  - name: pages
+    type: string
+    required: false
+    description: "页码范围"
+  - name: keywords
+    type: array
+    required: false
+    description: "关键词"
+  - name: pdf_url
+    type: string
+    required: false
+    description: "PDF 下载链接"
+
+selectors: {}
+
+plugins:
+  acquire: ajax_api
+  parse:
+    - faculty_parser
+  post:
+    - normalize
+    - dedup
+    - statistics
+  store:
+    - jsonl_store
+  present: []

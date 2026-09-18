@@ -1,0 +1,33 @@
+{
+  "name": "html_presenter",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "presenter",
+  "input_schema": "PresentationRequest.v1",
+  "output_schema": "RenderedOutputDTO.v1",
+  "entry_point": "plugins.presenters.html_presenter.plugin:HtmlPresenterPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "output_dir": {
+        "type": "string",
+        "description": "Optional output directory for HTML files"
+      },
+      "template": {
+        "type": "string",
+        "default": "minimal-light",
+        "description": "Template name from templates/ registry"
+      },
+      "mode": {
+        "type": "string",
+        "enum": ["standalone", "hosted"],
+        "default": "standalone",
+        "description": "standalone: inline everything, file:// safe; hosted: API data refs"
+      }
+    },
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

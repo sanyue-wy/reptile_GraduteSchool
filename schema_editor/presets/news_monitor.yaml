@@ -1,0 +1,71 @@
+# news_monitor 预设 —— 新闻监控
+# 用途：从新闻站点采集文章（标题、来源、时间、正文等）
+# 验证：非教育场景、动态内容采集
+
+dataset: news_monitor
+source_id: news_site
+profile_id: custom
+target_url: "https://news.sina.com.cn/tech"
+max_pages: 20
+
+fields:
+  - name: headline
+    type: string
+    required: true
+    description: "新闻标题"
+  - name: source
+    type: string
+    required: true
+    description: "来源/发布者"
+  - name: published_at
+    type: string
+    required: true
+    description: "发布时间 (ISO 8601)"
+  - name: summary
+    type: string
+    required: false
+    description: "摘要"
+  - name: content
+    type: string
+    required: false
+    description: "正文内容"
+  - name: category
+    type: string
+    required: false
+    description: "分类"
+    enum: ["科技", "教育", "财经", "社会", "国际", "体育", "其他"]
+  - name: author
+    type: string
+    required: false
+    description: "作者"
+  - name: image_url
+    type: string
+    required: false
+    description: "配图 URL"
+  - name: tags
+    type: array
+    required: false
+    description: "标签"
+  - name: url
+    type: string
+    required: true
+    description: "原文链接"
+
+selectors:
+  item_selector: "article.news-item"
+  title_selector: "h2.headline"
+  date_selector: "time.published"
+  content_selector: ".article-body"
+
+plugins:
+  acquire: js_render
+  parse:
+    - faculty_parser
+  post:
+    - normalize
+    - dedup
+    - statistics
+  store:
+    - jsonl_store
+  present:
+    - text_presenter

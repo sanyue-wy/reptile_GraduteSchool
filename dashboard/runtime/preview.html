@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <title>Output Preview - Runtime</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
+        .header { background: #34495e; color: #fff; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 1.1rem; }
+        .header .info { font-size: 0.8rem; color: #adb5bd; }
+        .auth-error { text-align: center; padding: 4rem 2rem; }
+        .auth-error h2 { color: #e74c3c; margin-bottom: 0.5rem; }
+        .auth-error p { color: #666; }
+        .preview-frame { width: 100%; height: calc(100vh - 50px); border: none; }
+        .meta-bar { padding: 0.5rem 2rem; background: #fff; border-bottom: 1px solid #dee2e6; font-size: 0.8rem; color: #666; display: flex; gap: 1.5rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Output Preview</h1>
+        <span class="info" id="output-info"></span>
+    </header>
+    <div id="auth-error" class="auth-error" style="display:none;">
+        <h2>Access Denied</h2>
+        <p>This output requires a valid authorization token.</p>
+        <p style="margin-top:1rem; font-size:0.85rem;">Token is passed as <code>?token=...</code> query parameter.</p>
+    </div>
+    <div id="meta-bar" class="meta-bar" style="display:none;"></div>
+    <iframe id="preview-frame" class="preview-frame" style="display:none;"></iframe>
+    <script>
+    (function() {
+        'use strict';
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        var token = params.get('token');
+        var runId = params.get('run_id');
+        var outputId = params.get('output_id');
+
+        if (!token) {
+            document.getElementById('auth-error').style.display = '';
+            return;
+        }
+
+        // Validate token and load output metadata
+        var metaUrl = '/api/pipeline/runs/' + encodeURIComponent(runId || '') + '?token=' + encodeURIComponent(token);
+
+        fetch(metaUrl, { credentials: 'same-origin' })
+            .then(function(r) {
+                if (!r.ok) throw new Error('Unauthorized or not found');
+                return r.json();
+            })
+            .then(function(data) {
+                var outputs = data.outputs || [];
+                var output = outputs.find(function(o) { return o.output_id === outputId; }) || outputs[0];
+
+                if (!output) {
+                    document.getElementById('auth-error').style.display = '';
+                    document.getElementById('auth-error').querySelector('p').textContent = 'Output not found in run.';
+                    return;
+                }
+
+                // Show metadata bar
+                var metaBar = document.getElementById('meta-bar');
+                metaBar.style.display = '';
+                metaBar.innerHTML =
+                    '<span>Format: ' + escapeHtml(output.output_format) + '</span>' +
+                    '<span>Run: ' + escapeHtml(runId || data.run_id) + '</span>' +
+                    '<span>Generated: ' + escapeHtml(output.created_at || '—') + '</span>';
+
+                document.getElementById('output-info').textContent =
+                    escapeHtml(output.output_format) + ' | ' + escapeHtml(output.output_id || '');
+
+                // Load output content via iframe
+                // In standalone mode, serve the HTML file directly
+                // For other formats, display metadata only (download link)
+                if (output.output_format === 'html' && output.path) {
+                    var frame = document.getElementById('preview-frame');
+                    frame.style.display = '';
+                    frame.src = '/api/outputs/serve?path=' + encodeURIComponent(output.path) + '&token=' + encodeURIComponent(token);
+                } else {
+                    var frame = document.getElementById('preview-frame');
+                    frame.style.display = '';
+                    var content = '<html><body style="font-family:sans-serif;padding:2rem;">' +
+                        '<h2>Output: ' + escapeHtml(output.output_format) + '</h2>' +
+                        '<p>Path: ' + escapeHtml(output.path || '—') + '</p>' +
+                        '<p>Size: ' + escapeHtml((output.metadata && output.metadata.size_bytes) || '—') + ' bytes</p>' +
+                        '<p>Records: ' + escapeHtml((output.metadata && output.metadata.record_count) || '—') + '</p>' +
+                        '</body></html>';
+                    frame.srcdoc = content;
+                }
+            })
+            .catch(function(err) {
+                document.getElementById('auth-error').style.display = '';
+                document.getElementById('auth-error').querySelector('p').textContent = err.message;
+            });
+    })();
+    </script>
+</body>
+</html>

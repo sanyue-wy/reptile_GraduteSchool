@@ -1,0 +1,17 @@
+{
+  "name": "normalize",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RecordBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.normalize.plugin:NormalizePlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

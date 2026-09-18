@@ -493,6 +493,11 @@ class TestMediaStorePlugin:
         ctx.storage = Mock()
         ctx.storage.workspace = ManagedWorkspace("test_run", tmp_path)
         ctx.storage.workspace.create()
+        ctx.allowed_paths = [
+            str((tmp_path / "test_run" / "media").resolve()),
+            str((tmp_path / "test_run" / "store").resolve()),
+            str((tmp_path / "test_run" / "outputs").resolve()),
+        ]
         return ctx
 
     def test_plugin_metadata(self, plugin):
@@ -678,6 +683,9 @@ class TestIdempotency:
                 }
             }
         }
+        ctx.storage = Mock()
+        ctx.storage.workspace = ManagedWorkspace("test_run", tmp_path)
+        ctx.storage.workspace.create()
         plugin.setup(ctx)
 
         records = [{
@@ -689,16 +697,301 @@ class TestIdempotency:
             "created_at": "2026-01-01T00:00:00",
         }]
 
-        # Insert twice
-        written1, skipped1 = plugin._upsert_records(records, "test")
-        written2, skipped2 = plugin._upsert_records(records, "test")
+        # Write a data_ref file with the records
+        data_ref = tmp_path / "batch.jsonl"
+        import json
+        with open(data_ref, "w") as f:
+            for r in records:
+                f.write(json.dumps(r) + "\n")
 
-        assert written1 == 1
-        assert skipped1 == 0
-        assert written2 == 0
-        assert skipped2 == 1  # Second time is skipped (updated)
+        request = StoreRequest(
+            dataset="test",
+            run_id="idem_run",
+            target_id="sql_out",
+            format_id="sqlite",
+            data_refs=[str(data_ref)],
+            idempotency_key="sql_idem_key",
+        )
+
+        # First execute
+        receipt1 = plugin.execute(request, ctx)
+        assert receipt1.written == 1
+        assert receipt1.skipped == 0
+
+        # Second execute with same key - should be skipped via idempotency
+        receipt2 = plugin.execute(request, ctx)
+        assert receipt2.skipped > 0
+        assert receipt2.written == 0
 
         plugin.close()
+
+
+# ============================================================================
+# Idempotency Infrastructure Tests
+# ============================================================================
+
+class TestIdempotencyRegistry:
+    """Test the file-based idempotency key registry."""
+
+    def test_check_returns_none_for_new_key(self, tmp_path):
+        from infra.storage.idempotency import check_and_reserve
+        result = check_and_reserve(tmp_path, "run1", "key1")
+        assert result is None
+
+    def test_commit_and_check(self, tmp_path):
+        from infra.storage.idempotency import check_and_reserve, commit
+        receipt = {"target_id": "t", "records_written": 5, "output_ref": "/out"}
+        commit(tmp_path, "run1", "key1", receipt)
+        cached = check_and_reserve(tmp_path, "run1", "key1")
+        assert cached is not None
+        assert cached["records_written"] == 5
+        assert cached["output_ref"] == "/out"
+
+    def test_different_keys_independent(self, tmp_path):
+        from infra.storage.idempotency import check_and_reserve, commit
+        commit(tmp_path, "run1", "key_a", {"target_id": "a", "records_written": 1, "output_ref": "x"})
+        assert check_and_reserve(tmp_path, "run1", "key_b") is None
+        assert check_and_reserve(tmp_path, "run1", "key_a") is not None
+
+    def test_clear_removes_registry(self, tmp_path):
+        from infra.storage.idempotency import check_and_reserve, commit, clear
+        commit(tmp_path, "run1", "key1", {"target_id": "t", "records_written": 1, "output_ref": "x"})
+        assert check_and_reserve(tmp_path, "run1", "key1") is not None
+        clear(tmp_path, "run1")
+        assert check_and_reserve(tmp_path, "run1", "key1") is None
+
+    def test_concurrent_commit_safety(self, tmp_path):
+        from infra.storage.idempotency import commit, check_and_reserve
+        errors = []
+
+        def writer(key):
+            try:
+                commit(tmp_path, "run_c", key, {"target_id": key, "records_written": 1, "output_ref": key})
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=writer, args=(f"key_{i}",)) for i in range(10)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert errors == []
+        # All keys should be committed
+        for i in range(10):
+            assert check_and_reserve(tmp_path, "run_c", f"key_{i}") is not None
+
+
+# ============================================================================
+# Concurrent File Lock Tests
+# ============================================================================
+
+class TestConcurrentFileLock:
+    """Test 4-thread concurrent read-modify-write with no lost updates."""
+
+    def test_four_threads_concurrent_json_read_modify_write(self, tmp_path):
+        from infra.storage.atomic_io import atomic_write_json, read_json, path_lock
+
+        path = tmp_path / "shared.json"
+        atomic_write_json(path, {"counter": 0})
+
+        errors = []
+
+        def increment():
+            try:
+                for _ in range(10):
+                    with path_lock(path):
+                        data = read_json(path, {"counter": 0})
+                        data["counter"] = data.get("counter", 0) + 1
+                        atomic_write_json(path, data)
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=increment) for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert errors == []
+        final = read_json(path)
+        assert final["counter"] == 40  # 4 threads * 10 increments each
+
+
+# ============================================================================
+# SQLite Fault Injection Tests
+# ============================================================================
+
+class TestSqlFaultInjection:
+    """Verify SQLite transaction rollback leaves no partial state."""
+
+    def test_transaction_rollback_on_exception(self, tmp_path):
+        from plugins.storage.sql_store.plugin import SqlStorePlugin
+        from contextlib import contextmanager
+
+        db_path = tmp_path / "fault.db"
+        plugin = SqlStorePlugin()
+        ctx = Mock(spec=PluginContext)
+        ctx.config_snapshot = {
+            "plugins": {"sql_store": {"database_path": str(db_path)}}
+        }
+        ctx.storage = Mock()
+        ctx.storage.workspace = ManagedWorkspace("run_fault", tmp_path)
+        ctx.storage.workspace.create()
+        plugin.setup(ctx)
+
+        # Insert a record successfully
+        records_ok = [{
+            "record_id": "ok_rec",
+            "schema_id": "test.v1",
+            "fields": {"val": 1},
+            "provenance": {},
+            "media_refs": [],
+            "created_at": "2026-01-01T00:00:00",
+        }]
+        w, s = plugin._upsert_records(records_ok, "test")
+        assert w == 1
+
+        # Patch _transaction to raise mid-operation, simulating a failure
+        original_transaction = plugin._transaction
+
+        @contextmanager
+        def failing_transaction():
+            cur = plugin._conn.cursor()
+            try:
+                yield cur
+                # Simulate a failure before commit
+                raise sqlite3.OperationalError("simulated failure")
+            except Exception:
+                plugin._conn.rollback()
+                raise
+
+        plugin._transaction = failing_transaction
+
+        records_bad = [{
+            "record_id": "bad_rec",
+            "schema_id": "test.v1",
+            "fields": {"val": 2},
+            "provenance": {},
+            "media_refs": [],
+            "created_at": "2026-01-01T00:00:00",
+        }]
+
+        with pytest.raises(sqlite3.OperationalError):
+            plugin._upsert_records(records_bad, "test")
+
+        plugin._transaction = original_transaction
+
+        # Verify: ok_rec still exists, bad_rec does not
+        cur = plugin._conn.cursor()
+        cur.execute("SELECT record_id FROM records")
+        ids = {row[0] for row in cur.fetchall()}
+        assert "ok_rec" in ids
+        assert "bad_rec" not in ids
+
+        # Replay after failure should succeed
+        w2, s2 = plugin._upsert_records(records_bad, "test")
+        assert w2 == 1
+
+        plugin.close()
+
+
+# ============================================================================
+# MediaStore Path Safety Tests
+# ============================================================================
+
+class TestMediaPathSafety:
+    """Test that MediaStore validates paths are within allowed directories."""
+
+    def test_reject_path_outside_allowed(self, tmp_path):
+        from infra.storage.workspace import resolve_safe_path
+
+        allowed = [str((tmp_path / "allowed").resolve())]
+        (tmp_path / "allowed").mkdir()
+
+        with pytest.raises(ValueError, match="not within allowed"):
+            resolve_safe_path(str(tmp_path / "outside" / "file.txt"), allowed)
+
+    def test_accept_path_within_allowed(self, tmp_path):
+        from infra.storage.workspace import resolve_safe_path
+
+        allowed_dir = tmp_path / "allowed"
+        allowed_dir.mkdir()
+        test_file = allowed_dir / "subdir" / "file.txt"
+
+        resolved = resolve_safe_path(str(test_file), [str(allowed_dir.resolve())])
+        assert resolved == test_file.resolve()
+
+
+# ============================================================================
+# Storage Converter Tests
+# ============================================================================
+
+class TestStorageConverter:
+    """Tests for converters/storage_converter.py."""
+
+    def test_records_from_data_refs_jsonl(self, tmp_path):
+        from converters.storage_converter import records_from_data_refs
+
+        batch = tmp_path / "batch.jsonl"
+        import json
+        with open(batch, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"record_id": "r1", "fields": {"name": "A"}}) + "\n")
+            f.write(json.dumps({"record_id": "r2", "fields": {"name": "B"}}) + "\n")
+
+        records = records_from_data_refs([str(batch)])
+        assert len(records) == 2
+        assert records[0]["record_id"] == "r1"
+
+    def test_records_from_data_refs_missing_file(self, tmp_path):
+        from converters.storage_converter import records_from_data_refs
+        records = records_from_data_refs([str(tmp_path / "missing.jsonl")])
+        assert records == []
+
+    def test_records_to_legacy_format(self):
+        from converters.storage_converter import records_to_legacy_format
+
+        raw = [{
+            "fields": {
+                "university": "TestUni",
+                "college": "TestCollege",
+                "name": "Dr. Smith",
+                "title": "Professor",
+                "advisor_status": "active",
+                "research_areas": ["AI", "ML"],
+            },
+            "provenance": {"url": "http://example.com"},
+        }]
+
+        legacy = records_to_legacy_format(raw)
+        assert len(legacy) == 1
+        assert legacy[0]["university"] == "TestUni"
+        assert legacy[0]["name"] == "Dr. Smith"
+        assert legacy[0]["research_areas"] == "AI, ML"
+        assert legacy[0]["source_url"] == "http://example.com"
+
+    def test_build_store_request_deterministic_key(self):
+        from converters.storage_converter import build_store_request
+
+        r1 = build_store_request(
+            dataset="test", run_id="run1", target_id="t1",
+            format_id="generic", data_refs=["a.jsonl", "b.jsonl"],
+        )
+        r2 = build_store_request(
+            dataset="test", run_id="run1", target_id="t1",
+            format_id="generic", data_refs=["b.jsonl", "a.jsonl"],
+        )
+        # Same refs in different order should produce same key
+        assert r1.idempotency_key == r2.idempotency_key
+
+    def test_build_store_request_explicit_key(self):
+        from converters.storage_converter import build_store_request
+
+        r = build_store_request(
+            dataset="test", run_id="run1", target_id="t1",
+            format_id="generic", idempotency_key="my_key",
+        )
+        assert r.idempotency_key == "my_key"
 
 
 if __name__ == "__main__":

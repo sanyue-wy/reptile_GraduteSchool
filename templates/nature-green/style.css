@@ -1,0 +1,53 @@
+/* nature-green - Nature-inspired green palette, light theme */
+:root {
+  --color-primary: #15803d;
+  --color-secondary: #22c55e;
+  --bg-primary: #f0fdf4;
+  --bg-secondary: #dcfce7;
+  --text-primary: #14532d;
+  --text-secondary: #4d7c5e;
+  --border-color: #86efac;
+  --font-family: "Nunito", "Quicksand", "Segoe UI", sans-serif;
+  --font-size-base: 15px;
+  --border-radius: 10px;
+  --spacing-unit: 8px;
+}
+
+.tpl-nature-green {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-nature-green .tpl-header-nature {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--color-primary);
+  padding: calc(var(--spacing-unit) * 2);
+  border-left: 4px solid var(--color-secondary);
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-nature-green .tpl-stats-leaf {
+  display: flex;
+  gap: calc(var(--spacing-unit) * 2);
+  padding: calc(var(--spacing-unit) * 2);
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-nature-green .tpl-content {
+  line-height: 1.7;
+}
+
+.tpl-nature-green .tpl-content a {
+  color: var(--color-primary);
+  text-decoration-color: var(--color-secondary);
+}

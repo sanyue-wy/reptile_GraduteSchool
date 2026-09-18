@@ -1,0 +1,24 @@
+{
+  "name": "faculty_parser",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RawDataBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.faculty_parser.plugin:FacultyParserPlugin",
+  "dependencies": ["beautifulsoup4"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "profile": {"type": "string", "enum": ["education.tutor.v1", "education.major.v1"], "default": "education.tutor.v1"},
+      "item_selector": {"type": "string", "default": ".teacher"},
+      "name_selector": {"type": "string", "default": "a"},
+      "research_selector": {"type": "string", "default": ".research"},
+      "profile_url_attr": {"type": "string", "default": "href"},
+      "base_url": {"type": "string"}
+    },
+    "additionalProperties": false
+  }
+}

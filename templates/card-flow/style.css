@@ -1,0 +1,59 @@
+/* card-flow - Card-based layout, light theme */
+:root {
+  --color-primary: #7c3aed;
+  --color-secondary: #a855f7;
+  --bg-primary: #f8f7ff;
+  --bg-secondary: #ffffff;
+  --text-primary: #1f1535;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --font-family: "DM Sans", "Segoe UI", sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 16px;
+  --spacing-unit: 8px;
+}
+
+.tpl-card-flow {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-card-flow .tpl-header {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-card-flow .tpl-stats-row {
+  display: flex;
+  gap: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-card-flow .tpl-stats-row > * {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  flex: 1;
+}
+
+.tpl-card-flow .tpl-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-card-flow .tpl-card-grid > * {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}

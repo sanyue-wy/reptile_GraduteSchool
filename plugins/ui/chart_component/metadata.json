@@ -1,0 +1,36 @@
+{
+  "name": "chart_component",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "ui",
+  "input_schema": "ViewModel.v1",
+  "output_schema": "UIComponentDTO.v1",
+  "entry_point": "plugins.ui.chart_component.plugin:ChartComponentPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "default_chart_type": {
+        "type": "string",
+        "enum": ["bar", "line", "pie"],
+        "default": "bar",
+        "description": "Default chart type when not specified"
+      },
+      "max_charts_per_view": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "default": 5,
+        "description": "Maximum number of charts to generate per view"
+      },
+      "auto_infer_charts": {
+        "type": "boolean",
+        "default": true,
+        "description": "Automatically infer charts from numeric/categorical fields"
+      }
+    },
+    "additionalProperties": false
+  }
+}

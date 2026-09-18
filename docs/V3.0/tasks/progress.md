@@ -85,7 +85,7 @@
 - 分支/worktree：Refactoring_code (main worktree, 串行模式)
 - 已完成：
   - **plugin_manager/__init__.py**：公共导出
-  - **plugin_manager/loader.py**：metadata.json 扫描发现器，扫描 plugins/ 下5组子目录（spider/processor/storage/presenter/ui），解析 JSON 并校验必须字段，GPL 类许可证告警（不阻断），缺 license 且有依赖时降级为警告，待审区扫描（不参与可执行发现）
+  - **plugin_manager/loader.py**：metadata.json 扫描发现器，扫描 plugins/ 下5组子目录（spider/processor/storage/presenter/ui），解析 JSON 并校验必须字段（含 license），GPL 类许可证告警（不阻断），待审区扫描（不参与可执行发现）
   - **plugin_manager/validator.py**：结构/版本/依赖/schema 校验，受控 Schema ID 注册表（INTERFACES.md §7 全部20个 ID），entry_point 格式和文件可达性检查，内容摘要 SHA-256 计算和校验
   - **plugin_manager/registry.py**：生命周期状态机（discovered→pending_review→approved→loaded/rejected/disabled），扫描→AST审查→批准（绑定内容摘要）→加载（动态import+基类验证）→快照发布，引用计数保护（活动运行不可禁用），审计日志，预检函数（供 W2 POST /api/pipeline/validate 调用），上传待审区流程
   - **security/plugin_validator_v3.py**：V3.0 校验层（不修改原 plugin_validator.py），允许 os.path/os.replace 合法使用，阻止 os.system/subprocess.run/eval/exec 等危险调用，BasePlugin 子类检测（含泛型 BasePlugin[T,U]），entry_point 类名交叉校验
@@ -94,9 +94,14 @@
   - **tests/test_plugin_loader.py**：32 tests（7 loader +12 registry +4 预检 +5 validator +5 兼容视图）
   - **tests/test_plugin_security.py**：18 tests（8 AST 安全检查 +5 BasePlugin 检测 +3 旧校验器兼容 +2 上传安全）
 - 验收命令实测：
-  - `python -m pytest tests/test_plugin_loader.py tests/test_plugin_security.py -q` → **49 passed, 1 skipped in 1.04s**
+  - `python -m pytest tests/test_plugin_loader.py tests/test_plugin_security.py -q` → **49 passed, 1 skipped**
   - `python -c "from config.plugins import list_plugins; ps=list_plugins(); print(len(ps))"` → **19**（数量与改造前一致）
-  - 全量回归：`pytest tests/ -q --ignore=tests/test_filter_component.py` → **917 passed, 3 skipped**（零回归）
+  - `python -c "from plugin_manager.validator import validate_all_metadata; print(validate_all_metadata())"` → **[]**（无缺失项）
+  - 全量回归：`pytest tests/ -q` → **956 passed, 3 skipped**（零回归）
+- N1 修复（2026-09-22）：
+  - **license 升级为必须字段**：REQUIRED_METADATA_FIELDS 现包含 license，loader 扫描时缺失直接报错
+  - **8 个 metadata.json 补全**：6 个 processors（W5 管辖）+ 2 个 UI（W7 管辖）已全部补齐 `"license": "MIT"`
+  - **validate_all_metadata()** 新增：扫描全部 metadata.json 返回缺失字段清单，W9 验收入口
 - 未完成：
   - **待审区审批端点**：registry 层已实现 approve_upload()，API 端点由 W2 在 api/server.py 中编写（W3 提供后端函数，W2 暴露为 PUT /api/plugins/<key>/approve）
   - **W5 处理器 BasePlugin 继承**：6 个处理器插件（dedup/normalize/education_merge/statistics/yzw_major_parser/faculty_parser）因不继承 BasePlugin 被 registry 拒绝，需 W5 修复为继承 RecordProcessorPlugin/ParserPlugin
@@ -134,6 +139,7 @@
   - **education_merge** (plugins/processors/education_merge/)：post 阶段，多源合并。调用 pipelines.merge 的 exact→strip→fuzzy 三阶匹配（阈值 0.85，与 V2.2 fixture 一致）；分组键 group_by=[university, college, year]，跨学校/学院绝不匹配；合并后 record_id 自然键哈希稳定生成，provenance 保留全部来源。单来源运行允许部分来源记录通过。
   - **statistics** (plugins/processors/statistics/)：post 阶段，RecordBatch→RecordBatch。group_by 分组计数/字段分布统计，结果写入 RecordBatch.stats，主数据 records 不变。
   - 每个插件含 plugin.py + metadata.json + __init__.py，metadata 声明 input_schema/output_schema，plugin_type=processor。
+  - **N1 license 补全**（2026-09-22，W3 代补）：6 个处理器 metadata.json 全部补齐 `"license": "MIT"`
   - tests/test_processor_plugins.py：34 tests（faculty_parser 6、yzw_major_parser 5、normalize 7、dedup 4、education_merge 6、statistics 4、chain 2）。
   - tests/fixtures/expected_records/ 目录已创建（与 W4 共享 raw_pages 原始文件）。
 - 验收命令实测：
@@ -188,6 +194,7 @@
     - `tests/test_presentation_plugins.py`：33 tests（html 6、text 3、csv 3、jsonl 2、markdown 5、pdf 3、base_helper 5、attributes 6 + 1 skip）
     - `tests/test_ui_plugins.py`：29 tests（table 5、chart 6、card 5、filter 8、attributes 4 + 1 parametrize）
     - `tests/test_filter_component.py`：修复 3 个 bug（语法错误行 385、PluginContext 未导入、断言矛盾），32 tests 全绿
+  - **N1 license 补全**（2026-09-22，W3 代补）：chart_component + filter_component metadata.json 补齐 `"license": "MIT"`
 - 验收命令实测：
   - `python -m pytest tests/test_presentation_plugins.py tests/test_ui_plugins.py tests/test_filter_component.py -q` → **91 passed, 1 skipped** (WeasyPrint PDF)
   - `python -c "import json; r=json.load(open('templates/registry.json',encoding='utf-8')); print(len(r['templates']))"` → **20**
@@ -403,3 +410,30 @@ value.replace("&", "&").replace("<", "<").replace(">", ">")
 - plugins/storage/（W6 负责）：jsonl_store, media_store, progress_store, sql_store, xlsx_store
 - plugins/presenters/（W7 负责）：csv_presenter, jsonl_presenter, pdf_presenter, text_presenter
 
+
+### N3 已修复：NOTICE / LICENSE 缺失（2026-09-21）
+
+**问题**：W9 验收发现仓库缺少 NOTICE 和 LICENSE 文件。
+
+**处置**：
+- 创建 `LICENSE`（MIT 许可证，与项目定位匹配）
+- 创建 `NOTICE`，声明借鉴的 6 个开源项目及其许可证：
+  - Scrapy (BSD-3-Clause)
+  - Crawlee (Apache-2.0)
+  - Meltano (MIT)
+  - yt-dlp (Unlicense)
+  - Pillow (HPND)
+  - WeasyPrint (BSD-3-Clause)
+- 在 `docs/plugin_dev_guide/10_testing.md` 末尾追加"许可证合规"一节（新增依赖检查清单、插件内第三方代码归属、NOTICE 维护规范）
+
+**验收**：
+- `test -f NOTICE && test -f LICENSE && echo OK` → OK
+
+## W9 复验完成
+
+- 复验时间：2026-09-21
+- **结论：建议 W1 合并签字** — 全部 5 项阻断 (B1-B5) 和 3 项非阻断 (N1-N3) 均已修复验证通过
+- L3 回归：956 passed, 3 skipped, 0 failed（较首次 949 +7 新测试）
+- L4 实验：A(安全) B(分发) C(脚手架) 全部 PASS
+- 修复提交：`9c48d90` B2+B3 / `9dccdd1` schema 补全 / `deac88a` assets 运行时校验 / `320a603` B4 fallback / `2e0aec8` N2 越权登记
+- 详见：docs/V3.0/acceptance.md §7 复验记录

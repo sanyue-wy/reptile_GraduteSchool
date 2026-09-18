@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#dc2626", "description": "Primary accent color"},
+  "color-secondary": {"type": "color", "default": "#f87171", "description": "Secondary accent color"},
+  "bg-primary": {"type": "color", "default": "#ffffff", "description": "Main background"},
+  "bg-secondary": {"type": "color", "default": "#fef2f2", "description": "Alternate background"},
+  "text-primary": {"type": "color", "default": "#1f1f1f", "description": "Primary text color"},
+  "text-secondary": {"type": "color", "default": "#6b7280", "description": "Secondary text color"},
+  "border-color": {"type": "color", "default": "#fca5a5", "description": "Border color"},
+  "font-family": {"type": "font", "default": "Montserrat, Poppins, sans-serif", "description": "Bold display sans-serif font"},
+  "font-size-base": {"type": "size", "default": "16px", "description": "Large base font for poster viewing"},
+  "border-radius": {"type": "size", "default": "0px", "description": "Sharp poster-style corners"},
+  "spacing-unit": {"type": "size", "default": "12px", "description": "Spacious spacing for poster"}
+}

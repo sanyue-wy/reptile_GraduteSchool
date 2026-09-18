@@ -1,0 +1,33 @@
+{
+  "name": "card_component",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "ui",
+  "input_schema": "ViewModel.v1",
+  "output_schema": "UIComponentDTO.v1",
+  "entry_point": "plugins.ui.card_component.plugin:CardComponentPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "card_fields": {
+        "type": "array",
+        "items": {"type": "string", "minLength": 1},
+        "minItems": 1,
+        "description": "List of field names to display on each card"
+      },
+      "image_field": {"type": "string", "description": "Field name containing image URL"},
+      "link_field": {"type": "string", "description": "Field name containing link URL"},
+      "title_field": {"type": "string", "description": "Field name for card title"},
+      "subtitle_field": {"type": "string", "description": "Field name for card subtitle"},
+      "max_cards": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20},
+      "card_layout": {"type": "string", "enum": ["horizontal", "vertical", "grid"], "default": "grid"},
+      "show_border": {"type": "boolean", "default": true},
+      "hover_effect": {"type": "boolean", "default": true}
+    },
+    "required": ["card_fields"],
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

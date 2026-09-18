@@ -1,0 +1,46 @@
+site_name: "数据采集平台 V3.0 开发文档"
+site_description: "插件开发指南、API 参考、架构文档"
+site_dir: docs/_site_build
+
+theme:
+  name: material
+  language: zh
+  palette:
+    primary: blue
+    accent: blue
+
+nav:
+  - 概述:
+    - 平台总览: plugin_dev_guide/01_platform_overview.md
+    - 契约速查: plugin_dev_guide/02_contract_reference.md
+  - 插件开发:
+    - 编写 Spider: plugin_dev_guide/03_first_spider.md
+    - 编写 Processor: plugin_dev_guide/04_writing_processor.md
+    - 编写 Storage: plugin_dev_guide/05_writing_storage.md
+    - Presenter 与 UI: plugin_dev_guide/06_presenter_ui.md
+  - 配置与生命周期:
+    - metadata.json 与批准: plugin_dev_guide/07_metadata_approval.md
+    - 配置系统: plugin_dev_guide/08_config_system.md
+  - 高级:
+    - 模板开发: plugin_dev_guide/09_template_dev.md
+    - 测试与验收: plugin_dev_guide/10_testing.md
+  - API 参考:
+    - contracts: api/contracts.md
+    - plugins.base: api/plugins_base.md
+    - pipeline: api/pipeline.md
+    - plugin_manager: api/plugin_manager.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true

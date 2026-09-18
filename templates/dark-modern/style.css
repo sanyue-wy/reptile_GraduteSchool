@@ -1,0 +1,51 @@
+/* dark-modern - Dark modern interface, dark theme */
+:root {
+  --color-primary: #818cf8;
+  --color-secondary: #a78bfa;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --font-family: "Inter", "SF Pro Display", sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 12px;
+  --spacing-unit: 8px;
+}
+
+.tpl-dark-modern {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-dark-modern .tpl-header {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 3);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-dark-modern .tpl-header-nav {
+  font-size: 1.3em;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.tpl-dark-modern .tpl-stats-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-dark-modern .tpl-content {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 3);
+  line-height: 1.6;
+}

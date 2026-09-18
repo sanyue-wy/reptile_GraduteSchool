@@ -1,0 +1,46 @@
+/* minimal-dark - Minimal dark variant, dark theme */
+:root {
+  --color-primary: #e2e8f0;
+  --color-secondary: #94a3b8;
+  --bg-primary: #18181b;
+  --bg-secondary: #27272a;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --border-color: #3f3f46;
+  --font-family: "Inter", system-ui, sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 4px;
+  --spacing-unit: 8px;
+}
+
+.tpl-minimal-dark {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 960px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-minimal-dark .tpl-header {
+  padding: calc(var(--spacing-unit) * 2) 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+  font-weight: 600;
+  font-size: 1.2em;
+  color: var(--text-primary);
+}
+
+.tpl-minimal-dark .tpl-stats {
+  padding: calc(var(--spacing-unit) * 1.5) 0;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-minimal-dark .tpl-content {
+  line-height: 1.6;
+  color: var(--text-primary);
+}

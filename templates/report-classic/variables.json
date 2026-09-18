@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#1e3a5f", "description": "Primary accent color"},
+  "color-secondary": {"type": "color", "default": "#2c5282", "description": "Secondary accent color"},
+  "bg-primary": {"type": "color", "default": "#ffffff", "description": "Main background"},
+  "bg-secondary": {"type": "color", "default": "#edf2f7", "description": "Alternate background"},
+  "text-primary": {"type": "color", "default": "#1a202c", "description": "Primary text color"},
+  "text-secondary": {"type": "color", "default": "#4a5568", "description": "Secondary text color"},
+  "border-color": {"type": "color", "default": "#a0aec0", "description": "Border color"},
+  "font-family": {"type": "font", "default": "Cambria, Georgia, Book Antiqua, serif", "description": "Classic serif font stack"},
+  "font-size-base": {"type": "size", "default": "13px", "description": "Base font size"},
+  "border-radius": {"type": "size", "default": "0px", "description": "Sharp classic corners"},
+  "spacing-unit": {"type": "size", "default": "8px", "description": "Base spacing unit"}
+}

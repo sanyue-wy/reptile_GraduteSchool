@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <title>Plugin Management - Console</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
+        .header { background: #2c3e50; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+        .header h1 { font-size: 1.3rem; }
+        .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
+        .header a:hover { color: #fff; }
+        .toolbar { padding: 1rem 2rem; display: flex; gap: 0.75rem; align-items: center; background: #fff; border-bottom: 1px solid #dee2e6; }
+        .toolbar input { padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; width: 300px; }
+        .toolbar button { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        .toolbar button:hover { background: #34495e; }
+        .toolbar button.secondary { background: #fff; color: #2c3e50; }
+        .plugin-grid { padding: 1.5rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+        .plugin-card { background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 1.25rem; }
+        .plugin-card .name { font-size: 1.05rem; font-weight: 600; color: #2c3e50; }
+        .plugin-card .type { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 3px; background: #e8f4fd; color: #2980b9; margin-left: 0.5rem; }
+        .plugin-card .type.spider { background: #fdf2e8; color: #e67e22; }
+        .plugin-card .type.processor { background: #e8fde8; color: #27ae60; }
+        .plugin-card .type.storage { background: #fde8f8; color: #8e44ad; }
+        .plugin-card .type.presenter { background: #f0e8fd; color: #6c3483; }
+        .plugin-card .type.ui { background: #e8f0fd; color: #2471a3; }
+        .plugin-card .meta { font-size: 0.8rem; color: #666; margin-top: 0.5rem; }
+        .plugin-card .actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+        .plugin-card .actions button { padding: 0.3rem 0.75rem; border: 1px solid #ccc; background: #fff; border-radius: 3px; cursor: pointer; font-size: 0.8rem; }
+        .plugin-card .actions button:hover { background: #f5f5f5; }
+        .badge { display: inline-block; font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; }
+        .badge.approved { background: #d4edda; color: #155724; }
+        .badge.pending { background: #fff3cd; color: #856404; }
+        .badge.disabled { background: #f8d7da; color: #721c24; }
+        .empty-state { text-align: center; padding: 3rem; color: #999; }
+        .error-msg { padding: 1rem 2rem; background: #f8d7da; color: #721c24; display: none; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html">&larr; Console</a>
+        <h1>Plugin Management</h1>
+    </header>
+    <div id="error" class="error-msg"></div>
+    <div class="toolbar">
+        <input type="text" id="search" placeholder="Search plugins by name..." />
+        <button id="refresh-btn" class="secondary">Refresh</button>
+    </div>
+    <main id="plugin-list" class="plugin-grid">
+        <div class="empty-state">Loading plugins...</div>
+    </main>
+    <script>
+    (function() {
+        'use strict';
+        var API = '/api/plugins';
+        var container = document.getElementById('plugin-list');
+        var searchInput = document.getElementById('search');
+        var refreshBtn = document.getElementById('refresh-btn');
+        var errorDiv = document.getElementById('error');
+        var allPlugins = [];
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function loadPlugins() {
+            errorDiv.style.display = 'none';
+            fetch(API, { credentials: 'same-origin' })
+                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function(data) {
+                    allPlugins = Array.isArray(data) ? data : (data.plugins || data.items || []);
+                    renderPlugins(allPlugins);
+                })
+                .catch(function(err) {
+                    errorDiv.textContent = 'Failed to load plugins: ' + err.message;
+                    errorDiv.style.display = 'block';
+                    container.innerHTML = '<div class="empty-state">Could not load plugins</div>';
+                });
+        }
+
+        function renderPlugins(plugins) {
+            if (!plugins.length) {
+                container.innerHTML = '<div class="empty-state">No plugins found</div>';
+                return;
+            }
+            container.innerHTML = plugins.map(function(p) {
+                var name = escapeHtml(p.name || p.plugin_id || 'unknown');
+                var ptype = escapeHtml(p.plugin_type || p.kind || 'unknown');
+                var version = escapeHtml(p.version || '—');
+                var author = escapeHtml(p.author || '—');
+                var approved = p.approved !== false;
+                var enabled = p.enabled !== false;
+                return '<div class="plugin-card">' +
+                    '<div><span class="name">' + name + '</span><span class="type ' + ptype + '">' + ptype + '</span></div>' +
+                    '<div class="meta">v' + version + ' &middot; ' + author + '</div>' +
+                    '<div class="meta"><span class="badge ' + (approved ? 'approved' : 'pending') + '">' + (approved ? 'Approved' : 'Pending') + '</span> ' +
+                    '<span class="badge ' + (enabled ? 'approved' : 'disabled') + '">' + (enabled ? 'Enabled' : 'Disabled') + '</span></div>' +
+                    '<div class="actions">' +
+                    '<button onclick="togglePlugin(\'' + escapeHtml(p.name || p.plugin_id) + '\', ' + !enabled + ')">' + (enabled ? 'Disable' : 'Enable') + '</button>' +
+                    '<button onclick="reloadPlugin(\'' + escapeHtml(p.name || p.plugin_id) + '\')">Reload</button>' +
+                    '</div></div>';
+            }).join('');
+        }
+
+        searchInput.addEventListener('input', function() {
+            var q = searchInput.value.toLowerCase();
+            var filtered = allPlugins.filter(function(p) {
+                return (p.name || '').toLowerCase().indexOf(q) >= 0 || (p.plugin_type || '').toLowerCase().indexOf(q) >= 0;
+            });
+            renderPlugins(filtered);
+        });
+
+        refreshBtn.addEventListener('click', loadPlugins);
+
+        window.togglePlugin = function(name, enable) {
+            fetch(API + '/' + encodeURIComponent(name), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ enabled: enable })
+            }).then(function() { loadPlugins(); })
+            .catch(function(err) { alert('Toggle failed: ' + err.message); });
+        };
+
+        window.reloadPlugin = function(name) {
+            fetch(API + '/' + encodeURIComponent(name) + '/reload', {
+                method: 'POST',
+                credentials: 'same-origin'
+            }).then(function() { loadPlugins(); })
+            .catch(function(err) { alert('Reload failed: ' + err.message); });
+        };
+
+        loadPlugins();
+    })();
+    </script>
+</body>
+</html>

@@ -391,8 +391,20 @@ class PipelineEngine:
         specs = [OutputSpec(**{k: v for k, v in d.items()}) for d in self.definition.present.outputs]
         rendered, present_stage = ([], StageResult(stage="present", status="skipped"))
         if specs and not manager.is_cancelled():
-            presenter_map = {d.get("presenter_instance"): self._plugin_for(d["presenter_instance"])
-                             for d in self.definition.present.outputs if d.get("presenter_instance")}
+            # 显式 presenter_instance 优先；否则按 format 推断 <format>_presenter
+            presenter_map: dict[str, Any] = {}
+            for d in self.definition.present.outputs:
+                instance = d.get("presenter_instance")
+                if not instance:
+                    fmt = d.get("format")
+                    if fmt:
+                        instance = f"{fmt}_presenter"
+                if instance and instance not in presenter_map:
+                    try:
+                        presenter_map[instance] = self._plugin_for(instance)
+                    except Exception:
+                        logger.debug("Presenter '%s' not loadable for format='%s'",
+                                     instance, d.get("format"))
             rendered, present_stage = render_outputs(
                 final_batch, receipts, specs, run_state, presenter_map, manager, workspace)
 

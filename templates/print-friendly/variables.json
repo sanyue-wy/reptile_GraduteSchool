@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#1f2937", "description": "Primary accent color"},
+  "color-secondary": {"type": "color", "default": "#4b5563", "description": "Secondary accent color"},
+  "bg-primary": {"type": "color", "default": "#ffffff", "description": "Paper white background"},
+  "bg-secondary": {"type": "color", "default": "#ffffff", "description": "No secondary bg for ink saving"},
+  "text-primary": {"type": "color", "default": "#000000", "description": "Pure black text for print"},
+  "text-secondary": {"type": "color", "default": "#374151", "description": "Secondary text color"},
+  "border-color": {"type": "color", "default": "#000000", "description": "Black borders for print clarity"},
+  "font-family": {"type": "font", "default": "Times New Roman, Palatino, Georgia, serif", "description": "Classic print serif font"},
+  "font-size-base": {"type": "size", "default": "12pt", "description": "Print-standard font size in points"},
+  "border-radius": {"type": "size", "default": "0px", "description": "No radius for clean print"},
+  "spacing-unit": {"type": "size", "default": "6pt", "description": "Print-friendly spacing in points"}
+}

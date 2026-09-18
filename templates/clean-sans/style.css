@@ -1,0 +1,47 @@
+/* clean-sans - Sans-serif clean design, light theme */
+:root {
+  --color-primary: #2563eb;
+  --color-secondary: #60a5fa;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --font-family: "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 8px;
+  --spacing-unit: 8px;
+}
+
+.tpl-clean-sans {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-clean-sans .tpl-header {
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-clean-sans .tpl-header-inner {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.tpl-clean-sans .tpl-stats-bar {
+  display: flex;
+  gap: calc(var(--spacing-unit) * 2);
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-clean-sans .tpl-content {
+  line-height: 1.6;
+}

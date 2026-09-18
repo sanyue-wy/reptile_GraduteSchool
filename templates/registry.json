@@ -1,0 +1,525 @@
+{
+  "version": "1.0",
+  "templates": [
+    {
+      "name": "minimal-light",
+      "description": "Clean minimal layout, light theme",
+      "theme": "light",
+      "path": "templates/minimal-light",
+      "tags": [
+        "minimal",
+        "clean",
+        "simple"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/minimal-light/preview.png",
+      "variables": {
+        "color-primary": "#333333",
+        "color-secondary": "#666666",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f9f9f9",
+        "text-primary": "#222222",
+        "text-secondary": "#555555",
+        "border-color": "#e0e0e0",
+        "font-family": "system-ui, -apple-system, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "2px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "academic-serif",
+      "description": "Serif fonts for academic data, light theme",
+      "theme": "light",
+      "path": "templates/academic-serif",
+      "tags": [
+        "academic",
+        "serif",
+        "formal"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/academic-serif/preview.png",
+      "variables": {
+        "color-primary": "#1a3c5e",
+        "color-secondary": "#4a6f8a",
+        "bg-primary": "#faf8f5",
+        "bg-secondary": "#f0ede8",
+        "text-primary": "#2c2c2c",
+        "text-secondary": "#5a5a5a",
+        "border-color": "#c9c3b8",
+        "font-family": "Georgia, Times New Roman, Palatino Linotype, serif",
+        "font-size-base": "15px",
+        "border-radius": "0px",
+        "spacing-unit": "10px"
+      }
+    },
+    {
+      "name": "clean-sans",
+      "description": "Sans-serif clean design, light theme",
+      "theme": "light",
+      "path": "templates/clean-sans",
+      "tags": [
+        "clean",
+        "sans-serif",
+        "modern"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/clean-sans/preview.png",
+      "variables": {
+        "color-primary": "#2563eb",
+        "color-secondary": "#60a5fa",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f1f5f9",
+        "text-primary": "#1e293b",
+        "text-secondary": "#64748b",
+        "border-color": "#e2e8f0",
+        "font-family": "Inter, Segoe UI, Helvetica Neue, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "8px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "dark-modern",
+      "description": "Dark modern interface, dark theme",
+      "theme": "dark",
+      "path": "templates/dark-modern",
+      "tags": [
+        "dark",
+        "modern",
+        "sleek"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/dark-modern/preview.png",
+      "variables": {
+        "color-primary": "#818cf8",
+        "color-secondary": "#a78bfa",
+        "bg-primary": "#0f172a",
+        "bg-secondary": "#1e293b",
+        "text-primary": "#e2e8f0",
+        "text-secondary": "#94a3b8",
+        "border-color": "#334155",
+        "font-family": "Inter, SF Pro Display, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "12px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "card-flow",
+      "description": "Card-based layout, light theme",
+      "theme": "light",
+      "path": "templates/card-flow",
+      "tags": [
+        "card",
+        "flow",
+        "visual"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/card-flow/preview.png",
+      "variables": {
+        "color-primary": "#7c3aed",
+        "color-secondary": "#a855f7",
+        "bg-primary": "#f8f7ff",
+        "bg-secondary": "#ffffff",
+        "text-primary": "#1f1535",
+        "text-secondary": "#6b7280",
+        "border-color": "#e5e7eb",
+        "font-family": "DM Sans, Segoe UI, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "16px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "data-grid",
+      "description": "Dense data grid layout, light theme",
+      "theme": "light",
+      "path": "templates/data-grid",
+      "tags": [
+        "grid",
+        "dense",
+        "data"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/data-grid/preview.png",
+      "variables": {
+        "color-primary": "#0369a1",
+        "color-secondary": "#0ea5e9",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f0f9ff",
+        "text-primary": "#0c1425",
+        "text-secondary": "#475569",
+        "border-color": "#cbd5e1",
+        "font-family": "IBM Plex Sans, Arial Narrow, Arial, sans-serif",
+        "font-size-base": "12px",
+        "border-radius": "4px",
+        "spacing-unit": "6px"
+      }
+    },
+    {
+      "name": "report-classic",
+      "description": "Classic report format, light theme",
+      "theme": "light",
+      "path": "templates/report-classic",
+      "tags": [
+        "report",
+        "classic",
+        "formal"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/report-classic/preview.png",
+      "variables": {
+        "color-primary": "#1e3a5f",
+        "color-secondary": "#2c5282",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#edf2f7",
+        "text-primary": "#1a202c",
+        "text-secondary": "#4a5568",
+        "border-color": "#a0aec0",
+        "font-family": "Cambria, Georgia, Book Antiqua, serif",
+        "font-size-base": "13px",
+        "border-radius": "0px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "dashboard-pro",
+      "description": "Professional dashboard, both themes",
+      "theme": "both",
+      "path": "templates/dashboard-pro",
+      "tags": [
+        "dashboard",
+        "professional",
+        "both"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/dashboard-pro/preview.png",
+      "variables": {
+        "color-primary": "#0d9488",
+        "color-secondary": "#14b8a6",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f0fdfa",
+        "text-primary": "#134e4a",
+        "text-secondary": "#5f7a76",
+        "border-color": "#ccfbf1",
+        "font-family": "SF Pro Display, Segoe UI, Roboto, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "8px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "minimal-dark",
+      "description": "Minimal dark variant, dark theme",
+      "theme": "dark",
+      "path": "templates/minimal-dark",
+      "tags": [
+        "minimal",
+        "dark",
+        "simple"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/minimal-dark/preview.png",
+      "variables": {
+        "color-primary": "#e2e8f0",
+        "color-secondary": "#94a3b8",
+        "bg-primary": "#18181b",
+        "bg-secondary": "#27272a",
+        "text-primary": "#fafafa",
+        "text-secondary": "#a1a1aa",
+        "border-color": "#3f3f46",
+        "font-family": "Inter, system-ui, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "4px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "nature-green",
+      "description": "Nature-inspired green palette, light theme",
+      "theme": "light",
+      "path": "templates/nature-green",
+      "tags": [
+        "nature",
+        "green",
+        "organic"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/nature-green/preview.png",
+      "variables": {
+        "color-primary": "#15803d",
+        "color-secondary": "#22c55e",
+        "bg-primary": "#f0fdf4",
+        "bg-secondary": "#dcfce7",
+        "text-primary": "#14532d",
+        "text-secondary": "#4d7c5e",
+        "border-color": "#86efac",
+        "font-family": "Nunito, Quicksand, Segoe UI, sans-serif",
+        "font-size-base": "15px",
+        "border-radius": "10px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "ocean-blue",
+      "description": "Ocean blue palette, light theme",
+      "theme": "light",
+      "path": "templates/ocean-blue",
+      "tags": [
+        "ocean",
+        "blue",
+        "calm"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/ocean-blue/preview.png",
+      "variables": {
+        "color-primary": "#1d4ed8",
+        "color-secondary": "#3b82f6",
+        "bg-primary": "#eff6ff",
+        "bg-secondary": "#dbeafe",
+        "text-primary": "#1e3a5f",
+        "text-secondary": "#4b6a8e",
+        "border-color": "#93c5fd",
+        "font-family": "Source Sans 3, Open Sans, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "6px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "warm-amber",
+      "description": "Warm amber palette, light theme",
+      "theme": "light",
+      "path": "templates/warm-amber",
+      "tags": [
+        "warm",
+        "amber",
+        "cozy"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/warm-amber/preview.png",
+      "variables": {
+        "color-primary": "#b45309",
+        "color-secondary": "#f59e0b",
+        "bg-primary": "#fffbeb",
+        "bg-secondary": "#fef3c7",
+        "text-primary": "#451a03",
+        "text-secondary": "#78522a",
+        "border-color": "#fcd34d",
+        "font-family": "Merriweather Sans, Nunito, sans-serif",
+        "font-size-base": "14px",
+        "border-radius": "8px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "mono-code",
+      "description": "Monospace code-style layout, dark theme",
+      "theme": "dark",
+      "path": "templates/mono-code",
+      "tags": [
+        "monospace",
+        "code",
+        "developer"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/mono-code/preview.png",
+      "variables": {
+        "color-primary": "#a3e635",
+        "color-secondary": "#84cc16",
+        "bg-primary": "#1a1a2e",
+        "bg-secondary": "#16213e",
+        "text-primary": "#c8d6e5",
+        "text-secondary": "#7f8fa6",
+        "border-color": "#2c3e6d",
+        "font-family": "JetBrains Mono, Fira Code, Cascadia Code, Consolas, monospace",
+        "font-size-base": "13px",
+        "border-radius": "0px",
+        "spacing-unit": "8px"
+      }
+    },
+    {
+      "name": "magazine-style",
+      "description": "Magazine column layout, light theme",
+      "theme": "light",
+      "path": "templates/magazine-style",
+      "tags": [
+        "magazine",
+        "column",
+        "editorial"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/magazine-style/preview.png",
+      "variables": {
+        "color-primary": "#be185d",
+        "color-secondary": "#ec4899",
+        "bg-primary": "#fdf2f8",
+        "bg-secondary": "#ffffff",
+        "text-primary": "#1f1f1f",
+        "text-secondary": "#525252",
+        "border-color": "#f9a8d4",
+        "font-family": "Playfair Display, Lora, Georgia, serif",
+        "font-size-base": "15px",
+        "border-radius": "2px",
+        "spacing-unit": "10px"
+      }
+    },
+    {
+      "name": "compact-table",
+      "description": "Ultra-compact table density, light theme",
+      "theme": "light",
+      "path": "templates/compact-table",
+      "tags": [
+        "compact",
+        "table",
+        "dense"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/compact-table/preview.png",
+      "variables": {
+        "color-primary": "#4f46e5",
+        "color-secondary": "#6366f1",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f5f3ff",
+        "text-primary": "#111827",
+        "text-secondary": "#6b7280",
+        "border-color": "#d1d5db",
+        "font-family": "Roboto Mono, Consolas, Courier New, monospace",
+        "font-size-base": "11px",
+        "border-radius": "2px",
+        "spacing-unit": "4px"
+      }
+    },
+    {
+      "name": "poster-wide",
+      "description": "Wide poster format, light theme",
+      "theme": "light",
+      "path": "templates/poster-wide",
+      "tags": [
+        "poster",
+        "wide",
+        "display"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/poster-wide/preview.png",
+      "variables": {
+        "color-primary": "#dc2626",
+        "color-secondary": "#f87171",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#fef2f2",
+        "text-primary": "#1f1f1f",
+        "text-secondary": "#6b7280",
+        "border-color": "#fca5a5",
+        "font-family": "Montserrat, Poppins, sans-serif",
+        "font-size-base": "16px",
+        "border-radius": "0px",
+        "spacing-unit": "12px"
+      }
+    },
+    {
+      "name": "slide-deck",
+      "description": "Slide presentation style, both themes",
+      "theme": "both",
+      "path": "templates/slide-deck",
+      "tags": [
+        "slide",
+        "presentation",
+        "both"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/slide-deck/preview.png",
+      "variables": {
+        "color-primary": "#7c3aed",
+        "color-secondary": "#c084fc",
+        "bg-primary": "#faf5ff",
+        "bg-secondary": "#ffffff",
+        "text-primary": "#1e1b4b",
+        "text-secondary": "#6b7280",
+        "border-color": "#ddd6fe",
+        "font-family": "Poppins, Inter, sans-serif",
+        "font-size-base": "16px",
+        "border-radius": "12px",
+        "spacing-unit": "12px"
+      }
+    },
+    {
+      "name": "print-friendly",
+      "description": "Optimized for printing, light theme",
+      "theme": "light",
+      "path": "templates/print-friendly",
+      "tags": [
+        "print",
+        "paper",
+        "ink-saving"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/print-friendly/preview.png",
+      "variables": {
+        "color-primary": "#1f2937",
+        "color-secondary": "#4b5563",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#ffffff",
+        "text-primary": "#000000",
+        "text-secondary": "#374151",
+        "border-color": "#000000",
+        "font-family": "Times New Roman, Palatino, Georgia, serif",
+        "font-size-base": "12pt",
+        "border-radius": "0px",
+        "spacing-unit": "6pt"
+      }
+    },
+    {
+      "name": "high-contrast",
+      "description": "High contrast accessibility, both themes",
+      "theme": "both",
+      "path": "templates/high-contrast",
+      "tags": [
+        "accessible",
+        "high-contrast",
+        "both"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/high-contrast/preview.png",
+      "variables": {
+        "color-primary": "#0000ee",
+        "color-secondary": "#551a8b",
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f5f5f5",
+        "text-primary": "#000000",
+        "text-secondary": "#333333",
+        "border-color": "#000000",
+        "font-family": "Arial, Helvetica, sans-serif",
+        "font-size-base": "16px",
+        "border-radius": "0px",
+        "spacing-unit": "10px"
+      }
+    },
+    {
+      "name": "playful-rounded",
+      "description": "Rounded playful design, light theme",
+      "theme": "light",
+      "path": "templates/playful-rounded",
+      "tags": [
+        "playful",
+        "rounded",
+        "fun"
+      ],
+      "version": "1.0.0",
+      "preview": "templates/playful-rounded/preview.png",
+      "variables": {
+        "color-primary": "#e11d48",
+        "color-secondary": "#fb7185",
+        "bg-primary": "#fff1f2",
+        "bg-secondary": "#ffffff",
+        "text-primary": "#4c0519",
+        "text-secondary": "#9f1239",
+        "border-color": "#fecdd3",
+        "font-family": "Nunito, Quicksand, Comic Neue, sans-serif",
+        "font-size-base": "15px",
+        "border-radius": "24px",
+        "spacing-unit": "10px"
+      }
+    }
+  ]
+}

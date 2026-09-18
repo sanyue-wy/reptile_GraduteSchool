@@ -1,0 +1,55 @@
+{
+  "name": "filter_component",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "ui",
+  "input_schema": "ViewModel.v1",
+  "output_schema": "UIComponentDTO.v1",
+  "entry_point": "plugins.ui.filter_component.plugin:FilterComponentPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "filter_fields": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "field_name": {"type": "string", "minLength": 1},
+            "field_type": {"type": "string", "enum": ["string", "number", "date", "boolean", "enum"]},
+            "label": {"type": "string", "minLength": 1},
+            "operators": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "default_operator": {"type": "string"},
+            "enum_values": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "placeholder": {"type": "string"},
+            "required": {"type": "boolean", "default": false}
+          },
+          "required": ["field_name", "field_type", "label"],
+          "additionalProperties": false
+        }
+      },
+      "api_endpoint": {
+        "type": "string",
+        "format": "uri-reference",
+        "default": "/api/v1/datasets/query"
+      },
+      "default_filters": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "enable_crawl_action": {
+        "type": "boolean",
+        "default": true
+      }
+    },
+    "additionalProperties": false
+  }
+}

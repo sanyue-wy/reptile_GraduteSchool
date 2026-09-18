@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <title>Console - GraduteSchool V3.0</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
+        .console-header { background: #2c3e50; color: #fff; padding: 1.5rem 2rem; }
+        .console-header h1 { font-size: 1.5rem; font-weight: 600; }
+        .console-header .subtitle { font-size: 0.85rem; color: #adb5bd; margin-top: 0.25rem; }
+        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem; max-width: 960px; margin: 0 auto; }
+        .nav-card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; text-decoration: none; color: inherit; transition: box-shadow 0.2s, transform 0.15s; }
+        .nav-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .nav-card h2 { font-size: 1.2rem; color: #2c3e50; margin-bottom: 0.5rem; }
+        .nav-card p { font-size: 0.9rem; color: #666; line-height: 1.5; }
+        .nav-card .icon { font-size: 2rem; margin-bottom: 1rem; display: block; }
+    </style>
+</head>
+<body>
+    <header class="console-header">
+        <h1>GraduteSchool Console</h1>
+        <p class="subtitle">V3.0 Plugin Management &amp; Configuration</p>
+    </header>
+    <main class="nav-grid">
+        <a href="plugins.html" class="nav-card">
+            <span class="icon">&#9881;</span>
+            <h2>Plugin Management</h2>
+            <p>View approved plugins, check versions, enable/disable instances, and manage plugin lifecycle.</p>
+        </a>
+        <a href="task-config.html" class="nav-card">
+            <span class="icon">&#9881;</span>
+            <h2>Task Definition</h2>
+            <p>Define crawl tasks with source configuration, processing pipeline, and scheduling options.</p>
+        </a>
+        <a href="output-config.html" class="nav-card">
+            <span class="icon">&#9881;</span>
+            <h2>Output Definition</h2>
+            <p>Configure output formats, select templates, choose fields, and re-render from existing records.</p>
+        </a>
+    </main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#e11d48", "description": "Primary accent color"},
+  "color-secondary": {"type": "color", "default": "#fb7185", "description": "Secondary accent color"},
+  "bg-primary": {"type": "color", "default": "#fff1f2", "description": "Main background"},
+  "bg-secondary": {"type": "color", "default": "#ffffff", "description": "Card background"},
+  "text-primary": {"type": "color", "default": "#4c0519", "description": "Primary text color"},
+  "text-secondary": {"type": "color", "default": "#9f1239", "description": "Secondary text color"},
+  "border-color": {"type": "color", "default": "#fecdd3", "description": "Border color"},
+  "font-family": {"type": "font", "default": "Nunito, Quicksand, Comic Neue, sans-serif", "description": "Playful rounded sans-serif font"},
+  "font-size-base": {"type": "size", "default": "15px", "description": "Base font size"},
+  "border-radius": {"type": "size", "default": "24px", "description": "Extra rounded playful corners"},
+  "spacing-unit": {"type": "size", "default": "10px", "description": "Base spacing unit"}
+}

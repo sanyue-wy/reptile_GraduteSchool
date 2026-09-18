@@ -1,0 +1,30 @@
+{
+  "name": "statistics",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RecordBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.statistics.plugin:StatisticsPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "group_by": {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": ["university", "college", "year"],
+        "description": "Fields to group records for statistics"
+      },
+      "count_fields": {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": ["source_type", "match_status"],
+        "description": "Fields to compute distribution counts for"
+      }
+    },
+    "additionalProperties": false
+  }
+}

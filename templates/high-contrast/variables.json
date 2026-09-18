@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#0000ee", "description": "High visibility link blue (WCAG compliant)"},
+  "color-secondary": {"type": "color", "default": "#551a8b", "description": "Visited link purple"},
+  "bg-primary": {"type": "color", "default": "#ffffff", "description": "Pure white background"},
+  "bg-secondary": {"type": "color", "default": "#f5f5f5", "description": "Light gray alternate bg"},
+  "text-primary": {"type": "color", "default": "#000000", "description": "Pure black text for max contrast"},
+  "text-secondary": {"type": "color", "default": "#333333", "description": "Dark gray secondary text"},
+  "border-color": {"type": "color", "default": "#000000", "description": "Black borders for clarity"},
+  "font-family": {"type": "font", "default": "Arial, Helvetica, sans-serif", "description": "Accessible system sans-serif font"},
+  "font-size-base": {"type": "size", "default": "16px", "description": "Large base font for readability"},
+  "border-radius": {"type": "size", "default": "0px", "description": "No radius for clarity"},
+  "spacing-unit": {"type": "size", "default": "10px", "description": "Generous spacing for readability"}
+}

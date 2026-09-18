@@ -1,0 +1,80 @@
+# tutor_research 预设 —— 教育导师调研基本组合
+# 用途：采集高校导师基本信息（姓名、职称、研究方向、联系方式等）
+# 验证：通用教育采集场景的基本功能覆盖
+
+dataset: tutor_research
+source_id: faculty_page
+profile_id: education
+target_url: "https://example.edu/faculty"
+max_pages: 10
+
+fields:
+  - name: name
+    type: string
+    required: true
+    description: "导师姓名"
+  - name: title
+    type: string
+    required: false
+    description: "职称（教授/副教授/讲师）"
+    enum: ["教授", "副教授", "讲师", "研究员", "副研究员"]
+  - name: university
+    type: string
+    required: true
+    description: "所属学校"
+  - name: college
+    type: string
+    required: true
+    description: "所属学院"
+  - name: department
+    type: string
+    required: false
+    description: "所属系所"
+  - name: research
+    type: string
+    required: false
+    description: "研究方向"
+  - name: email
+    type: string
+    required: false
+    description: "联系邮箱"
+  - name: phone
+    type: string
+    required: false
+    description: "联系电话"
+  - name: profile_url
+    type: string
+    required: false
+    description: "个人主页 URL"
+  - name: photo_url
+    type: string
+    required: false
+    description: "照片 URL"
+  - name: education_bg
+    type: string
+    required: false
+    description: "教育背景"
+  - name: publications
+    type: array
+    required: false
+    description: "代表论文列表"
+
+selectors:
+  item_selector: ".faculty-item"
+  name_selector: ".faculty-name"
+  title_selector: ".faculty-title"
+  research_selector: ".research-area"
+  email_selector: ".faculty-email"
+
+plugins:
+  acquire: static_html
+  parse:
+    - faculty_parser
+  post:
+    - normalize
+    - dedup
+    - statistics
+  store:
+    - jsonl_store
+  present:
+    - text_presenter

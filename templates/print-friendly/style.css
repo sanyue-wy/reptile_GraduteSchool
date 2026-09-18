@@ -1,0 +1,76 @@
+/* print-friendly - Optimized for printing, light theme */
+:root {
+  --color-primary: #1f2937;
+  --color-secondary: #4b5563;
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #374151;
+  --border-color: #000000;
+  --font-family: "Times New Roman", "Palatino", Georgia, serif;
+  --font-size-base: 12pt;
+  --border-radius: 0px;
+  --spacing-unit: 6pt;
+}
+
+.tpl-print-friendly {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 20mm;
+  line-height: 1.5;
+}
+
+.tpl-print-friendly .tpl-print-title {
+  font-size: 18pt;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 2pt solid #000000;
+  padding-bottom: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-print-friendly .tpl-stats-print {
+  border: 1pt solid #000000;
+  padding: calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+  display: flex;
+  gap: calc(var(--spacing-unit) * 3);
+  font-size: 10pt;
+}
+
+.tpl-print-friendly .tpl-content {
+  line-height: 1.6;
+}
+
+.tpl-print-friendly .tpl-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: calc(var(--spacing-unit) * 2) 0;
+}
+
+.tpl-print-friendly .tpl-content th,
+.tpl-print-friendly .tpl-content td {
+  border: 1pt solid #000000;
+  padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+  text-align: left;
+  font-size: 10pt;
+}
+
+.tpl-print-friendly .tpl-content th {
+  background: #e5e5e5;
+  font-weight: 700;
+}
+
+@media print {
+  .tpl-print-friendly {
+    padding: 0;
+    max-width: none;
+  }
+  .tpl-print-friendly .tpl-content {
+    page-break-inside: avoid;
+  }
+}

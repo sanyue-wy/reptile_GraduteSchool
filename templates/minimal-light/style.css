@@ -1,0 +1,42 @@
+/* minimal-light - Clean minimal layout, light theme */
+:root {
+  --color-primary: #333333;
+  --color-secondary: #666666;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --text-primary: #222222;
+  --text-secondary: #555555;
+  --border-color: #e0e0e0;
+  --font-family: system-ui, -apple-system, sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 2px;
+  --spacing-unit: 8px;
+}
+
+.tpl-minimal-light {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 960px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-minimal-light .tpl-header {
+  padding: calc(var(--spacing-unit) * 2) 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-minimal-light .tpl-stats {
+  padding: calc(var(--spacing-unit) * 1.5) 0;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-minimal-light .tpl-content {
+  line-height: 1.6;
+}

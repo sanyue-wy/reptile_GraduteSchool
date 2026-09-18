@@ -25,10 +25,15 @@ from infra.storage.workspace import ManagedWorkspace
 logger = logging.getLogger(__name__)
 
 # Format → presenter name fallback mapping
-# Used when no explicit presenter_instance is specified in OutputSpec
+# Used when no explicit presenter_instance is specified in OutputSpec.
+# Maps to the correct primary presenter name (not a generic alternative).
 _FORMAT_FALLBACK: dict[str, str] = {
-    "markdown": "text_presenter",  # markdown mode handled by text_presenter
+    "markdown": "markdown_presenter",
 }
+
+# Generic fallback presenter used when neither <format>_presenter nor
+# _FORMAT_FALLBACK yields a match.  Always tried last.
+_GENERIC_FALLBACK: str = "text_presenter"
 
 
 @dataclass
@@ -80,18 +85,29 @@ def render_outputs(
 def _resolve_presenter(presenter_plugins: dict[str, Any], spec: OutputSpec) -> Optional[Any]:
     if spec.presenter_instance:
         return presenter_plugins.get(spec.presenter_instance)
-    # 无具名实例时按格式回退到 <format>_presenter
+    # 无具名实例时按格式回退：<format>_presenter → _FORMAT_FALLBACK → _GENERIC_FALLBACK
     key = f"{spec.format}_presenter"
     plugin = presenter_plugins.get(key)
-    if plugin is None:
-        # Check fallback mapping (e.g., markdown → text_presenter)
-        fallback_key = _FORMAT_FALLBACK.get(spec.format)
-        if fallback_key and fallback_key in presenter_plugins:
-            logger.warning("Presenter '%s' not found, falling back to '%s' for format='%s'",
+    if plugin is not None:
+        return plugin
+    # 格式别名映射（如 markdown_presenter 未在 plugins 中，查映射表）
+    fallback_key = _FORMAT_FALLBACK.get(spec.format)
+    if fallback_key:
+        plugin = presenter_plugins.get(fallback_key)
+        if plugin is not None:
+            logger.warning("Presenter '%s' not loaded; using mapped fallback '%s' for format='%s'",
                            key, fallback_key, spec.format)
-            return presenter_plugins[fallback_key]
-        logger.warning("No presenter found for format='%s' (tried '%s')", spec.format, key)
-    return plugin
+            return plugin
+    # 最终通用兜底：text_presenter（日志注明原格式，便于排查）
+    if _GENERIC_FALLBACK in presenter_plugins:
+        logger.warning(
+            "Presenter '%s' and '%s' both missing; "
+            "falling back to '%s' for format='%s'",
+            key, fallback_key or key, _GENERIC_FALLBACK, spec.format)
+        return presenter_plugins[_GENERIC_FALLBACK]
+    logger.warning("No presenter found for format='%s' (tried '%s', '%s', '%s')",
+                   spec.format, key, fallback_key or key, _GENERIC_FALLBACK)
+    return None
 
 
 def _execute_presenter(plugin: Any, request: PresentationRequest,

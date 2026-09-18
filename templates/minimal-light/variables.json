@@ -1,0 +1,13 @@
+{
+  "color-primary": {"type": "color", "default": "#333333", "description": "Primary accent color"},
+  "color-secondary": {"type": "color", "default": "#666666", "description": "Secondary accent color"},
+  "bg-primary": {"type": "color", "default": "#ffffff", "description": "Main background"},
+  "bg-secondary": {"type": "color", "default": "#f9f9f9", "description": "Alternate background"},
+  "text-primary": {"type": "color", "default": "#222222", "description": "Primary text color"},
+  "text-secondary": {"type": "color", "default": "#555555", "description": "Secondary text color"},
+  "border-color": {"type": "color", "default": "#e0e0e0", "description": "Border color"},
+  "font-family": {"type": "font", "default": "system-ui, -apple-system, sans-serif", "description": "Font stack"},
+  "font-size-base": {"type": "size", "default": "14px", "description": "Base font size"},
+  "border-radius": {"type": "size", "default": "2px", "description": "Border radius"},
+  "spacing-unit": {"type": "size", "default": "8px", "description": "Base spacing unit"}
+}

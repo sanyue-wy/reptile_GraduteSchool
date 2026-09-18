@@ -1,0 +1,20 @@
+{
+  "name": "yzw_major_parser",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RawDataBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.yzw_major_parser.plugin:YzwMajorParserPlugin",
+  "dependencies": [],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "profile": {"type": "string", "enum": ["education.tutor.v1", "education.major.v1"], "default": "education.tutor.v1"},
+      "major_codes": {"type": "array", "items": {"type": "string"}, "default": []}
+    },
+    "additionalProperties": false
+  }
+}

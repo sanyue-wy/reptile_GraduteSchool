@@ -18,5 +18,6 @@
       "wait_selector": {"type": "string"}
     },
     "additionalProperties": false
-  }
+  },
+  "license": "MIT"
 }

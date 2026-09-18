@@ -11,6 +11,7 @@ Optional dependency: weasyprint
 Output format: pdf
 """
 
+import html as html_mod
 import logging
 import time
 from pathlib import Path
@@ -232,7 +233,7 @@ class PdfPresenterPlugin(PresenterPlugin):
             html_parts.append("        <thead>")
             html_parts.append("            <tr>")
             for field in fields:
-                html_parts.append("                <th>{field}</th>".format(field=field))
+                html_parts.append("                <th>{field}</th>".format(field=html_mod.escape(field)))
             html_parts.append("            </tr>")
             html_parts.append("        </thead>")
             # Body rows
@@ -241,8 +242,8 @@ class PdfPresenterPlugin(PresenterPlugin):
                 html_parts.append("            <tr>")
                 for field in fields:
                     value = str(record.get(field, ""))
-                    # Escape HTML
-                    value = value.replace("&", "&").replace("<", "<").replace(">", ">")
+                    # Escape HTML entities (& < > " ')
+                    value = html_mod.escape(value, quote=True)
                     html_parts.append("                <td>{value}</td>".format(value=value))
                 html_parts.append("            </tr>")
             html_parts.append("        </tbody>")

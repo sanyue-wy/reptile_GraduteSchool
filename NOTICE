@@ -1,0 +1,42 @@
+NOTICE
+======
+
+This project draws inspiration from and acknowledges the following open-source
+projects. Their ideas, patterns, and conventions influenced the design of this
+platform. No source code from these projects is redistributed here unless
+explicitly noted.
+
+Scrapy
+  License: BSD-3-Clause
+  Copyright: Scrapy developers
+  URL: https://github.com/scrapy/scrapy
+  Influence: Spider/processor architecture, middleware pipeline, request/response model
+
+Crawlee
+  License: Apache-2.0
+  Copyright: Apify s.r.o.
+  URL: https://github.com/apify/crawlee
+  Influence: Browser automation patterns, session management, proxy rotation
+
+Meltano
+  License: MIT
+  Copyright: Meltano B.V.
+  URL: https://github.com/meltano/meltano
+  Influence: Plugin discovery, YAML-based configuration, Singer tap/target model
+
+yt-dlp
+  License: The Unlicense
+  URL: https://github.com/yt-dlp/yt-dlp
+  Influence: Media extraction pipeline, extractor plugin pattern
+
+Pillow
+  License: HPND (Historical Permission Notice and Disclaimer)
+  Copyright: Alex Clark and contributors
+  URL: https://github.com/python-pillow/Pillow
+  Influence: Image processing utilities in media_downloader spider
+
+WeasyPrint
+  License: BSD-3-Clause
+  Copyright: Simon Sapin and contributors
+  URL: https://github.com/Kozea/WeasyPrint
+  Influence: HTML-to-PDF rendering in pdf_presenter

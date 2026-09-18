@@ -15,5 +15,6 @@
       "delay": {"type": "number", "minimum": 0.5, "maximum": 10.0, "default": 1.5}
     },
     "additionalProperties": false
-  }
+  },
+  "license": "MIT"
 }

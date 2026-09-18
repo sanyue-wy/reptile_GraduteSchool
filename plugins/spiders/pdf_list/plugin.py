@@ -11,18 +11,18 @@ Parsing is left to processor plugins (or declared capability).
 import base64
 import logging
 from datetime import datetime
-from typing import Any, Optional
 
 from contracts.asset import MediaAsset
 from contracts.raw import RawDataDTO, RawDataBatch
 from contracts.task import TaskConfigDTO
-from utils.http import PoliteSession, BlockedError
-from utils.cache import CrawlCache
+from plugins.base import PluginContext
+from plugins.spiders import SpiderPlugin, make_error, ERROR_HTTP_BLOCKED, ERROR_PIPELINE_CANCELLED
+from utils.http import BlockedError
 
 logger = logging.getLogger(__name__)
 
 
-class PDFListSpiderPlugin:
+class PDFListSpiderPlugin(SpiderPlugin):
     """Spider plugin for PDF faculty lists.
 
     Input: TaskConfigDTO with config_snapshot containing pdf_url.
@@ -31,24 +31,13 @@ class PDFListSpiderPlugin:
 
     name = "pdf_list"
     version = "1.0.0"
-    plugin_type = "spider"
-    input_schema = "TaskConfigDTO.v1"
-    output_schema = "RawDataBatch.v1"
 
-    def __init__(self):
-        self._session: Optional[PoliteSession] = None
-        self._cache: Optional[CrawlCache] = None
-        self._cancel_token: Any = None
+    def execute(self, task_config: TaskConfigDTO, context: PluginContext) -> RawDataBatch:
+        session = context.http
+        cache = context.cache
+        cancel_token = context.cancel_token
 
-    def setup(self, context) -> None:
-        self._session = context.http
-        self._cache = context.cache
-        self._cancel_token = context.cancel_token
-
-    def execute(self, task_config: TaskConfigDTO, context) -> RawDataBatch:
-        self.setup(context)
-
-        if not self._session:
+        if not session:
             raise RuntimeError("PoliteSession not injected via context")
 
         cfg = task_config.config_snapshot
@@ -60,9 +49,12 @@ class PDFListSpiderPlugin:
         items: list[RawDataDTO] = []
         errors: list[dict] = []
 
-        if self._cancel_token and self._cancel_token.is_set():
-            errors.append(self._make_error(
-                "CANCELLED", "Crawl cancelled by user", "acquire", task_config.task_id, task_config.source_id, retryable=False
+        if cancel_token and cancel_token.is_set():
+            errors.append(make_error(
+                ERROR_PIPELINE_CANCELLED,
+                "Crawl cancelled by user",
+                task_id=task_config.task_id,
+                source_id=task_config.source_id,
             ))
             return RawDataBatch(
                 schema_version="1",
@@ -72,7 +64,7 @@ class PDFListSpiderPlugin:
                 errors=errors,
             )
 
-        dto, error = self._fetch_pdf(pdf_url, task_config, "pdf_list")
+        dto, error = self._fetch_pdf(pdf_url, task_config, "pdf_list", session, cache)
         if error:
             errors.append(error)
         if dto:
@@ -82,65 +74,42 @@ class PDFListSpiderPlugin:
             schema_version="1",
             task_id=task_config.task_id,
             items=items,
-            pagination_complete=True,  # PDF is single document
+            pagination_complete=True,
             errors=errors,
         )
 
-    def _fetch_pdf(self, pdf_url: str, task_config: TaskConfigDTO, trace_label: str) -> tuple[Optional[RawDataDTO], Optional[dict]]:
-        """Fetch PDF and wrap as RawDataDTO with document asset."""
+    def _fetch_pdf(self, pdf_url, task_config, trace_label, session, cache):
         try:
             def _do_fetch() -> bytes:
-                resp = self._session.get(pdf_url)
-                return resp.content
+                return session.get(pdf_url).content
 
-            if self._cache:
-                # Cache stores base64-encoded bytes
+            if cache:
                 def _fetch_encoded() -> str:
                     return base64.b64encode(_do_fetch()).decode("ascii")
 
-                encoded = self._cache.get_or_fetch(_fetch_encoded, f"pdf_list:base64:v1:{pdf_url}", force=False)
+                encoded = cache.get_or_fetch(_fetch_encoded, f"pdf_list:base64:v1:{pdf_url}", force=False)
                 pdf_bytes = base64.b64decode(encoded, validate=True)
             else:
                 pdf_bytes = _do_fetch()
 
-            # Create MediaAsset with PDF document
             asset = MediaAsset(
                 media_type="document",
                 mime_type="application/pdf",
                 data=pdf_bytes,
                 metadata={"source_url": pdf_url, "trace_label": trace_label},
             )
-
-            dto = RawDataDTO(
+            return RawDataDTO(
                 source_id=task_config.source_id,
                 url=pdf_url,
                 content_type="application/pdf",
                 encoding="binary",
                 fetched_at=datetime.now().isoformat(),
-                trace={
-                    "trace_label": trace_label,
-                    "task_id": task_config.task_id,
-                },
+                trace={"trace_label": trace_label, "task_id": task_config.task_id},
                 assets=[asset],
-            )
-            return dto, None
+            ), None
 
         except BlockedError as e:
-            return None, self._make_error("BLOCKED", str(e), "acquire", task_config.task_id, task_config.source_id, retryable=True)
+            return None, make_error(ERROR_HTTP_BLOCKED, str(e), task_id=task_config.task_id, source_id=task_config.source_id)
         except Exception as e:
             logger.exception("PDF fetch failed for %s", pdf_url)
-            return None, self._make_error("FETCH_ERROR", str(e), "acquire", task_config.task_id, task_config.source_id, retryable=True)
-
-    def _make_error(self, code: str, message: str, stage: str, task_id: str, source_id: str, retryable: bool) -> dict:
-        return {
-            "code": code,
-            "message": message,
-            "stage": stage,
-            "task_id": task_id,
-            "source_id": source_id,
-            "retryable": retryable,
-            "diagnostics": {},
-        }
-
-    def close(self) -> None:
-        pass
+            return None, make_error("PLUGIN_EXECUTE_FAILED", str(e), task_id=task_config.task_id, source_id=task_config.source_id)

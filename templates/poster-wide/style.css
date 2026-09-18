@@ -1,0 +1,63 @@
+/* poster-wide - Wide poster format, light theme */
+:root {
+  --color-primary: #dc2626;
+  --color-secondary: #f87171;
+  --bg-primary: #ffffff;
+  --bg-secondary: #fef2f2;
+  --text-primary: #1f1f1f;
+  --text-secondary: #6b7280;
+  --border-color: #fca5a5;
+  --font-family: "Montserrat", "Poppins", sans-serif;
+  --font-size-base: 16px;
+  --border-radius: 0px;
+  --spacing-unit: 12px;
+}
+
+.tpl-poster-wide {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-poster-wide .tpl-header {
+  background: var(--color-primary);
+  color: #ffffff;
+  padding: calc(var(--spacing-unit) * 4) calc(var(--spacing-unit) * 6);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.tpl-poster-wide .tpl-poster-title {
+  font-size: 3em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.tpl-poster-wide .tpl-poster-subtitle {
+  font-size: 1.2em;
+  font-weight: 300;
+  opacity: 0.9;
+  margin-top: var(--spacing-unit);
+}
+
+.tpl-poster-wide .tpl-stats-banner {
+  display: flex;
+  justify-content: space-around;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 4);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+  text-align: center;
+}
+
+.tpl-poster-wide .tpl-poster-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: calc(var(--spacing-unit) * 3);
+  line-height: 1.6;
+}

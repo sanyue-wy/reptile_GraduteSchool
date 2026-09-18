@@ -3,43 +3,39 @@
 Implements SQLite storage with UPSERT support, schema migration, and atomic transactions.
 """
 
+import json
 import logging
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from contracts.result import StoreRequest, StoreReceipt, ErrorDTO
 from plugins.base import BasePlugin, PluginContext
 
 logger = logging.getLogger(__name__)
 
-# Schema for the records table
 INIT_SQL = """
--- Records table with natural key (record_id)
 CREATE TABLE IF NOT EXISTS records (
     record_id TEXT PRIMARY KEY,
     dataset TEXT NOT NULL,
     schema_id TEXT NOT NULL,
-    fields_json TEXT NOT NULL,  -- JSON serialized fields
-    provenance_json TEXT,       -- JSON serialized provenance
-    media_refs_json TEXT,       -- JSON serialized media_refs list
+    fields_json TEXT NOT NULL,
+    provenance_json TEXT,
+    media_refs_json TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Index for common queries
 CREATE INDEX IF NOT EXISTS idx_records_dataset ON records(dataset);
 CREATE INDEX IF NOT EXISTS idx_records_schema ON records(schema_id);
 CREATE INDEX IF NOT EXISTS idx_records_created ON records(created_at);
 
--- Schema version tracking
 CREATE TABLE IF NOT EXISTS schema_version (
     version INTEGER PRIMARY KEY,
     applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert initial schema version
 INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 """
 
@@ -59,11 +55,8 @@ class SqlStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
         self._conn = None
 
     def setup(self, context: PluginContext) -> None:
-        """Initialize database connection and schema."""
         self._context = context
-        # Read config from context.config_snapshot
-        plugin_config = context.config_snapshot.get("plugins", {}).get("sql_store", {})
-        self._config = plugin_config
+        self._config = context.config_snapshot.get("plugins", {}).get("sql_store", {})
 
         db_path = self._config.get("database_path")
         if not db_path:
@@ -71,18 +64,17 @@ class SqlStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
 
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._conn.execute("PRAGMA journal_mode=WAL")  # Better concurrency
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA busy_timeout=5000")
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._init_schema()
 
     def _init_schema(self) -> None:
-        """Initialize database schema."""
         with self._transaction() as cur:
             cur.executescript(INIT_SQL)
 
     @contextmanager
     def _transaction(self):
-        """Context manager for database transactions."""
         cur = self._conn.cursor()
         try:
             yield cur
@@ -92,20 +84,29 @@ class SqlStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
             raise
 
     def execute(self, request: StoreRequest, context: PluginContext) -> StoreReceipt:
-        """Execute SQLite storage with UPSERT.
-
-        Args:
-            request: StoreRequest with dataset, run_id, target_id, format_id, data_refs
-            context: PluginContext with storage workspace
-
-        Returns:
-            StoreReceipt with written/skipped/failed counts and output_ref
-        """
         try:
-            records = self._load_records(request, context)
+            from infra.storage import check_and_reserve, commit as idem_commit
+            from converters.storage_converter import records_from_data_refs
+
+            # Idempotency check
+            base_dir = Path("data")
+            if context.storage and hasattr(context.storage, "workspace"):
+                base_dir = context.storage.workspace.base_dir
+            cached = check_and_reserve(base_dir, request.run_id, request.idempotency_key)
+            if cached is not None:
+                return StoreReceipt(
+                    target_id=cached.get("target_id", request.target_id),
+                    written=0,
+                    skipped=cached.get("records_written", 0),
+                    failed=0,
+                    records_written=0,
+                    output_ref=cached.get("output_ref", ""),
+                )
+
+            records = records_from_data_refs(request.data_refs)
 
             if not records:
-                return StoreReceipt(
+                receipt = StoreReceipt(
                     target_id=request.target_id,
                     written=0,
                     skipped=0,
@@ -113,17 +114,24 @@ class SqlStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
                     records_written=0,
                     output_ref=self._config.get("database_path", ""),
                 )
+            else:
+                written, skipped = self._upsert_records(records, request.dataset)
+                receipt = StoreReceipt(
+                    target_id=request.target_id,
+                    written=written,
+                    skipped=skipped,
+                    failed=0,
+                    records_written=written,
+                    output_ref=self._config.get("database_path", ""),
+                )
 
-            written, skipped = self._upsert_records(records, request.dataset)
+            idem_commit(base_dir, request.run_id, request.idempotency_key, {
+                "target_id": receipt.target_id,
+                "records_written": receipt.records_written,
+                "output_ref": receipt.output_ref,
+            })
 
-            return StoreReceipt(
-                target_id=request.target_id,
-                written=written,
-                skipped=skipped,
-                failed=0,
-                records_written=written,
-                output_ref=self._config.get("database_path", ""),
-            )
+            return receipt
 
         except Exception as e:
             logger.exception("SQLite storage failed for target %s", request.target_id)
@@ -139,23 +147,17 @@ class SqlStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
                     message=str(e),
                     stage="store",
                     task_id=request.state_snapshot.get("task_id", ""),
-                    retryable=True,
                 ),
             )
 
-    def _load_records(self, request: StoreRequest, context: PluginContext) -> list[dict]:
-        """Load records from data_refs (placeholder)."""
-        # Actual implementation would fetch from data_refs
-        return []
-
     def _upsert_records(self, records: list[dict], dataset: str) -> tuple[int, int]:
-        """Upsert records using natural key (record_id).
+        """Upsert records using SQLite INSERT ... ON CONFLICT (record_id).
 
-        Returns:
-            Tuple of (written_count, skipped_count)
+        Returns (written_count, skipped_count).
         """
         written = 0
         skipped = 0
+        now = datetime.now().isoformat()
 
         with self._transaction() as cur:
             for rec in records:
@@ -164,57 +166,41 @@ class SqlStorePlugin(BasePlugin[StoreRequest, StoreReceipt]):
                     logger.warning("Record missing record_id, skipping: %s", rec)
                     continue
 
-                # Check if record exists
-                cur.execute("SELECT record_id FROM records WHERE record_id = ?", (record_id,))
-                exists = cur.fetchone() is not None
+                fields_json = json.dumps(rec.get("fields", {}), ensure_ascii=False)
+                provenance_json = json.dumps(rec.get("provenance", {}), ensure_ascii=False)
+                media_refs_json = json.dumps(rec.get("media_refs", []), ensure_ascii=False)
+                created_at = rec.get("created_at", now)
 
-                import json
-                from datetime import datetime
-                now = datetime.now().isoformat()
+                # Check existence before upsert to track written vs skipped
+                cur.execute("SELECT 1 FROM records WHERE record_id = ?", (record_id,))
+                existed = cur.fetchone() is not None
 
-                if exists:
-                    # Update existing record
-                    cur.execute("""
-                        UPDATE records SET
-                            dataset = ?,
-                            schema_id = ?,
-                            fields_json = ?,
-                            provenance_json = ?,
-                            media_refs_json = ?,
-                            updated_at = ?
-                        WHERE record_id = ?
-                    """, (
-                        dataset,
-                        rec.get("schema_id", ""),
-                        json.dumps(rec.get("fields", {}), ensure_ascii=False),
-                        json.dumps(rec.get("provenance", {}), ensure_ascii=False),
-                        json.dumps(rec.get("media_refs", []), ensure_ascii=False),
-                        now,
-                        record_id,
-                    ))
+                cur.execute("""
+                    INSERT INTO records (record_id, dataset, schema_id, fields_json,
+                                         provenance_json, media_refs_json, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(record_id) DO UPDATE SET
+                        dataset = excluded.dataset,
+                        schema_id = excluded.schema_id,
+                        fields_json = excluded.fields_json,
+                        provenance_json = excluded.provenance_json,
+                        media_refs_json = excluded.media_refs_json,
+                        updated_at = excluded.updated_at
+                """, (
+                    record_id, dataset, rec.get("schema_id", ""),
+                    fields_json, provenance_json, media_refs_json,
+                    created_at, now,
+                ))
+
+                if existed:
                     skipped += 1
                 else:
-                    # Insert new record
-                    cur.execute("""
-                        INSERT INTO records (record_id, dataset, schema_id, fields_json, provenance_json, media_refs_json, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        record_id,
-                        dataset,
-                        rec.get("schema_id", ""),
-                        json.dumps(rec.get("fields", {}), ensure_ascii=False),
-                        json.dumps(rec.get("provenance", {}), ensure_ascii=False),
-                        json.dumps(rec.get("media_refs", []), ensure_ascii=False),
-                        rec.get("created_at", now),
-                        now,
-                    ))
                     written += 1
 
         logger.info("SQLite upsert: written=%d, skipped=%d", written, skipped)
         return written, skipped
 
     def close(self) -> None:
-        """Close database connection."""
         if self._conn:
             self._conn.close()
             self._conn = None

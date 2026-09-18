@@ -1,0 +1,49 @@
+/* ocean-blue - Ocean blue palette, light theme */
+:root {
+  --color-primary: #1d4ed8;
+  --color-secondary: #3b82f6;
+  --bg-primary: #eff6ff;
+  --bg-secondary: #dbeafe;
+  --text-primary: #1e3a5f;
+  --text-secondary: #4b6a8e;
+  --border-color: #93c5fd;
+  --font-family: "Source Sans 3", "Open Sans", sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 6px;
+  --spacing-unit: 8px;
+}
+
+.tpl-ocean-blue {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-ocean-blue .tpl-wave-header {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: #ffffff;
+  padding: calc(var(--spacing-unit) * 3) calc(var(--spacing-unit) * 4);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  font-size: 1.5em;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.tpl-ocean-blue .tpl-stats-wave {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 3);
+  margin-bottom: calc(var(--spacing-unit) * 3);
+  display: flex;
+  gap: calc(var(--spacing-unit) * 3);
+}
+
+.tpl-ocean-blue .tpl-content {
+  line-height: 1.6;
+}
