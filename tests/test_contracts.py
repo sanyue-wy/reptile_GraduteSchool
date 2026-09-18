@@ -183,6 +183,7 @@ class TestRawDataDTO:
         assert validate_raw_dto(dto)
 
     def test_legacy_content_field(self):
+        asset = MediaAsset(media_type="text", mime_type="text/html", data=b"<html>legacy</html>")
         dto = RawDataDTO(
             source_id="source_a",
             url="https://example.com/page1",
@@ -190,11 +191,12 @@ class TestRawDataDTO:
             encoding="utf-8",
             fetched_at=datetime.now().isoformat(),
             content="<html>legacy</html>",
-            assets=[],
+            assets=[asset],
         )
         assert validate_raw_dto(dto)
 
     def test_legacy_raw_ref_field(self):
+        asset = MediaAsset(media_type="text", mime_type="text/html", data=b"placeholder")
         dto = RawDataDTO(
             source_id="source_a",
             url="https://example.com/page1",
@@ -202,11 +204,12 @@ class TestRawDataDTO:
             encoding="utf-8",
             fetched_at=datetime.now().isoformat(),
             raw_ref="data/raw/example.html",
-            assets=[],
+            assets=[asset],
         )
         assert validate_raw_dto(dto)
 
     def test_invalid_both_legacy_fields(self):
+        asset = MediaAsset(media_type="text", mime_type="text/html", data=b"placeholder")
         with pytest.raises(ValueError, match="cannot have both content and raw_ref"):
             RawDataDTO(
                 source_id="source_a",
@@ -216,7 +219,7 @@ class TestRawDataDTO:
                 fetched_at=datetime.now().isoformat(),
                 content="html",
                 raw_ref="path",
-                assets=[],
+                assets=[asset],
             )
 
 

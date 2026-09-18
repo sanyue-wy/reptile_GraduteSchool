@@ -30,6 +30,11 @@ class RawDataDTO:
     raw_ref: Optional[str] = None  # Legacy: path to raw file (mutually exclusive with content)
 
     def __post_init__(self):
+        # Validate assets is non-empty for new code (required field per INTERFACES.md §2.4)
+        # Exception: legacy raw_ref mode allows empty assets (converter fills them in)
+        if not self.assets and not self.raw_ref:
+            raise ValueError("RawDataDTO.assets must not be empty — at least one MediaAsset required (unless using legacy raw_ref)")
+
         # Validate legacy mutual exclusion
         if self.content is not None and self.raw_ref is not None:
             raise ValueError("RawDataDTO cannot have both content and raw_ref (legacy)")

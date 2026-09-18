@@ -309,3 +309,18 @@
 **验收**：
 - `python -m pytest tests/test_presentation_plugins.py -q` → 25 passed, 1 skipped
 - `python -m pytest tests/test_contracts.py -q` → 44 passed
+
+### B3 更新：RawDataDTO assets 运行时校验（2026-09-21）
+
+**问题**：仅靠 v1_schema() required 列表不够，下游可能收到运行时构造的空 assets DTO。
+
+**修复**：
+- `contracts/raw.py` RawDataDTO.__post_init__ 新增校验：
+  - `assets` 为空且无 `raw_ref` → 抛出 ValueError
+  - legacy `raw_ref` 模式允许空 assets（converter 负责填充）
+- `tests/test_contracts.py` 修复 3 个 legacy 测试用例，补充 assets fixture
+- INTERFACES.md §2.4 更新：说明 __post_init__ 校验行为
+
+**验收**：
+- `python -c "from contracts.raw import RawDataDTO; RawDataDTO(source_id='x', url='y', content_type='text/html', encoding='utf-8', fetched_at='2024-01-01', assets=[])"` → ValueError
+- `python -m pytest tests/ -q --ignore=tests/test_filter_component.py` → 917 passed, 3 skipped

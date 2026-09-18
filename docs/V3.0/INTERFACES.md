@@ -91,11 +91,12 @@
 | encoding | str | ✓ | 编码 |
 | fetched_at | str | ✓ | ISO 8601 |
 | trace | dict | | 请求/响应元数据 |
-| assets | list[MediaAsset] | ✓ | **资产真值** |
+| assets | list[MediaAsset] | ✓ | **资产真值**；`__post_init__` 校验：新代码必须非空；legacy raw_ref 模式允许空（converter 填充） |
 | content | str? | ✗ | **Legacy only** 与 raw_ref 二选一 |
 | raw_ref | str? | ✗ | **Legacy only** 与 content 二选一 |
 
 > **红线**：新插件必须填充 assets；content/raw_ref 仅供 legacy 适配，raw_converter 负责归一。
+> **校验**：`__post_init__` 在 `assets` 为空且无 `raw_ref` 时抛出 ValueError。
 
 ### 2.5 RawDataBatch (contracts.raw)
 
@@ -560,6 +561,7 @@ print(len(r['errors']))
 | 3.0.0 | 2026-09-18 | 初始冻结 | W1 |
 | 3.0.1 | 2026-09-20 | 契约验收复核：迁移器映射表对齐示例 YAML 实例名（纯脚本，不改契约）；裁决仲裁提案 #1–#4 | W1 |
 | 3.0.2 | 2026-09-21 | B2 PresenterPlugin 契约对齐：execute() 为具体方法（调用 render() 钩子），更新 §3.6 描述与代码一致；B3 RawDataDTO assets 加入 v1_schema() required 列表（§2.4） | W1 |
+| 3.0.3 | 2026-09-21 | B3 RawDataDTO assets 运行时校验：`__post_init__` 在 assets 为空且无 raw_ref 时抛 ValueError；更新 §2.4 说明 | W1 |
 
 ---
 
