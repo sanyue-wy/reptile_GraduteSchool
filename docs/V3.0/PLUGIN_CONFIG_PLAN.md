@@ -1,881 +1,699 @@
-# 通用网络数据采集与处理平台 · V3.0 计划书
+# 通用网络数据采集与处理平台 · V3.0 可执行计划书
 
-> 版本：2026-09-17 · 取代 2026-09 的《插件化配置系统 · 计划书》
-> 定位升级：从「研究生导师采集脚本」升级为**数据契约驱动的通用网络数据采集与处理平台**——主干稳定如磐石，插件灵活如积木。
-> 本文档是 **V3.0 的实施计划书**，不是 V2.2 完成证明。V3.0 开工前提见 §1.3「V2.2 启动门槛」。
+> 编制日期：2026-09-17
+> 实施前提：完成 V2.2 重构并通过验收，再启动本计划。
+> 本次交付仅为计划书，不代表以下目录、功能或测试已实现。
+> 核心方向：多媒体资产契约驱动的管道—过滤器架构，统一 spider、processor、storage、presenter、ui 五组插件。
+> 控制台仅负责插件管理、任务定义、输出定义；成品输出由呈现器负责。导师调研是基本验证组合，不是核心数据模型。
+> 开发辅助目标：5 分钟定义任务、30 分钟完成首个插件、约 30 行业务代码起步、20 套 HTML 模板快速切换。时间目标须实测，不是已达成结论。
 
----
+### 阅读顺序
 
-## 0. 阅读指引
+先读 §2 目录、§3 数据流、§4 契约，再按 §10 分工实施；§8 定义控制台/呈现器，编辑器、脚手架、20 套模板和十篇指南的落地规格见 [tasks/](tasks/README.md) 多窗口任务卡（W7/W8），§11 是最终验收门槛。
 
-| 章节 | 回答的问题 |
-|---|---|
-| §1 执行摘要与启动门槛 | 本次升级做什么？何时可以开工？ |
-| §2 目录结构与放置规则 | 目录怎么排布？文件放哪里？（用户重点关注） |
-| §3 架构与渐进迁移 | 新旧结构如何过渡？ |
-| §4 数据契约（DTO）与调用语义 | 阶段之间传什么数据？ |
-| §5 调度、合并与副作用边界 | 并发、重试、失败、多存储怎么处理？ |
-| §6 插件迁移映射与配置系统 | 旧 7 类插件怎么迁？配置怎么管？ |
-| §7 插件治理与安全 | 外部插件如何安全加载？ |
-| §8 UI 组件插件化与 API | 前端怎么插拔？接口怎么变？ |
-| §9 开源参考与依赖策略 | 借鉴谁？引入什么？ |
-| §10 Wave 划分、文件所有权与实施步骤 | 谁做什么？什么顺序？ |
-| §11 验收标准与回滚 | 怎么算做完？怎么退回来？ |
+本次只修改计划书，不创建目录、不实现代码、不安装依赖、不执行采集或发布。以下新路径、接口和命令均为未来交付要求。
 
----
+## 1. 目标、现状与启动门槛
 
-## 1. 执行摘要、范围与启动门槛
+### 1.1 本期交付
 
-### 1.1 项目定位
+1. 统一主干 acquire → process → store → present，不按学校、来源、媒体类型或具体输出格式写业务分支。
+2. MediaAsset、原始资产批次、通用记录、存储回执、呈现请求及 RenderedOutputDTO；支持文本/图片/音频/视频/文档/二进制。
+3. 静态 HTML、AJAX、JS、PDF、研招网采集，以及受控直接媒体 URL 下载示例。OCR/音频分析/转码预留协议与可选适配点，不宣称已经具备生产级处理能力。
+4. 列表/详情/研招解析、归一、去重、合并、统计；资产引用在处理后保持可追踪。
+5. JSONL、Excel、SQLite、进度快照、媒体存储；兼容旧数据路径和格式。
+6. 五个内置呈现器：HTML、Text（含 Markdown 模式）、JSONL、CSV、PDF；XML 定义扩展格式规范，不列入五个内置实现。
+7. HTML 下的 table/chart/card/filter 四个 UI 组件、20 套完整模板、ThemeSwitcher 与预览图；不是只交付模板名称。
+8. 控制台三功能、schema_editor 三个预设、五类插件及模板脚手架、十篇开发指南、MkDocs/mkdocstrings 文档构建。
+9. 配置迁移、批准与生命周期管理、CLI/API 兼容、离线回归、浏览器验收、新手计时和回滚演练。
 
-**一句话定位**：数据契约（DTO）驱动的「管道-过滤器」平台 + 统一插件生态，覆盖采集 → 处理 → 存储 → 展示全链路可插拔。
+“主干零修改”指在既有契约和执行模型内新增能力，只新增插件包、插件自带 schema/资源及配置。新增执行模型或改变核心契约仍需版本化升级，不能承诺任意变化永远无需改主干。
 
-核心目标：
+本期不重命名仓库，不重写为 SPA，不引入分布式调度、复杂 DAG 或另一套异步运行时。Scrapy/Crawlee 等只作为可选适配器，不成为核心依赖。不支持未经审查的任意 Python 代码安全执行。
 
-1. **主干稳定**：`pipeline/` 只负责流程编排，不含任何具体数据源、解析或存储逻辑；新增数据源/处理器/存储/UI 组件，主干零修改。
-2. **契约先行**：阶段之间只传标准 DTO，杜绝隐式 `dict` 透传；DTO 有版本与校验。
-3. **四类插件**：采集（spider）、处理（processor）、存储（storage）、展示（ui），全部继承统一基类、输出标准 DTO。
-4. **UI 也插件化**：表格、图表、卡片、过滤器组件通过配置切换，宿主按描述 DTO 渲染。
-5. **兼容旧世界**：旧 CLI、旧配置、旧 JSONL 输出、旧 API 均保留兼容视图。
+### 1.2 当前资产与 V2.2 预期交付分开记录
 
-**不做什么**（本期明确排除，避免范围膨胀）：
+依据：[V2.2 架构分析](../V2.2/ARCHITECTURE_ANALYSIS.md)、[实施总览](../V2.2/agents/README.md)、[冻结契约登记](../refactor/interfaces.md)。冻结登记中的纠正优先于原指导书冲突示例，最终签名以 V2.2 验收结果为准。
 
-- 不重命名仓库、不改 `data/` 既有路径。
-- 不引入 Scrapy/Crawlee 等重框架作为核心依赖（仅可选适配器）。
-- 不做分布式采集、复杂 DAG 编排、async 双栈、非 Python 插件（列入 §12 路线图）。
-- 不承诺跨文件/数据库的分布式事务（多存储是同一结果的 fan-out，各自回执）。
-
-### 1.2 现状盘点（2026-09-17 代码快照）
-
-状态标记：**已存在** = 代码中已观察到；**待验收** = V2.2 指导书要求但本次快照未确证；**V3.0 新增** = 本计划新增。
-
-| 能力 | 状态 | 位置/说明 |
+| 资产 | 当前观察 | V3.0 处理 |
 |---|---|---|
-| 爬虫引擎抽象基类 | 已存在 | `spiders/engine.py`：`SpiderEngine` ABC + 类注册表；与包级旧函数注册表并存 |
-| 五个采集引擎 | 已存在 | `spiders/static_list.py`、`ajax_api.py`、`js_render.py`、`pdf_list.py`、`yzw_api.py` |
-| 插件元信息与七类清单 | 已存在 | `config/plugins.py`：七类（source/fetcher/parser/processor/exporter/presenter/utility）、外部插件发现/启停/上传/重载 |
-| 权重链 processor/exporter | 已存在 | `processors/__init__.py`、`exporters/__init__.py`；权重链由 `config/plugins.json` 驱动 |
-| 服务层 | 待验收 | `services/`（CrawlerService/MergeService/ExportService）在 V2.2 Agent A 指导书中定义，代码快照未观察到 |
-| 存储抽象层 | 待验收 | `storage/jsonl_store.py`、`progress_store.py`、`config_store.py` 已出现在 git status，接口以 V2.2 验收为准 |
-| 插件安全校验 | 已存在 | `security/plugin_validator.py`：AST 黑名单 + META 校验；**明确：AST 检查是静态审查门禁，不是安全沙箱** |
-| 缓存/熔断整合 | 待验收 | `PoliteSession` 按域熔断（V2.2 Agent E 契约），main.py 旧 `CircuitBreaker` 退役情况待确认 |
-| 插件管理 API | 已存在 | `api/server.py`：`/api/plugins` 全套（清单/上传/更新/删除/重载/流水线权重） |
-| 配置校验联动注册表 | 已存在 | `config/validator.py`：`list_type`/`template` 已从注册表动态查询 |
-| 管道引擎 `pipeline/` | V3.0 新增 | 单数 `pipeline/`，区别于旧复数 `pipelines/` |
-| `contracts/`、`converters/` | V3.0 新增 | DTO 契约层与转换层 |
-| `plugin_manager/` | V3.0 新增 | 发现/校验/注册治理框架 |
-| UI 组件插件 | V3.0 新增 | `plugins/ui/` 表格/图表/卡片/过滤器 |
+| [config/plugins.py](../../config/plugins.py) | 已有七类清单、覆盖配置、发现/上传/重载 | 迁移治理逻辑，保留旧管理入口 |
+| [spiders/engine.py](../../spiders/engine.py) | 类注册表与包级函数表并存；fetch 返回已解析记录 | 统一 registry，显式 legacy 适配，再拆分抓取与解析 |
+| [processors/__init__.py](../../processors/__init__.py) | normalize/dedup/merge；merge 是兼容占位 | 复用算法，不把占位当作实际多源合并 |
+| [exporters/__init__.py](../../exporters/__init__.py) | JSONL/Excel 注册入口 | 包装成 storage 插件 |
+| [security/plugin_validator.py](../../security/plugin_validator.py) | 加载前 AST 校验；非沙箱 | 保留拒绝策略，扩展元数据和批准流程 |
+| services、storage、HTTP/缓存整合 | V2.2 交付范围；部分模块存在不等于整体完成 | 必须先核验服务接入、线程安全与兼容性 |
+| pipeline、contracts、converters、统一 UI 组件 | 本计划新增 | 不描述为当前已实现 |
 
-### 1.3 V2.2 启动门槛（Gate）
+### 1.3 V2.2 Gate
 
-V3.0 Wave 0 开工前，须完成 V2.2 交接确认，逐项打勾并记录到 `docs/refactor/acceptance.md`：
+开工前由集成人员记录基线提交、Python/依赖版本、实际测试输出和覆盖率，检查：
 
-- [ ] `services/` 服务层接入：`main.py` 与 `api/server.py` 通过服务层调用底层（或记录为何保留直接调用）。
-- [ ] 旧函数兼容：`main.run_source_a/b`、`main.execute_task`、`main.build_tasks`、`run_merge` 兼容层存在且测试通过。
-- [ ] 存储抽象：`JSONLStore/ProgressStore/ConfigStore` 落地，原子写入 `tempfile.mkstemp + os.replace` 未破坏。
-- [ ] HTTP 熔断单一真值：`PoliteSession.is_blocked()` 生效，生产路径无双熔断状态。
-- [ ] `ProgressTracker`、`CrawlCache` 线程锁保留，跨线程更新测试通过。
-- [ ] 测试隔离：全量 `pytest tests/ -q` 在临时目录下通过，不以真实 `data/` 为依赖。
-- [ ] V2.2 验收报告存在（提交标识、环境、测试输出、实际覆盖率）。
+- [ ] CrawlerService、MergeService、ExportService 已接入 CLI/API；旧函数签名和返回值保留。
+- [ ] JSONLStore、ProgressStore、ConfigStore 已验收；原子写入和失败清理正常。
+- [ ] 生产路径由 PoliteSession 管理唯一熔断状态；不存在两套独立熔断器。
+- [ ] ProgressTracker、CrawlCache 的锁及并发测试保留。
+- [ ] 测试隔离真实配置/数据，source A/B、resume、retry_failed、force 均有回归证据。
+- [ ] V2.2 验收报告已交接。历史测试数量不能代替本次基线。
 
-**未通过项返回 V2.2 收尾，不带入 V3.0。** 基线以验收报告中的实测数字为准，不沿用历史「405 passed」等快照。
+未通过项返回 V2.2 收尾。本计划可先编写，V3.0 代码实施不得以“已有几个目录”为由跳过 Gate。
 
----
+## 2. 目录结构与文件放置规则
 
-## 2. 目录结构与放置规则（重点章节）
+### 2.1 推荐目标目录
 
-### 2.1 最终目录树
-
-目标组织，兼容期结束后应呈现的结构（省略常规 `__init__.py`）：
+保持与原草案一致的六个核心目录，不额外增加 core/platform/runtime 等同义层。下树表示目标组织；兼容期仍保留 §2.4 的旧入口。省略常规 `__init__.py`。
 
 ```text
-reptile_GraduteSchool/                # 仓库名保留；对外展示名可升级
-├── main.py                          # CLI 参数解析 + 调用 Pipeline
-├── api/server.py                    # REST 路由 + 调用入口
-├── pipeline/                        # ★ 主干：流程怎么走
-│   ├── engine.py                    #   流程控制、插件调度、异常熔断
-│   └── stages/                      #   acquire.py / process.py / store.py / present.py
-├── contracts/                       # ★ 契约：数据长什么样
-│   ├── task.py                      #   TaskConfigDTO + TaskRunState
-│   ├── raw.py                       #   RawDataDTO、RawDataBatch
-│   ├── record.py                    #   NormalizedRecordDTO、RecordBatch
-│   ├── ui.py                        #   UIComponentDTO、ViewModel
-│   ├── result.py                    #   StoreReceipt、StageResult、RunResult
-│   └── profiles/                    #   领域 schema（education.py 等）
-├── converters/                      # ★ 转换：边界怎么转
-│   ├── request_converter.py         #   外部请求 → TaskConfigDTO
-│   ├── raw_converter.py             #   RawDataDTO ↔ 插件输入
-│   ├── storage_converter.py         #   NormalizedRecordDTO → 存储格式
-│   └── view_converter.py            #   分析结果 → UIComponentDTO
-├── plugins/                         # ★ 插件生态：能力怎么扩展
-│   ├── base.py                      #   BasePlugin 及四类协议
-│   ├── spiders/                     #   采集组
-│   ├── processors/                  #   处理组
-│   ├── storage/                     #   存储组
-│   └── ui/                          #   展示组
-├── plugin_manager/                  # ★ 治理：插件怎么管理
-│   ├── loader.py                    #   发现、加载（候选发现不 import）
-│   ├── validator.py                 #   metadata/接口/AST 校验
-│   └── registry.py                  #   单一注册表、生命周期
-├── infra/                           # ★ 基建：运行靠什么
-│   ├── context.py                   #   PipelineContext
-│   ├── http.py                      #   受管 HTTP（委托 utils/http.py 实现）
-    ├── cache.py                     #   受管缓存
-    ├── progress.py                  #   进度门面
-    ├── errors.py                    #   错误分类与重试预算
-│   └── storage/                     #   原子文件、JSONL/进度/配置底层读写
-├── config/                          # 配置：启用什么、怎样组合
-│   ├── pipeline.yaml                #   声明式管道（新增）
-│   ├── plugins.yaml                 #   插件实例与参数（新增）
-│   ├── global.json                  #   全局参数（保留）
-│   └── school_data.json             #   教育领域旧配置（兼容）
-├── dashboard/                       # UI 宿主：加载组件插件、布局、renderer
-├── tests/                           # 镜像模块目录；fixtures/、integration/
-├── scripts/                         # 迁移、验收等维护脚本
-├── docs/                            # V0.0–V3.0 文档
-└── data/                            # raw/cache/output 路径不变
+reptile_DataPlatform/                # 目标名称；迁移期实际仓库名暂保留
+├── main.py
+├── api/server.py
+├── pipeline/
+│   ├── engine.py
+│   └── stages/                     # acquire/process/store/present.py
+├── contracts/
+│   ├── asset.py                    # MediaAsset、AssetRef
+│   ├── task.py                     # TaskConfigDTO、TaskRunState、OutputSpec
+│   ├── raw.py                      # RawDataDTO、RawDataBatch
+│   ├── record.py                   # NormalizedRecordDTO、RecordBatch
+│   ├── output.py                   # PresentationRequest、RenderedOutputDTO
+│   ├── ui.py                       # ViewModel、UIComponentDTO
+│   ├── result.py                   # StoreRequest/Receipt、RunResult、ErrorDTO
+│   └── profiles/education.py       # 领域扩展，不作为通用必填字段
+├── converters/
+│   ├── request_converter.py
+│   ├── raw_converter.py
+│   ├── storage_converter.py
+│   └── view_converter.py
+├── plugins/
+│   ├── base.py
+│   ├── spiders/                    # 五种旧引擎 + media_downloader 示例
+│   ├── processors/                 # 解析/合并/统计，媒体处理按能力声明
+│   ├── storage/                    # JSONL/Excel/SQLite/Progress/Media
+│   ├── presenters/
+│   │   ├── base_presenter.py
+│   │   ├── html_presenter/          # plugin.py、theme_switcher.py
+│   │   ├── text_presenter/          # text / markdown 两种模式
+│   │   ├── jsonl_presenter/
+│   │   ├── csv_presenter/
+│   │   └── pdf_presenter/
+│   └── ui/                         # table/chart/card/filter_component
+├── plugin_manager/
+│   ├── loader.py
+│   ├── validator.py
+│   └── registry.py
+├── infra/
+│   ├── context.py
+│   ├── http.py
+│   ├── cache.py
+│   ├── progress.py
+│   ├── errors.py
+│   └── storage/                    # 原子 I/O、媒体引用、受管输出工作区
+├── scaffolds/
+│   ├── cli.py
+│   ├── generator.py
+│   └── templates/                 # 五类插件骨架 + HTML 模板骨架
+├── templates/
+│   ├── registry.json
+│   ├── minimal-light/             # layout.html/style.css/variables.json/preview.png
+│   ├── academic-serif/
+│   └── ...                        # 共 20 套，规格见 tasks/W7_presenters_ui_templates.md
+├── schema_editor/
+│   ├── editor.py
+│   ├── generator.py
+│   └── presets/                   # tutor_research/paper_collection/news_monitor.yaml
+├── config/
+│   ├── pipeline.yaml
+│   ├── plugins.yaml
+│   ├── global.json
+│   ├── school_data.json
+│   └── examples/tutor_research.yaml
+├── dashboard/
+│   ├── console/
+│   │   ├── index.html             # 仅三功能导航
+│   │   ├── plugins.html
+│   │   ├── task-config.html
+│   │   └── output-config.html
+│   └── runtime/                   # 成品授权预览/静态服务桥，不保存配置逻辑
+├── tests/                         # 集成/fixtures；插件包单测收集约定见 tasks/W8_editor_scaffolds_docs.md
+├── scripts/                       # 迁移、验收
+├── docs/
+│   ├── V2.2/                      # 保留历史
+│   ├── V3.0/                      # 本计划、INTERFACES、ACCEPTANCE、tasks/ 多窗口任务卡
+│   ├── refactor/                  # 保留 V2.2 冻结记录和验收
+│   ├── plugin_dev_guide/           # 十篇指南，规格见 tasks/W8_editor_scaffolds_docs.md
+│   └── api/                       # mkdocstrings API 参考源页面
+├── mkdocs.yml                     # site_dir 指向独立构建目录
+└── data/
+    ├── raw/                       # 原件与暂存媒体
+    ├── cache/
+    ├── output/                    # 旧结果兼容
+    └── runs/<run_id>/outputs/      # 新成品及随附媒体，不写代码目录
 ```
 
-### 2.2 目录职责一句话
+此处没有要求本次立刻移动目录。最终目录名调整与兼容入口删除是两件事，后者须有正式废弃周期。
 
-| 目录 | 一句话职责 | 放什么 | 不放什么 |
-|---|---|---|---|
-| `pipeline/` | 流程怎么走 | 阶段调度、权重链执行、异常熔断 | 业务字段判断、具体站点逻辑 |
-| `contracts/` | 数据长什么样 | DTO、校验、领域 profile | IO、网络、日志 |
-| `converters/` | 边界怎么转 | DTO ↔ 旧格式/外部输入的通用转换 | 每插件的私有解析（归插件包） |
-| `plugins/` | 能力怎么扩展 | 四类插件包 | 主干逻辑、跨类共享工具 |
-| `plugin_manager/` | 插件怎么管理 | 发现、校验、注册、生命周期 | 数据处理逻辑 |
-| `infra/` | 运行靠什么 | HTTP/缓存/进度/原子 I/O/上下文 | 领域字段、插件业务 |
-| `config/` | 启用什么 | YAML/JSON 配置 | 代码逻辑 |
-| `dashboard/` | 展示宿主 | renderer、布局、静态资源 | 组件业务逻辑（归 `plugins/ui/`） |
-| `tests/` | 质量保障 | 单元/集成/fixtures | 生产代码 |
-| `data/` | 数据 | 运行产物 | 代码 |
+### 2.2 职责与依赖边界
 
-### 2.3 插件包组织（两层：类别 / 插件名）
+| 目录 | 允许内容/依赖 | 禁止内容 |
+|---|---|---|
+| pipeline | 契约、转换器、registry 协议、受管上下文 | 具体站点 URL、教育匹配算法、插件名称分支 |
+| contracts | 标准库、schema 校验；纯数据类型 | 网络、文件写入、依赖 pipeline/plugins |
+| converters | 通用编解码、版本映射、已登记 legacy 格式 | 集中维护每个插件的私有解析分支 |
+| plugins | contracts、infra 的公共接口；包内工具 | 反向调用 pipeline；直接依赖其他插件私有模块 |
+| plugin_manager | 元数据/版本/批准/接口校验及生命周期 | 数据抓取与业务处理 |
+| infra | 受管 HTTP、缓存、锁、原子 I/O | 学校/导师字段逻辑 |
+| dashboard/console | 插件管理、任务定义、输出定义 | 成品布局、导师业务图表 |
+| presenters | 顶层格式生成；HTML 通过受管 resolver 组合 UI | 重新抓取、重复存储、直接导入其他插件私有实现 |
+| schema_editor | 字段定义、Schema/FormSpec 导出 | 自动发明抓取规则、执行用户 Python |
+| scaffolds | 从统一契约生成骨架 | 自动安装/启用/批准插件 |
+| templates | HTML 布局与变量声明 | 爬虫、业务合并、控制台 API 调用 |
 
-每个插件是一个自包含目录：
+特别区分：
+
+- `pipeline/` 单数是新主干；旧 `pipelines/` 复数只作为过渡入口。
+- `plugins/storage/` 是存储节点；`infra/storage/` 是节点复用的底层 I/O。
+- `plugins/presenters/` 决定输出格式；`plugins/ui/` 仅服务 HTML 呈现器；`dashboard/console/` 不负责成品展示，runtime 只是授权访问桥。
+- `templates/` 是成品 HTML 模板库；`scaffolds/templates/` 是生成代码的骨架，两者不能混用。
+- 内置教育模型放 `contracts/profiles/`；外部新领域 schema 随插件包声明并注册，不必修改核心契约目录。
+
+### 2.3 插件包与扩展速查
 
 ```text
 plugins/spiders/static_html/
-├── plugin.py          # 实现（类 + PLUGIN_META 或 metadata.json 之一，见 §7.2）
-├── metadata.json      # 名称/版本/依赖/入口
-└── （可选）schema.json、依赖说明、静态资源
+├── plugin.py                       # 对外入口类
+├── metadata.json                   # 唯一元数据来源
+└── schemas/                        # 仅确有需要时增加配置/领域 schema
+
+plugins/ui/table_component/
+├── plugin.py
+├── metadata.json
+└── assets/renderer.js              # 已批准的前端实现
 ```
 
-- 插件内部再分模块随意（`fetcher.py`、`parser.py`），对外只暴露 `metadata.json` 声明的入口。
-- UI 组件的前端资源（JS/CSS）随组件包放置，由 dashboard 宿主按 manifest 加载（§7.5）。
-- **测试统一放 `tests/`**，镜像插件路径；不把测试塞进插件目录。
+最小手写插件只需 plugin.py 与 metadata.json；脚手架生成完整包（含 README、requirements、test_plugin.py），生成物约定见 [tasks/W8_editor_scaffolds_docs.md](tasks/W8_editor_scaffolds_docs.md)。集成和 fixture 统一放 tests，不复制包级测试。
 
-### 2.4 容易混淆的目录对
-
-| 目录对 | 区分 |
+| 我要做什么 | 放在哪里 |
 |---|---|
-| `pipeline/`（单数） vs 旧 `pipelines/`（复数） | `pipeline/` 是 V3.0 唯一管道主干；旧 `pipelines/` 是 V2.2 资产，兼容期保留 |
-| `plugins/storage/` vs `infra/storage/` | 前者是管道节点插件（决定「存到哪、怎么存」）；后者是复用的底层 I/O（原子写、JSONL 行编解码），插件调用之 |
-| `plugins/ui/` vs `dashboard/` | 前者是组件实现（描述 DTO + 受管资源）；后者是加载/布局/受管 renderer 宿主 |
-| `contracts/profiles/` vs `converters/` | profiles 定义领域数据形状（教育）；converters 做边界格式转换 |
-| `plugin_manager/` vs `config/plugins.py` | 前者是 V3.0 治理框架；后者是 V2.2 已有实现，兼容期作为旧入口保留并逐步委托 |
+| 新增采集方式或数据源连接器 | plugins/spiders/新插件 |
+| 新解析、字段映射、合并、统计 | plugins/processors/新插件 |
+| 新数据库或持久化策略 | plugins/storage/新插件 |
+| 新成品格式（Markdown/CSV 等） | plugins/presenters/新插件 |
+| 新 HTML 风格 | templates/新模板 + registry.json |
+| 新表格/图表等展示实现 | plugins/ui/新插件及 assets |
+| 切换已有能力/调整顺序 | config/pipeline.yaml、plugins.yaml |
+| 新领域的数据形状 | 插件自带 schema；内置领域可放 contracts/profiles |
 
-### 易混淆规则（速查）
+### 2.4 迁移期目录与去留
 
-- 新能力放置速查：
-  - 新数据源 → `plugins/spiders/<新插件>/`
-  - 新解析/清洗/统计 → `plugins/processors/<新插件>/`
-  - 新存储目标 → `plugins/storage/<新插件>/`
-  - 新展示组件 → `plugins/ui/<新插件>/`
-  - 新领域数据形状 → `contracts/profiles/<领域>.py`
-  - 只调组合 → `config/pipeline.yaml`、`config/plugins.yaml`
-- **主干零修改的判定**：新增上述能力时，`pipeline/`、`contracts/`、`converters/` 通用部分、`plugin_manager/`、`infra/` 不应有 diff。若有 diff，说明该能力本应做成插件或配置。
-- 不新增同义目录层（core/platform/runtime/components 等）。
-- 不为每个小函数建子目录；插件包内模块划分自由，对外只暴露 metadata 声明的入口。
-
-### 2.5 迁移期附加目录（临时存在，非目标架构）
-
-兼容期内旧目录继续存在，但**不在旧入口新增 V3.0 业务**：
-
-| 迁移期目录 | 内容 | 迁移去向 | 负责人 | 退出条件 |
-|---|---|---|验收后删除 |
+| 旧目录/入口 | 迁移去向 | 保留方式 | 所有者 |
 |---|---|---|---|
-| `services/` | V2.2 服务层 | legacy 门面调用 pipeline | A | Wave 2 切换完成，兼容测试通过 |
-| 旧 `spiders/` | 五个引擎 + engine.py | `plugins/spiders/` 各插件 + legacy 适配 | C | 对应插件交付并对照通过 |
-| 旧 `parsers/`、`processors/`、`exporters/` | 解析/处理/导出注册表 | `plugins/processors/`、`plugins/storage/` | D / B | 对应插件交付并对照通过 |
-| 旧 `pipelines/` | merge/export 管道 | `pipeline/stages/` + 插件 | A | 切换完成 |
-| 旧 `storage/` | JSONL/进度/配置存储 | `infra/storage/` + `plugins/storage/` | B | 对应插件交付 |
-| `security/` | AST 校验 | `plugin_manager/validator.py` | D | 治理框架交付 |
-| `utils/` | http/cache/progress 等 | `infra/`（委托，不复制） | E | infra 委托层交付 |
-| `plugins_ext/` | V2.2 外部插件 | 逐个显式映射迁移 | 插件作者 + D | 映射表确认，不静默丢弃 |
+| services | 编排进 pipeline；业务算法进插件 | 切换后旧服务仅作门面 | A |
+| spiders | plugins/spiders；纯解析进 processors | 旧函数/类入口转发 | C |
+| parsers、processors | plugins/processors | dispatch 兼容视图 | D |
+| exporters | plugins/storage | jsonl/xlsx ID 与旧返回值适配 | B |
+| pipelines/merge.py、export.py | 业务插件与存储插件 | 旧路径/签名保留 | D/B |
+| storage | infra/storage | 先委托旧实现，后只留转发 | B |
+| utils | infra | 同一实现、同一缓存/熔断状态 | E |
+| security | plugin_manager/validator.py | 校验函数旧入口保留 | D |
+| config/plugins.py | plugin_manager + 活动配置后端 | 原管理接口兼容 | D |
+| plugins_ext | 显式适配或迁移到统一插件包 | 不可迁移项列清单，不静默丢弃 | D/插件作者 |
 
-**删除旧目录不属于本次任务**：需后续版本确认调用方迁移、回归通过、正式废弃通知后另行处理。兼容期旧导入门面必须保留，不为目录美观破坏已承诺接口。
+每个目录迁移退出条件：新模块单测通过、旧入口对照测试通过、生产调用方向单一、没有复制业务实现。V3.0 保留必要门面；后续版本经过调用方迁移、废弃通知及回归后才删除旧目录。
 
----
-
-## 3. 架构与渐进迁移
-
-### 3.1 分层架构
+## 3. 架构与数据流
 
 ```text
-┌─────────────────────────────────────────────────────┐
-│ 接口层：CLI / REST API / Dashboard                   │
-│ main.py  api/server.py  dashboard/                   │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│ 管道引擎层：pipeline/                                │
-│ engine.py  stages/acquire|process|store|present     │
-└──────────────────────┬──────────────────────┘
-│
-┌──────────────────────▼──────────────────────────────� │
-│ 契约层与转换层：contracts/ + converters/              │
-│ DTO 定义 + 模块间数据转换（箭头实体化）               │
-└──────────────────────┬──────────────────────────────┘
-│
-┌──────────────────────▼──────────────────────────────┐
-│ 插件生态：plugins/                                   │
-│ spiders/  processors/  storage/  ui/                 │
-└──────────────────────┬──────────────────────────────┘
-│
-┌──────────────────────▼──────────────────────────────┐
-│ 治理与基建：plugin_manager/ + infra/                 │
-│ 插件发现、加载、安全校验、HTTP、缓存、上下文           │
-└─────────────────────────────────────────────────────┘
+控制台（三功能） / CLI / REST
+  schema_editor → request_converter → TaskConfigDTO + OutputSpec
+                            │
+                      pipeline.engine
+                            │
+           registry + PipelineContext（冻结版本）
+                 HTTP/cache/progress/assets/artifacts
 ```
-
-### 3.2 数据流闭环
 
 ```text
-TaskConfigDTO
-   │
-   ▼
-[acquire] 调度采集插件 → RawDataDTO / RawDataBatch
-   │
-   ▼
-[converters/raw_converter] → 处理器输入格式
-   │
-  ▼
-[process] 调度处理器插件（解析/合并/统计）→ NormalizedRecordDTO / RecordBatch
-   │
-   ▼
-[converters/storage_converter] → 存储格式
-   │
-   ▼
-[store] 谎度存储插件 → StoreReceipt
-   │
-   ▼
-[converters/view_converter] → UIComponentDTO / ViewModel
-   │
-   ▼
-[present] 调度 UI 组件插件 → 页面/描述文件
-   │
-   ▼
-页面交互 → request_converter → TaskConfigDTO（闭环）
+acquire: TaskConfigDTO → RawDataBatch[RawDataDTO.assets: MediaAsset[]]
+  → raw_converter（引用与编码标准化，不丢资产）
+  → processor.parse: RawDataBatch → RecordBatch（字段 + media_refs）
+  → processor.post: RecordBatch → RecordBatch（合并/统计/可选媒体处理）
+     ├── storage_converter → StoreRequest → storage → StoreReceipt[]
+     └── view_converter(RecordBatch, receipts, OutputSpec, RunState)
+              → PresentationRequest
+              → presenter.execute → RenderedOutputDTO
+                    ├── HTML：受管 UI resolver → UIComponentDTO[]
+                    │         + ThemeSwitcher + templates → HTML 成品包
+                    └── Text/Markdown/JSONL/CSV/PDF：直接成品文件
+
+控制台输出定义 → 新 OutputSpec → 从已有记录重新呈现（不重新抓取）
 ```
 
-> 注：`[store] 谎度存储插件` 为笔误，实为「调度存储插件」。
+**存储与呈现边界**：store 保存可复用的标准记录、媒体及检查点；present 制作面向人的报告/交换文件。jsonl_store 与 jsonl_presenter 可以共享底层序列化器，但写不同命名空间，分别记录回执，不能再次发起采集或覆盖同一文件。旧 JSONL/Excel 保持 data/output；新成品写 data/runs/<run_id>/outputs/<output_id>/。
 
-### 3.3 分阶段调用方向（防递归）
+view_converter 保留记录与媒体引用，不把 StoreReceipt 当数据本身。所有格式使用相同 PresentationRequest；无 HTML 输出时不加载 UI、模板或浏览器依赖。控制台只创建任务/输出配置、展示状态与下载链接，成品是可独立打开的文件或文件包。
 
-```text
-阶段 1（Wave 1a）：
-  main/api → pipeline.engine → plugins（经 registry）→ infra（委托 utils/）
+迁移分两条不互调的路径：Wave 1 旧 CLI/API 继续走 V2.2 服务，新链路仅离线独立运行；Wave 2 单次切换后 CLI/API 进入 pipeline，旧服务改成调用新链路的门面。新链路可暂时调用尚未迁走的**叶子算法**，但不得调用再次进入 pipeline 的旧服务。
 
-阶段 2（Wave 2 切换期）：
-  main/api → services（legacy 门面）→ pipeline.engine → plugins → infra
-  旧 spiders/parsers/exporters 导入门面 → 转发到 plugins/
+## 4. 数据契约、插件接口与上下文
 
-阶段 3（兼容期结束，目标态）：
-  main/api → pipeline.engine → plugins → infra
-  services/ 移除或退化为纯 DTO 别名
-```
+### 4.1 类型清单（Wave 0 冻结）
 
-**禁止调用方向**：service → pipeline → 同一 service（递归）；插件反向调用 pipeline；contracts 依赖 plugins/pipeline（契约层保持无依赖）。
+默认使用标准库 dataclass + jsonschema 运行时验证，YAML 使用 PyYAML 安全加载，版本约束使用 packaging。具体兼容版本在 Gate 环境中验证并锁定，不同时维护 Pydantic 与 dataclass 两套模型。
 
-### 调用方向硬性规则
+| 类型 | 必要字段与约束 |
+|---|---|
+| TaskConfigDTO | task_id、dataset、source_id、profile_id、target_url、config_revision、只读配置快照；领域字段不作为通用必填 |
+| TaskRunState | run_id、task_id、状态、retry_count、last_attempt_at、检查点；与不可变配置分开 |
+| RawDataDTO | source_id、url、content_type、encoding、fetched_at、trace；content 或 raw_ref 二选一 |
+| RawDataBatch | schema_version、task_id、items、分页完成标记、ErrorDTO 列表；允许合法空结果 |
+| NormalizedRecordDTO | record_id、dataset、schema_id、fields、provenance；fields 只允许经 schema 校验的 JSON 值 |
+| RecordBatch | schema_version、分组键、records、stats、来源完成状态、errors；统计不改变主数据类型 |
+| StoreRequest | schema_version、dataset、run_id、target_id、格式标识、经校验的行/数据引用、幂等键、状态快照 |
+| StoreReceipt | target_id、written/skipped/failed、records_written、output_ref、error；每个目标独立返回 |
+| ViewModel | dataset、字段描述、受限数据引用/分页数据、统计、存储回执、运行状态 |
+| UIComponentDTO | component_id、component_type、renderer_id、经校验的 payload、data_ref、事件声明 |
+| StageResult / RunResult | 阶段状态、输入/输出计数、TaskRunState 列表、回执、组件引用、ErrorDTO 列表 |
+| ErrorDTO | code、message、stage、task_id、source_id、可重试标记、脱敏诊断 |
 
-1. 契约层零依赖（仅标准库 + 校验库）。
-2. 插件只向内依赖：plugins → contracts/infra，禁止 plugins → pipeline。
-3. 转换器只做格式转换，不写业务判断。
-4. 段落标号小节（§）引用保持与本节一致，修订时同步。
+共同要求：
 
-### 3.4 渐进迁移三阶段
+- 每个边界验证结构、schema_id 和 schema_version；注解或 dataclass 本身不构成校验。
+- 原始内容建议默认上限 10 MiB，超限流式落盘，只传受管 raw_ref；下载本身也要有限额，不能全部读入内存后再检查。
+- 引用路径必须在允许目录内，不能让插件自由读取任意路径。外部引用通过受管服务解析。
+- record_id 由数据集自然键规则生成；合并后的 ID 不简单沿用来源 ID，必须稳定且保留全部 provenance。
+- 字段损失、未知版本、错误编码都有明确诊断；不以宽松 dict 掩盖跨阶段契约错误。
 
-| 阶段 | 调用链 | 说明 |
-|---|---|---|
-| 阶段 1 | main/api → pipeline.engine → registry → plugins（经 infra） | 新链路最小可用（垂直切片） |
-| �阶段 2 | main/api → services（兼容门面）→ pipeline | 旧入口转发到新引擎；旧函数签名不变 |
-| 阶段 3 | main/api → pipeline | services 退化为 DTO 别名或移除 |
+### 4.2 教育领域与旧格式
 
-> 每阶段结束全量回归 + CLI/API 手动验证。阶段 2 起旧入口与新链路必须**同任务禁止双跑**（防止重复副作用，§5.5）。
+education profile 定义 university、college、category、year、name、title、研究方向等字段，任务与记录分别校验。保留 source_type、raw_ref、来源信息及旧 schema v1 的所有既有字段；旧字段以 V2.2 fixture 为准，不通过删字段实现“通用化”。
 
----
+旧 CrawlTask 的执行状态映射到 TaskRunState，旧 `key()` 保持大学/学院/source；新内部检查点增加 dataset/year/config_revision，避免跨年份误判完成。旧 progress.json 仍由兼容投影生成。
 
-## 3A. `services/` 与 `storage/` 的定位说明
+旧引擎的 list[dict] 经 `LegacyRecordBatch` 专用适配进入记录侧，不能伪装成 HTML RawDataBatch。适配是迁移手段；最终五类采集插件必须能交付真正的原始批次与相应解析器。
 
-**`services/` 是 V2.2 资产，不是 V3.0 的组成**。V2.2 验收后 `services/` 存在时：
+### 4.3 统一基类及四类协议
 
-1. Wave 1a 期间：pipeline 不调用 services；services 继续服务旧入口（旧 CLI/API 兼容）。
-2. Wave 2 切换：`main.py`/`api/server.py` 切到 pipeline，services 变成 legacy 门面（仅转发，无业务）。
-3. 兼容期结束后：services 移除或退化。**核心仅依赖协议、DTO 与注册表，不按学校/source/plugin_id 写分支。**
-
-`infra/storage/` 复用 V2.2 `storage/`（JSONLStore/ProgressStore/ConfigStore）已验收实现，初期直接导入旧包路径；Wave 2 集成时如路径调整，由 G 统一改导入并登记到 interfaces.md。**不得复制成两套缓存、熔断或存储实现。**
-
----
-
-## 4. 数据契约（DTO）与调用语义
-
-### 4.1 通用 DTO 草图
+以下为签名草图，实际实现由 Wave 0 冻结；示例不承诺此刻可导入运行。
 
 ```python
-# contracts/task.py
-@dataclass(frozen=True)
-class TaskConfigDTO:
-    task_id: str                    # 任务唯一标识
-    dataset: str                    # 数据集标识（如 education.tutor）
-    source_id: str                  # 数据源标识
-    config_ref: str                 # 配置引用（如 config/school_data.json#东南大学/机械工程学院）
-    config_snapshot: dict | None    # 配置快照（可选，冻结用）
-    target_url: str | None = None
-    # 学校/学院/学科/年份是教育领域字段，在 profiles/education.py 中定义，不是通用必填字段
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 
-# contracts/task.py（运行状态，与不可变配置分离）
-@dataclass
-class TaskRunState:
-    execution_state: str            # pending/running/succeeded/failed/skipped/cancelled/partial
-    retry_count: int = 0
-    last_attempt_at: str | None = None
+InputT = TypeVar("InputT")
+OutputT = TypeVar("OutputT")
 
-# contracts/raw.py
-@dataclass
-class RawDataDTO:
-    source_id: str
-    url: str
-    content_type: str               # text/html、application/json、application/pdf…
-    encoding: str | None
-    content: str | bytes | None     # 内容或原件引用二选一
-    raw_ref: str | None             # 原件落盘路径（超限时的引用）
-    fetched_at: str                 # ISO8601
-    trace: dict | None = None       # 任务/页码/分页/重试链等追踪信息
-    # 体积上限：content 超限（默认 10 MiB，可配）必须落盘，DTO 只带 raw_ref
+class BasePlugin(ABC, Generic[InputT, OutputT]):
+    name: str
+    version: str
+    plugin_type: str
+    input_schema: str
+    output_schema: str
 
-# contracts/record.py
-@dataclass
-class NormalizedRecordDTO:
-    record_id: str                  # 稳定标识（来源+自然键哈希）
-    dataset: str
-    schema_id: str                  # 指向 contracts/profiles/ 中的领域 schema
-    fields: dict                    # 按 schema 校验的 JSON 值；非无约束 Any
-    provenance: dict                # 来源、抓取时间、raw_ref、匹配依据
+    def setup(self, context) -> None:
+        pass
 
-# contracts/ui.py
-@dataclass
-class UIComponentDTO:
-    component_type: str             # table/chart/card/filter（内置四种；未知类型占位并报错，不无声消失）
-    payload: dict
-    data_ref: str | None            # 数据引用（文件/API 路径），与渲染声明分离
-    events: dict | None             # 事件声明（如过滤 → request_converter）
+    @abstractmethod
+    def execute(self, data: InputT, context) -> OutputT:
+        raise NotImplementedError
+
+    def close(self) -> None:
+        pass
 ```
 
-### 4.2 各阶段输入/输出契约表
-
-| 阶段 | 输入 | 输出 | 基数 | 错误行为 | 版本 |
-|---|---||---|---|---|
-| acquire | TaskConfigDTO | RawDataBatch（1..N RawDataDTO） | 1→N | 单页失败记录进 trace，全部失败抛 StageError | raw.schema=v1 |
-| process | RawDataBatch 或 RecordBatch | RecordBatch | N→N | 单条失败不阻断批次，记 provenance.error | record.schema=v1 |
-| store | RecordBatch | StoreReceipt（每目标一份） | 1→N（fan-out） | 单目标失败只影响该目标回执 | store.schema=v1 |
-| present | ViewModel | UIComponentDTO 列表 | N→N | 单组件失败占位 + 错误提示，不阻断整页 | ui.schema=v1 |
-
-### 4.3 新增辅助 DTO
-
-```python
-# contracts/result.py
-@dataclass
-class StoreReceipt:
-    target: str                     # 存储目标标识
-    status: str                     # written/skipped/failed
-    records_written: int
-    output_ref: str | None          # 输出文件/表路径
-    error: str | None = None
-
-@dataclass
-class StageResult:
-    stage: str
-    status: str                     # succeeded/failed/partial
-    items_in: int
-    items_out: int
-    errors: list[dict]
-
-@dataclass
-class RunResult:
-    run_id: str
-    tasks: list[TaskRunState]
-    receipts: list[StoreReceipt]
-    errors: CLI/API 汇总
-```
-
-> 注：`RunResult.errors` 上一行伪代码笔误，正式冻结时以 dataclass 字段类型补齐（如 `errors: list[dict]`）[sic] [sic]——修正为统一类型再冻结。
-
-[sic][sic] [sic]
-
-[sic][sic][sic] [sic]
-
-[sic][sic] [sic]
-
-[sic]
-
----
-
-## 4A. `services/` 契约兼容
-
-V2.2 `CrawlerService.run_source_a/b`、`execute_task` 返回 `CrawlResult(task_id, status, records, failures, error_message, error_type)`；V3.0 阶段间传 DTO，不直接复用该形状。转换关系：
-
-- V2.2 引擎产出的 `list[dict]` 经**显式** LegacyRecordBatch 适配进 record 侧（不伪装成 HTML RawDataDTO）。
-- 教育 profile 回 schema v1 时：**university 不得被 school 简单替换**；保持 `university、college、category、source_type、raw_ref` 及其他既有字段不丢。
-- `execution_state/retry_count/last_attempt_at` 归 TaskRunState，legacy 转换兼容 V2.2 CrawlTask。
-
----
-
-## 5. 调度、合并与副作用边界
-
-### 5.1 并发模型
-
-- 保留 `ThreadPoolExecutor`（现 `main.py` 模式），先实现有界任务并发。
-- 不同时引入分布式、复杂 DAG、asyncio 双栈。
-- **列表→详情 fan-out**（现 `run_source_a` 逐条 `fetch_detail` 的模式）由采集插件内部组装为有界原始批次；分页终止条件：去重/最大页数/取消令牌。页面发现不藏进纯处理器。
-- **HTTP 重试由 infra/http 负责；管道重试有独立边界/预算**，两者不相乘。失败任务重试从明确检查点恢复；非幂等插件不自动重放。
-
-### 5.2 多源合并
-
-- 多源合并按 dataset/领域分组，汇聚**本次运行范围**的批次后合并；不逐条合并，不跨学校/学院混合。
-- 复用现有三阶匹配算法（`pipelines/merge.py`：exact → strip → fuzzy 0.85 阈值，见 `match_records`）。
-- 参与策略显式化：所选来源、缺失来源、失败来源、历史来源是否参与，由配置决定；**默认不读旧年份文件混入新结果**。
-
-### 5.3 状态机
-
-```text
-pending → running → succeeded
-                 ↘ failed → （重试）→ running
-                 ↘ partial → running（补采）
-                 ↘ cancelled
-跳过：pending → skipped（断点续抓命中）
-```
-
-旧 API 状态映射：`done→succeeded`、`pending→pending`、`failed→failed`，映射表在 `contracts/task.py` 中定义。
-
-### 5.4 多存储 fan-out 与失败语义
-
-- 多存储是同一处理结果 fan-out：JSONL、Excel、SQLite 各自回执 StoreReceipt，不承诺跨目标全局事务。
-- 存储成功但展示失败：**不重抓、不重写存储**；present 标记 partial，由用户决定重试。
-- required/optional 存储目标明确决定 RunResult 总体状态：required 失败 → run failed；optional 太败 → partial。
-
-### 5.5 原子写与线程安全
-
-- 保留 `tempfile.mkstemp + os.replace` 原子写；同输出路径**进程内锁**必须保留（V2.2 `ProgressTracker`/`CrawlCache` 的 `threading.Lock`）。
-- 原子 replace 只防半文件，不防丢失更新：**读改写必须整体加锁**（V2.2 ProgressStore 契约延续）。
-- 四线程并发 ≠ 多进程安全：若支持 CLI/API 多进程同目录，需另加进程锁或明确禁止并文档化。
-
-### 5.6 present 不依赖浏览器
-
-CLI 无界面执行同样生成展示 DTO/描述文件（`data/output/*.views.json` 拟新增），Dashboard 消费它们；present 阶段不强制启动浏览器。
-
----
-
-## 6. 插件迁移映射与配置系统
-
-### 6.1 旧 7 类 → 新 4 类映射
-
-| 旧 kind | 新归属 | 说明 |
+| 插件协议 | 输入 → 输出 | 特殊约束 |
 |---|---|---|
-| source | 数据源/profile 声明（配置，非插件）+ legacy adapter | 组合声明由 `config/pipeline.yaml` 与教育 profile 承载 |
-| fetcher | `plugins/spiders/` | 旧 fetch 函数表 + 新类注册表由统一 registry 派生兼容视图 |
-| parser | `plugins/processors/`（解析阶段） | 与后处理区分阶段 |
-| processor | `plugins/processors/`（后处理阶段） | |
-| exporter | `plugins/storage/` | 保留 `jsonl`/`xlsx` 旧 ID 别名 |
-| presenter | `plugins/ui/` | 旧页面导航与新组件清单分开维护 |
-| utility | 受管基础服务/受控扩展 | cache/progress/http_session 并入 infra 受管服务；外部 setup 插件无法无损迁移的，输出诊断并留在明确标记的 legacy 模式，不静默忽略 |
+| SpiderPlugin | TaskConfigDTO → RawDataBatch | 抓取与页面发现，受管网络 |
+| ParserPlugin（processor） | RawDataBatch → RecordBatch | 纯解析，不暗中补发网络请求 |
+| RecordProcessorPlugin（processor） | RecordBatch → RecordBatch | 清洗、合并、统计；不得原地改共享批次 |
+| StoragePlugin | StoreRequest → StoreReceipt | 显式副作用、幂等与回执 |
+| UIPlugin | ViewModel → UIComponentDTO | 声明式描述，不返回任意 HTML |
 
-**显式迁移约束**：
-- `static_html` 旧配置名与 `static_list` 类名必须显式映射（registry 兼容视图）。
-- 旧权重 `{name: weight}` 按 `(weight, id)` 升序确定顺序，默认链、禁用值、未知 ID、重复 ID、别名冲突行为确定（预检报错，不静默）。
-- 旧外部插件（`plugins_ext/`）只经显式映射确认后迁移，映射/冲突报告随迁移脚本输出；**不静默丢弃**。
+四类插件是四种 kind；processor 内有两个输入阶段，不增加第五类。metadata 声明输入/输出 schema，类属性与 metadata 必须一致；配置预检检查链路类型兼容。
 
-### 6.2 声明式配置（pipeline.yaml + plugins.yaml）
+### 4.4 PipelineContext
+
+上下文注入 http、cache、progress、受管存储、日志、允许路径、取消令牌、配置快照、registry_revision、任务/运行标识。每任务获取独立 HTTP 会话和插件实例；跨任务缓存、限速、按域熔断协调器使用显式共享且加锁的状态。不要以复制 PoliteSession 的方式重建另一套重试逻辑。
+
+上下文对插件提供只读配置；共享状态通过受管接口操作。setup 失败、execute 异常或取消时均须在 finally 关闭已创建资源；重试是否创建新实例由生命周期约定确定。
+
+## 5. 执行、并发和失败语义
+
+### 5.1 调度与多源汇聚
+
+继续采用 ThreadPoolExecutor，有界并发队列，不在本期加入通用 DAG。acquire 内允许列表发现、分页和详情 fan-out；设置最大页数、请求去重、每域并发与取消检查。发现链接属于采集职责，处理器只处理已取得的原始材料。
+
+每个来源有独立 parse 链。完成后按 dataset + profile 分组规则汇聚；教育分组包含 university、college、year，不能跨学校/学院匹配。复用 V2.2 MergeService/匹配算法的 exact→strip→fuzzy 规则，并用既有 fixture 固定阈值与字段优先级。
+
+配置明确所选来源、required 来源、缺失来源策略。默认不自动混入历史结果；如用户显式复用，必须匹配年份、领域 schema 和来源版本并记录出处。单来源运行允许合并器输出部分来源记录，不应永久等待未选来源。
+
+### 5.2 重试与状态
+
+任务状态：pending → running → succeeded/failed/partial/cancelled；命中有效检查点时 pending → skipped。旧接口分别映射回 V2.2 的 done/success 等既有枚举，不能把新枚举直接透传给旧前端。
+
+HTTP 层负责单请求重试；管道默认不立即整任务重试，可显式恢复失败检查点。总尝试预算和重试责任须记录，禁止两层循环相乘。非幂等存储不得自动重放；取消应停止派发并在安全检查点退出，不伪称线程已被强杀。
+
+### 5.3 存储与进度
+
+- 同一 RecordBatch 向多个 storage 目标 fan-out，分别构造 StoreRequest。storage_converter 只负责格式契约；具体 SQL/Excel 语义在插件内。
+- JSONL/Excel 使用受管临时文件与 replace；SQLite 使用事务和稳定键 UPSERT。SQLite 是本期 SQL 实现，其他数据库后续适配。
+- 引擎通过 infra.progress 持续保存检查点；progress_store 插件负责可选进度快照导出。不能因禁用导出插件而失去运行状态管理。
+- 必需来源或必需存储失败使 run failed；可选目标失败或允许的记录级拒收为 partial；完全成功为 succeeded。空结果是否有效由来源契约定义，不自动视为失败。
+- present 可配置 required，默认 optional。数据成功、展示失败只重建展示，不重抓或重复写入成功目标。
+- 不承诺跨文件/SQLite 的全局事务，报告哪些目标已成功；副作用有回执和幂等键。
+
+### 5.4 文件与运行安全
+
+原子 replace 防半文件，不防丢失更新。同规范化路径的锁必须跨存储实例共享，读改写整体加锁；保留 V2.2 cache/progress 锁和临时文件异常清理。
+
+本期默认同一输出根目录只允许一个运行进程，内部支持四线程；CLI/API 第二个进程应在启动时被输出目录进程锁拒绝。四线程测试不能作为多进程共享写入的证据。Windows 上须测试锁释放、文件句柄关闭和 replace 失败。
+
+## 6. 配置系统与旧七类插件迁移
+
+### 6.1 映射
+
+| 旧 kind | V3.0 归属 | 兼容处理 |
+|---|---|---|
+| source | 数据源/profile 配置 | describe 结果显式转为来源配置，任意可执行 source 需专用适配 |
+| fetcher | spider | static_html 与旧 static_list 类名建立明确别名 |
+| parser | processor.parse | 旧 raw_path/meta 接口经适配转换 |
+| processor | processor.post | 旧 records/ctx 转换为批次协议 |
+| exporter | storage | jsonl/xlsx ID 和返回形状兼容 |
+| presenter | ui | 旧页面导航另保留；组件与整页不是同一概念 |
+| utility | 受管基础服务或批准的 legacy 扩展 | 不允许开关关闭必要的校验/锁/检查点；不支持项列迁移错误 |
+
+registry 是唯一能力表；旧函数表/类表从其派生兼容视图，不保留三套各自写入的真值。新增插件在管理清单可见不等于已被执行链调用，必须有执行集成测试。
+
+### 6.2 自洽的静态垂直切片配置
+
+以下两个文件是一组完整示例。研招来源应单独声明 yzw_api + yzw_major_parser 分支，不能把静态 HTML 交给研招 JSON 解析器。
 
 ```yaml
-# config/pipeline.yaml —— 明确有序步骤与 fan-out
+# config/pipeline.yaml（拟新增）
+schema_version: 1
 pipeline:
-  acquire:
-    steps:
-      - plugin: static_html          # 引用 plugins/spiders/static_html
-        profile: education.tutor     # 领域 profile
+  id: education_default
+  sources:
+    source_a:
+      acquire: static_fetch
+      parse: [faculty_parse]
+      required: true
   process:
-    steps:
-      - plugin: yzw_major_parser     # 解析
-        stage: parse
-      - plugin: normalize
-        stage: post
-      - plugin: dedup
-        stage: post
-      - plugin: merge                # 多源合并（按 university+college 分组）
-        stage: post
+    steps: [normalize_records, merge_records, statistics]
   store:
-    steps:
-      - plugin: jsonl_store
+    targets:
+      - instance: jsonl_output
         required: true
-      - plugin: xlsx_store
+      - instance: excel_output
         required: false
   present:
-    components:
-      - table_component
-      - chart_component
+    required: false
+    components: [table_view, chart_view, card_view, filter_view]
 ```
 
 ```yaml
-# config/plugins.yaml —— 插件实例、启用状态、参数
-plugins:
-  static_html:
+# config/plugins.yaml（拟新增）
+schema_version: 1
+instances:
+  static_fetch:
+    plugin: spider:static_html
     enabled: true
-    version: ">=1.0"
-    params: {timeout: 30}
-  yzw_major_parser:
+    params: {max_pages: 20}
+  faculty_parse:
+    plugin: processor:faculty_parser
     enabled: true
-    params: {fuzzy_threshold: 0.85}
-  jsonl_store:
+    params: {profile: education.tutor.v1}
+  normalize_records:
+    plugin: processor:normalize
     enabled: true
-    params: {output_dir: data/output}
-  sql_store:
-    enabled: false
-    params: {dsn: sqlite:///data/output/platform.db}
+    params: {}
+  merge_records:
+    plugin: processor:education_merge
+    enabled: true
+    params: {group_by: [university, college, year]}
+  statistics:
+    plugin: processor:statistics
+    enabled: true
+    params: {group_by: [university]}
+  jsonl_output:
+    plugin: storage:jsonl_store
+    enabled: true
+    params: {format: legacy_education_v1, output_dir: data/output}
+  excel_output:
+    plugin: storage:xlsx_store
+    enabled: true
+    params: {format: legacy_education_v1, output_dir: data/output}
+  table_view:
+    plugin: ui:table_component
+    enabled: true
+    params: {}
+  chart_view:
+    plugin: ui:chart_component
+    enabled: true
+    params: {}
+  card_view:
+    plugin: ui:card_component
+    enabled: true
+    params: {}
+  filter_view:
+    plugin: ui:filter_component
+    enabled: true
+    params: {}
 ```
 
-**配置规则**：
-- `pipeline.yaml` 存在时为唯一真值；仅当其不存在时读取旧 `plugins.json` 兼容模式；**禁止两套同时可写**。
-- 旧 JSON 显式迁移：预览 → 校验 → 备份 → 原子写 → 切换，输出映射/冲突报告（`scripts/migrate_config.py` 拟新增）；不自动覆盖学校配置。
-- 任务开始时冻结配置与注册表版本；运行中改配置只影响后续任务（§7.6）。
-- YAML 解析用安全加载（禁止任意对象实例化，PyYAML `safe_load`）；schema 验证依赖（jsonschema/Pydantic）的选型与版本在 Wave 0 核验后冻结。
+URL、学校、年份和选择器来自任务与已校验的教育配置快照，不重复硬编码到示例。JSONL/Excel 默认兼容旧格式；其他领域使用通用记录格式。SQLite 和进度快照用相同实例规则增加 sql_store、progress_store，必须纳入 Wave 1b 测试，不能因未列在默认链而漏交付。
 
-### 6.3 插件元数据（metadata.json）
+### 6.3 真值、预检与迁移
+
+1. 无新 YAML 时：加载旧 JSON 兼容模式；新 YAML 成对有效时：只以 YAML 为活动真值。只存在其中一个或配置损坏时拒绝启动，不能悄悄退回旧配置。
+2. 元数据描述能力，plugins.yaml 描述实例，pipeline.yaml 描述执行顺序。预检拒绝未知 ID、重复实例、禁用却被引用、schema 不匹配和依赖缺失。
+3. 旧权重按 `(weight, id)` 确定顺序；合法 null/禁用值按旧实际语义迁移。旧 merge 占位不应重复执行实际合并：迁移器保留旧“先合并后后处理”的行为，优化顺序须单独对照验证。
+4. `scripts/migrate_config.py`（拟新增）：dry-run → 映射/冲突报告 → 用户确认 → 备份 → staging 校验 → 成对发布新配置。两个 YAML 不可能靠两次 replace 自动构成事务，需配置锁、版本清单及失败恢复；启动只接受完整版本。
+5. 旧 API 写入活动后端，JSON 兼容表示只读生成，不再同时写两套。配置更新带 revision，旧 revision 冲突返回 409。
+6. 运行开始冻结配置和 registry revision；更新只影响后续任务。不自动安装 metadata 的 dependencies。
+
+## 7. 插件治理与安全
+
+### 7.1 唯一元数据格式
 
 ```json
 {
   "name": "static_html",
   "version": "1.0.0",
-  "author": "community",
-  "kind": "spider",
-  "schema_in": "TaskConfigDTO",
-  "schema_out": "RawDataBatch",
+  "author": "maintainers",
+  "plugin_type": "spider",
+  "input_schema": "TaskConfigDTO.v1",
+  "output_schema": "RawDataBatch.v1",
   "entry_point": "plugins.spiders.static_html.plugin:StaticHtmlSpiderPlugin",
-entry_point_json": "plugins.spiders.static_html.plugin:StaticHtmlSpiderPlugin",
-  "entry_point_py": "plugins.spiders.dynamic.plugin:DynamicPlugin",
-  "dependencies": ["requests"],
-  "min_core_version": "3.0.0"
+  "dependencies": ["requests", "beautifulsoup4"],
+  "min_core_version": "3.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {"max_pages": {"type": "integer", "minimum": 1}},
+    "additionalProperties": false
+  }
 }
-metadata.json 中 entry_point 与 entry_point_py 为同一字段的别名（文档笔误，冻结时以 entry_point 为准）。
 ```
 
----
+统一使用 metadata.json。旧 PLUGIN_META 仅作为迁移输入，用 AST 字面量提取，不再新建装饰器自动注册的第二真值。schema 名称从受控注册表解析，禁止 eval 任意字符串。
 
-## 7. 插件治理与安全
+### 7.2 生命周期
 
-### 7.1 发现与加载顺序
+扫描元数据（不 import）→ 结构/版本/依赖/包路径校验 → AST 静态策略审查 → 外部包管理员批准 → 对批准的包内容摘要校验 → 加载 → 基类和接口验证 → 发布 registry 快照。
 
-```text
-1. 扫描 metadata（不 import 插件代码）          ← 候选发现
-2. 校验 metadata（字段、kind、版本、依赖、入口路径）
-3. AST 静态校验（既有 security/plugin_validator.py 规则延续）
-4. 管理员批准（外部插件）
-5. 加载（import）→ 接口验证（实现对应协议）
-6. 注册到单一 registry
-```
+未知包、名称冲突、版本不兼容、批准后内容变化均拒绝；禁用插件不得 import。支持按实例禁用，不能靠加载失败后静默跳过必需节点继续运行。
 
-候选发现与加载/启用分离：发现只读 metadata；加载发生在批准之后。**禁用插件不加载。**
+### 7.3 信任边界
 
-### 7.2 两种声明方式
+AST 检查是静态审查门禁，**不是沙箱，也不是可信证明**。沿用 V2.2 对受限导入/调用的拒绝策略；新类接口校验与旧顶层函数校验分开适配，不直接套错检查器。底层可信文件实现通过 infra 使用，不能为让存储插件工作而全局取消限制。
 
-- 方式一：`metadata.json`（推荐，外部插件必须）。
-- §6.3 示例字段即 metadata.json 结构；`plugin.py` 内 `PLUGIN_META` 字典作为轻量替代，仅限内置插件使用。`kind` 取值固定四类：spider/processor/storage/ui。
+上传只写待审区 `data/plugin_uploads/`，该目录不参与发现或静态文件服务。保留旧上传入口，但变更为“已接收、待批准”，不自动执行。后台管理需权限验证、请求防护、大小限制、路径约束、审计及版本留存。批准绑定完整包摘要；依赖和静态资源变更同样重新审查。
 
-###  declaration marker
+可信插件仍具有进程权限；未经批准代码不得在 API 进程运行。不可信插件隔离须单独提供操作系统级沙箱、文件/网络限制及资源限额，本期未交付前禁用该模式。
 
-- 内置插件用类装饰器注册：`@register_plugin` 声明 kind、name、version。
-- 外部插件必须 metadata.json + 管理员批准。
-- 单一 registry：插件 ID 不静默覆盖；同 ID 冲突预检报错。
-- schema_id 映射受控：不 eval/动态导入任意字符串；schema_id → 校验器查注册表，未知 schema_id 拒绝。
+### 7.4 热更新
 
-### 7.3 AST 检查的定位（如实表述）
+新版本形成新 registry 快照，仅影响后续运行。活动实例不得靠清空 sys.modules 强行替换；停用/删除有引用计数，活动版本完成后释放。依赖或原生库升级要求重启 worker。不得声称任意插件无重启热加载都安全。
 
-- AST 检查是**加载前的静态策略检查**（受限 import/调用黑名单），不是沙箱。
-- **不照搬旧方案「先导入后安全检查」或「白名单沙箱」叙述**——加载（exec_module）在安全检查之后，且检查通过 ≠ 代码可信。
-- 不扩大本次检查范围；不可信代码隔离运行作为独立能力，交付前禁用。
+抓取保持合规限速和站点访问边界，凭据使用受管引用且日志脱敏；不把反爬绕过或验证绕过列为平台功能。
 
-### 7.4 上传与审批
+## 8. UI 插件与接口
 
-- Python 插件面向**已批准、可信开发者**；网页上传进入隔离待审区（`plugins_ext/_pending/`），**不自动导入/执行**。
-- 未经批准代码不能在 API 进程执行。
-- 上传管理保留既有能力，但**安全行为变更**：权限控制、请求防护、大小限制、路径规范化、审计日志、版本留存与回滚。
-- 上传返回校验详情（通过/失败原因），与 V2.2 行为差异在 dashboard 提示中说明。
+### 8.1 组件与 renderer
 
-### 7.5 热更新语义
+继续使用现有 Flask、原生前端和 Chart.js。UIPlugin 输出描述 DTO；table/chart/card/filter 具有独立参数 schema。运行描述保存到受管输出路径，前端通过授权 API 分页读取，避免将整个大数据集嵌入页面。
 
-- 热更新只替换**后续任务**的 registry 快照；活动实例不能通过清 `sys.modules` 强行卸载（V2.2 实现维持）。
-- 原生库/依赖更新要求重启 worker。
+宿主提供 `registerRenderer(id, implementation)` 风格的通用注册入口；metadata 的 renderer manifest 声明版本、同源资源、payload schema 和能力。经过批准的资源由受管路由提供，新 renderer 只新增插件包/资源/配置，不改宿主 if/else。未知 renderer 显示占位和诊断。
 
-### 7.6 运行护栏
+配置切换已有组件与安装新渲染实现分别验收。不能用四个硬编码 renderer 冒充开放 UI 插件。第三方 JS 本质是可执行代码，须管理员批准；HTML 文本使用安全文本插入，启用 CSP，不接收任意脚本 URL/事件代码。
 
-- HTTP 合规限速（PoliteSession 延续）；站点访问边界由配置声明；敏感信息不写日志；UI 输出转义。
-- **不把反爬绕过作为必需功能**；自适应选择器等能力按需评估后作为可选插件。
+过滤器事件只传动作 ID 和经校验参数：查询过滤走授权查询接口；明确的“开始采集”才经 request_converter 创建 TaskConfigDTO。普通筛选不能意外触发重新抓取。
 
----
+### 8.2 API 迁移表
 
-## 8. UI 组件插件化与 API
-
-### 8.1 设计要点
-
-- 四种内置组件全部交付：`table_component`、`chart_component`、`card_component`、`filter_component`。
-- 继续使用现有 Flask + 原生前端 + Chart.js；**不引入 SPA 重写**。
-- 第一层插件返回**可校验描述 DTO**（UIComponentDTO），宿主固定 renderer 渲染：组件、数据引用、事件声明相互分离。
-- 未知 component_type：可见占位 + 错误提示，不无声消失。
-
-### 8.2 受管 renderer manifest
-
-- dashboard 宿主内置固定 renderer（table/chart/card/filter）。
-- 新增 renderer 的注册机制：**受信任静态资源 manifest**——新 renderer 安装 = 新增包 + 资源 + 配置登记，**不改宿主分支**。
-- 不直接注入任意 HTML/JS：内容转义、CSP、同源受管资源、动作白名单；过滤器请求经 `request_converter` 转成有效 TaskConfigDTO。
-
-### 8.3 明确边界（防虚报）
-
-- 「只换已有组件配置」≠「新增渲染实现」；不能把硬编码几种 renderer 宣称为全部 UI 可插拔。
-- 表格、图表、卡片、过滤器四种内置组件的**组件级可配置**是基线交付；新增渲染实现经 manifest 机制支持。
-
-### 8.4 API 端点规划
-
-**已有端点（升级兼容，V2.2 实现）**：
-
-| 端点 | 方法 | 说明 |
+| 端点 | 状态 | 行为 |
 |---|---|---|
-| `/api/plugins` | GET | 插件清单（builtin+external+overrides） |
-| `/api/plugins/upload` | POST | 上传（进入待审区，不自动执行） |
-| `/api/plugins/<key>` | PUT/DELETE | 启停/配置/卸载 |
-| `/api/plugins/<key>/reload` | POST | 热重载（后续任务生效） |
-| `/api/plugins/pipeline/<type>` | PUT | 权重链调整 |
+| GET /api/plugins | 已有，升级 | 四组清单 + 旧 kind 兼容表示；批准状态/版本可见 |
+| POST /api/plugins/upload | 已有，行为收紧 | 待审，不执行，返回明确状态 |
+| PUT/DELETE /api/plugins/<key> | 已有，升级 | 更新活动后端、版本冲突检查、活动引用保护 |
+| POST /api/plugins/<key>/reload | 已有，升级 | 下次运行生效，不改变活动快照 |
+| PUT /api/plugins/pipeline/<type> | 已有，兼容 | 旧权重映射为新有序步骤；不支持映射明确报错 |
+| POST /api/pipeline/validate | 拟新增 | 配置/schema/引用/权限预检，不执行插件 |
+| POST /api/pipeline/run | 拟新增 | 返回 run_id，受控后台运行 |
+| GET /api/pipeline/runs/<id> | 拟新增 | 状态、阶段结果、存储回执 |
+| GET /api/ui/components | 拟新增 | 已批准组件描述与布局 |
+| PUT /api/ui/components/layout | 拟新增 | 校验后持久化布局和 revision |
+| 旧 crawl/tutors/进度/失败接口 | 保留 | 教育兼容视图，响应字段及状态以旧测试固定 |
 
-**拟新增端点（V3.0）**：
+批准/版本激活端点由 Wave 0 同步冻结，必须具有管理员权限；不能只增加按钮却缺少后端审批状态机。
 
-| 端点 | 方法 | 说明 |
+## 9. 开源参考与依赖选择
+
+核验状态（2026-09-17 经浏览器直连确认）：Scrapy 官方文档（Item Pipeline，当前版本 2.19.0）、Crawlee Python 官方仓库（apify/crawlee-python）、Meltano 插件概念文档（extractors/loaders/mappers/utility 等类型、discoverable/custom 插件机制）均可访问且内容与下表相符。此核对仅确认入口与文档存在，未逐行核验当前源码、许可证文本或 API 细节；引入依赖前仍须按本节末尾要求记录仓库、版本与 LICENSE。WaterCrawl、Scrapling 及名称存疑项目仍未核验，实现不依赖名称含糊项目的未证实功能。
+
+| 参考项目/资料 | 拟借鉴内容 | 本地落点与取舍 |
 |---|---|---|
-| `/api/pipeline/run` | POST | 触发管道运行 |
-| `/api/pipeline/runs/<id>` | GET | 运行状态/StageResult/回执 |
-| `/api/pipeline/validate` | POST | 配置预检（YAML schema + 引用插件存在性） |
-| `/api/ui/components` | GET | 当前配置的组件清单（UIComponentDTO） |
-| `/api/ui/components/layout` | PUT | 组件布局持久化 |
+| [Scrapy Item Pipeline](https://docs.scrapy.org/en/latest/topics/item-pipeline.html)、[Feed Exports](https://docs.scrapy.org/en/latest/topics/feed-exports.html)、[仓库](https://github.com/scrapy/scrapy) | 有序处理、生命周期、多目标导出 | 轻量 engine/storage；Scrapy 接入仅可选适配器 |
+| [Crawlee Python](https://crawlee.dev/python)、[仓库](https://github.com/apify/crawlee-python) | 请求队列、浏览器资源管理 | 有界采集/JS 插件；核对 Python API，不能照搬 JS 示例 |
+| [Meltano 插件文档](https://docs.meltano.com/concepts/plugins/)、[仓库](https://github.com/meltano/meltano) | 声明式配置、插件元数据 | YAML 实例与执行配置分离，不引入整个框架 |
+| [PyPA entry points](https://packaging.python.org/en/latest/specifications/entry-points/) | Python 包发现机制 | 后续补充安装包发现，首期 metadata 扫描即可 |
+| [jsonschema](https://python-jsonschema.readthedocs.io/)、[PyYAML](https://pyyaml.org/wiki/PyYAMLDocumentation)、[packaging](https://packaging.pypa.io/) | 运行时校验、安全解析、版本约束 | Wave 0 核验并锁定依赖 |
+| [Pydantic](https://docs.pydantic.dev/) | 类型模型与 schema | 比较参考；首期不额外引入第二套 DTO 模型 |
+| [pluggy](https://pluggy.readthedocs.io/) | 显式接口与生命周期纪律 | 不引入依赖，借鉴接口约定 |
+| WaterCrawl、Scrapling | 插件接口、自适应选择器方向 | 当前未核验唯一仓库和版本，不作为必需依赖 |
+| OmniData、Universal Harvester、Perseus、scpun-crawl | 自动发现、合并、UI 分包、可视化编排方向 | 名称不足以确认项目身份，取得明确仓库后再评价 |
 
-旧 `/api/crawl`、`/api/tutors`、进度接口保留教育兼容视图。
+引入或复制代码前记录仓库、版本/commit、LICENSE、NOTICE、分发义务与兼容性；不笼统宣称“借鉴就没有许可证问题”。可选依赖缺失时在预检可见，已选必需插件必须阻止启动；运行时不得自动 pip install。
 
----
+## 10. 实施波次、所有权与工作量
 
-## 9. 开源参考与依赖策略
+### 10.1 阶段安排
 
-> **调研状态声明**：以下条目基于既有认知与文档入口，本次编写时外部网络访问受限（Jina 超时、官方文档直连失败），**未完成在线核验**。表中「核验状态」如实标注；实施前须按官方文档核对机制细节，不把未核验内容当既定结论。
+以下为工程估算，不是运行代理的耗时承诺。5–7 名熟悉代码的实施者，完整交付约 35–55 人日、3–5 周工作日跨度；顺序开发按人日估算。10 天可作为垂直切片目标，不作为完整重构保证。Gate 未通过、真实站点适配及测试债务需重新估算。
 
-| 项目 | 官方入口 | 建议借鉴机制 | 本地落点 | 引入依赖？ | 核验状态 |
-|---|---|---|---|---|---|
-| Scrapy | docs.scrapy.org / github.com/scrapy/scrapy | Item Pipeline 有序链、Feed Exports 多目标、settings BASE+覆盖 | pipeline/engine.py、plugins/storage/ | 否（可选适配器） | 未在线核验 |
-| Crawlee (Python) | crawlee.dev / github.com/apify/crawlee-python | RequestQueue、浏览器资源池 | plugins/spiders/js_render、infra | 可选 | 未在线核验 |
-| Meltano | docs.meltano.com / github.com/meltano/meltano | 声明式 YAML 配置、连接器元数据 | config/pipeline.yaml、plugins.yaml | 否 | 未在线核验 |
-| PyPA entry points | packaging.python.org | 插件发现补充机制（可选） | plugin_manager/loader.py | 否 | 未在线核验 |
-| Pydantic / jsonschema | docs.pydantic.dev / jsonschema.readthedocs.io | DTO/schema 运行时校验 | contracts/ 校验 | 可选（Wave 0 冻结选型） | 未在线校验 |
-| WaterCrawl | 待核验 | AbstractPlugin 抽象基类 | plugins/base.py | 否 | 待核验（仓库待确认） |
-| Scrapling | 待核验 | 自适应选择器 | 可选 spider 插件 | 可选 | 待核验（仓库待确认） |
-| OmniData / Universal Harvester / Perseus / scpun-crawl | 无唯一仓库地址，待确认 | 仅记录方向，不作为关键依赖 | — | 否 | 待核验 |
-
-**依赖策略**：
-- 直接依赖或复制代码必须核对实际版本、LICENSE/NOTICE 义务；**不宣称「借鉴设计思想完全不涉及许可证」**。
-- 新增运行时依赖（YAML 解析、schema 校验）在 Wave 0 冻结选型与版本，登记 NOTICE；不执行 requirements 自动安装。
-- 可选依赖（Playwright、Scrapling 等）由插件 metadata 声明，缺失时插件禁用而非崩溃。
-
-### 9.1 重点机制结合说明
-
-1. **Scrapy × pipeline**：权重字典 `{name: weight}` 按 `(weight, id)` 排序执行（延续 V2.2 `config/plugins.json` 语义）；BASE 内置 + 用户覆盖禁用。
-2. **Crawlee × 采集**：列表→详情 fan-out、分页终止、有界批次（§5.1），浏览器插件借鉴资源池思想。
-3. **Meltano × 配置**：pipeline.yaml/plugins.yaml 双文件、连接器元数据。
-4. **pluggy 纪律**：不引入依赖，但保留 hookspec 式接口约定文档，固定各 kind 签名。
-5. **UI 插件化**：借鉴 Perseus「components/views 分包」方向（待核验），落地为 `plugins/ui/` + dashboard manifest 机制。
-
----
-
-## 10. Wave 划分、文件所有权与实施步骤
-
-### 10.1 总览
-
-```text
-V2.2 Gate → Wave 0 契约冻结 → Wave 1a 垂直切片 → Wave 1b 并行开发 → Wave 2 集成切换 → Wave 3 验收交付
-```
-
-| 阶段 | 内容 | 前置依赖 | 估时（工作量/关键路径） |
+| 波次 | 前置 | 工作量 | 交付与退出条件 |
 |---|---|---|---|
-| V2.2 Gate | 交接确认（§1.3） | V2.2 完成 | 0.5 人日 |
-| Wave 0 | 冻结 DTO/协议/配置 schema/错误/兼容契约；最小离线插件链测试 | Gate | 0.5–1 人日 |
-| Wave 1a | 治理/基建/最小引擎 + 静态垂直切片（静态源→解析→JSONL→表格） | Wave 0 | 2–3 人日 |
-| Wave 1b | 并行补齐四类插件 + 配置/API 兼容 | Wave 1a | 3–5 人日（并行 3–5 自然日） |
-| Wave 2 | 按依赖集成、迁移预览、新旧对照、并发与失败恢复、逐步切换入口 | Wave 1b | 1.5–2.5 人日 |
-| Wave 3 | 默认切换、全量兼容验收、示例插件 + 第二数据集验收、回滚演练 | Wave 2 | 1–2 人日 |
+| Gate | V2.2 收尾 | 1–2 人日 | 基线报告、所有启动项通过 |
+| Wave 0 | Gate | 3–4 人日 | 契约/配置/错误/生命周期冻结，mock 四阶段 smoke |
+| Wave 1a | Wave 0 | 5–8 人日 | 静态来源→faculty_parser→JSONL→表格离线贯穿 |
+| Wave 1b | Wave 1a | 16–24 人日 | 五采集、全部处理/存储/UI、治理/API 兼容及单测 |
+| Wave 2 | 模块验收 | 6–10 人日 | 迁移、对照、并发、故障恢复、入口切换 |
+| Wave 3 | Wave 2 | 4–7 人日 | 第二领域、零主干扩展、回滚、最终验收 |
 
-**总计**：约 8.5–14 人日；原「10 天」为原型目标而非完整交付保证。人日 ≠ 自然日；关键路径 = Wave 0 → 1a → 2 → 3。同一文件只能一个写入者；**共享工作区并行，不各自 checkout 分支**。
+### 10.2 A–G 文件所有权
 
-### 10.2 Agent 分工（后续职责，非本次启动代理）
+此表用于后续分工，本次不执行重构。单人也可按同顺序实施。
 
-| Agent | 职责 | 关键交付 |
-|---|---|--|---|
-| A | pipeline、services 兼容门面、main/API | pipeline/engine.py、stages、main.py/API 切换、兼容层 |
-| B | 存储插件 + storage_converter | jsonl/xlsx/sql/progress 插件；复用 JSONLStore/ProgressStore/ConfigStore/ExportService |
-| C | spider 插件 + raw_converter + legacy 引擎适配 | 五个采集插件、LegacyRecordBatch 适配、兼容视图 |
-| D | processor 插件 + plugin_manager | 治理框架 + 解析/合并/统计插件；**工作量偏大，先治理后处理器，必要时 G 协调，不伪装全并行** |
-| E | infra/context、UI 插件、Dashboard、request/view converter | 先交付基建，后 UI |
-| F | 隔离 fixtures、集成/契约/覆盖率 | 模块所有者写各自独占单元测试；F 负责跨模块集成与覆盖率 |
-| G | 契约/配置 schema/共享文件协调、分阶段集成、验收 | interfaces.md 增量登记、集成、验收报告 |
-
-### 10.3 实施步骤（每阶段：任务→文件→测试→退出条件→回滚）
-
-#### V2.2 Gate（0.5 人日）
-
-- **任务**：逐项确认 §1.3 清单。
-- **退出条件**：清单全勾或有书面豁免；登记实际基线。
-- **回滚点**：不适用（只读确认）。
-
-#### Wave 0（0.5–1 人日，Agent G，F 提前备 fixture）
-
-- **任务**：冻结 `contracts/`（task/raw/record/ui/result/profiles 接口）、`plugins/base.py`、`infra/context.py`；配置 schema（YAML 结构 + 校验）；错误分类与兼容映射；`docs/refactor/interfaces.md` 增量登记；最小离线插件链测试（mock 插件贯穿四阶段）。
-- **文件**：`contracts/**`、`plugins/base.py`、`infra/context.py`、`config/*.yaml` schema、`docs/refactor/interfaces.md`、`tests/test_wave0_contract.py`。
-- **测试**：契约导入、DTO 校验、mock 链路 smoke。
-- **退出条件**：契约文档冻结；smoke 测试通过。
-- **回滚点**：契约 revert 即回 V2.2 行为（新目录独立存在）。
-
-#### Wave 1a（2–3 人日，A + E + D 前置部分）
-
-- **任务**：plugin_manager 最小实现（发现/校验/注册）、infra/context、最小 pipeline.engine + acquire/process/store/present 阶段调度、静态垂直切片。
-- **文件**：`plugin_manager/**`、`infra/**`、`pipeline/**`、`plugins/spiders/static_html/`、`plugins/processors/yzw_major_parser/`（或静态解析插件）、`plugins/storage/jsonl_store/`、`plugins/ui/table_component/`。
-- **测试**：垂直切片端到端（离线 fixtures）。
-- **退出条件**：离线静态链路产出与旧链路同构 JSONL + 表格视图 DTO。
-- **回滚点**：新链路独立目录，关闭即回 V2.2。
-
-#### Wave 1b（3–5 人日，A/B/C/D/E 并行 + F）
-
-| 责任块 | 任务 | 主要文件 |
+| 角色 | 独占生产文件 | 测试/依赖 |
 |---|---|---|
-| C | 五个采集插件 + raw_converter + legacy 适配 | `plugins/spiders/**`、`converters/raw_converter.py` |
-| D | 解析/归一/合并/统计插件 | `plugins/processors/**` |
-| B | JSONL/Excel/SQLite/进度存储插件 + storage_converter | `plugins/storage/**`、`converters/storage_converter.py` |
-| E | UI 四组件 + view_converter + request_converter | `plugins/ui/**`、`converters/view_converter.py`、`request_converter.py` |
-| A | 配置系统 + API 兼容 + main 改造 | `config/pipeline.yaml`、`config/plugins.yaml`、`api/server.py`、`main.py` |
-| F | 契约/转换器/集成测试 + fixtures | `tests/**` |
+| A 主干与接口 | pipeline、services 兼容、main.py、api/server.py | test_pipeline_engine、test_api_v3；依赖 G/D/E |
+| B 存储 | plugins/storage、infra/storage、旧 storage/导出门面、storage_converter | test_storage_plugins；复用 V2.2 原子 I/O |
+| C 采集 | plugins/spiders、旧 spiders 适配、raw_converter | test_spider_plugins；与 D 冻结原始页面契约 |
+| D 治理与处理 | plugin_manager、security 适配、config/plugins.py、plugins/processors、旧解析/合并门面 | test_plugin_loader/security、test_processor_plugins；先治理后业务 |
+| E 基建与 UI | infra 的非 storage 文件、utils 兼容、plugins/ui、dashboard、request/view_converter | test_http_context、test_ui_plugins；先基建后前端 |
+| F 质量 | tests/integration、共享 fixtures、浏览器测试、覆盖率配置 | 不与模块所有者争写独占单测 |
+| G 契约与集成 | contracts、plugins/base.py、config YAML/schema、迁移/验收脚本、V3.0 文档 | Wave 0 后接口变更须登记；集成时接管共享文件 |
 
-- **退出条件**：各责任块测试通过；配置迁移预览工具可用（`scripts/migrate_config.py` 拟新增）。
-- **回滚点**：每责任块独立目录，单块 revert 不影响他块。
+utils/progress.py 的对外门面由 E 写，B 只交付其存储依赖；旧 pipelines/merge.py 归 D，export.py 归 B。A 不直接改这些文件，避免原方案共享热点争写。
 
-#### Wave 2（1.5–2.5 人日，Agent G）
+共享工作区不得各自 checkout；同一文件仅一个写入者。若改用独立分支/worktree，须另行确定集成方式。F 从 Wave 0 准备 fixture，不能到最后才发现契约无法测试。
 
-- **任务**：按依赖集成（E→D→C→B→A→F 顺序核对）；配置迁移预览 → 校验 → 备份 → 原子写 → 切换；旧/新离线结果对照（同输入 JSONL diff 为空）；四线程并发与失败恢复；逐步切换 main/API 入口。
-- **退出条件**：§11 验收矩阵全绿；对照差异报告归档。
-- **回滚点**：配置备份 + 固定 V2.2 版本可回退。
+### 10.3 分阶段执行清单
 
-#### Wave 3（1–2 人日，Agent G + 各所有者）
+**Wave 0：冻结而非搭空壳**
 
-- **任务**：默认入口切换；示例插件零主干改动验收；第二数据集（无教育字段）贯穿验收；交付文档；回滚演练。
-- **退出条件**：§11 全部通过；验收报告输出。
+- G 定义 §4 全部类型、schema ID、运行/兼容状态映射、实例配置、registry 和 context 协议。
+- 冻结教育 schema v1 的 golden fixtures、来源分组/历史参与策略、UI manifest 和批准接口。
+- 新建 `docs/V3.0/INTERFACES.md`、`tests/test_contracts.py`、`tests/test_wave0_contract.py`；不覆盖 V2.2 冻结记录。
+- 新增 mock 插件贯穿四阶段，错误链在执行前拒绝。命令：`python -m pytest tests/test_contracts.py tests/test_wave0_contract.py -q`。
+- 退出：契约/示例可验证，mock smoke 通过；回滚：旧入口未变，仅移除新配置引用。
 
-### 10.4 并行纪律
+**Wave 1a：第一条真实插件切片**
 
-- Wave 1b 各责任块文件不相交；共享文件（`config/pipeline.yaml` schema、`docs/refactor/interfaces.md`）由 G 独占写。
-- Wave 1b 不能在 Wave 0 契约冻结前全速实施；先接口交付再按依赖汇合。
-- 模块所有者写各自独占的单元测试；F 只写跨模块集成/契约测试，避免与所有者抢测试文件。
+- D/E 先交付 registry 和 context，A 接入最小引擎；C/D 交付 static_html/faculty_parser，B/E 交付 JSONL/table。
+- 静态列表/详情全部使用离线 fixture，经真实插件而非全链 mock；JSONL 对照旧结果，生成 views 描述。
+- 命令：`python -m pytest tests/integration/test_static_slice.py -q`（拟新增）。
+- 退出：四阶段及失败清理通过；回滚：旧 CLI/API 仍不变，新链仅独立测试。
 
----
+**Wave 1b：补齐完整范围**
 
-## 11. 验收标准与回滚
+- C/D 补齐 AJAX、JS、PDF、YZW 原始批次与解析，合并/统计/去重；不得只包装旧已解析记录充当完成。
+- B 补齐 Excel/SQLite/进度快照，验证同路径锁和幂等；E 完成四组件、manifest、过滤交互。
+- D 完成版本/审批/热更新和七类适配；G 完成配置迁移 dry-run；A 完成新端点但先保持旧入口默认。
+- 命令：`python -m pytest tests/test_spider_plugins.py tests/test_processor_plugins.py tests/test_storage_plugins.py tests/test_plugin_loader.py tests/test_ui_plugins.py -q`（拟新增）。
+- 退出：每插件有输入/输出/失败单测，配置预检覆盖所有默认引用；回滚：停止启用未验收插件，不覆盖旧数据。
 
-### 11.1 验收矩阵
+**Wave 2：按依赖集成并切换**
 
-| # | 验收项 | 证据/命令（拟新增测试或脚本除注明外） | 通过标准 |
-|---|---|---|---|
-| 1 | 旧 CLI 全参数兼容 | `python main.py --help`；逐参数冒烟 | 全部参数可解析，退出码 0 |
-| 2 | 旧函数兼容 | 调用 `main.run_source_a/b`、`main.execute_task`、`main.build_tasks`、`main.run_merge` 旧签名 | 返回形状与 V2.2 一致 |
-| 3 | Source A/B 全流程 | 离线 fixtures 驱动 source_a/source_b | 产出与 V2.2 同构 JSONL |
-| 4 | resume/retry_failed/force | 模拟中断重跑 | 行为与 V2.2 一致 |
-| 5 | 旧配置/JSONL/Excel/进度/失败记录格式 | 读旧文件 → 新链路 → 对照 | 字段不丢、结构不变 |
-| 6 | DTO 边界错误 | 非法链、空结果、DTO 校验失败 | 明确错误码与消息 |
-| 7 | 分页/详情 fan-out | 多页 fixture | 批次完整、去重生效 |
-| 8 | 多源部分失败 | 单源失败 fixture | partial 状态正确、成功源不回滚 |
-| 9 | 三阶合并回归 | 复用 `tests/test_merge.py` 样例 | 匹配结果与 V2.2 一致 |
-| 10 | 存储原子性 | 注入写失败 | 无半文件、临时文件清理、重执行幂等 |
-| 11 | 并发 4 线程 | 同路径读改写 + 状态无丢失 | 无损坏、无丢失更新 |
-| 12 | 插件发现不执行 | 发现阶段不 import | metadata-only 扫描验证 |
-| 13 | 禁用不加载 | 禁用插件 | 模块未 import（sys.modules 检查） |
-| 14 | 冲突/版本拒绝 | 同 ID 插件、低于 min_core_version | 拒绝并报错 |
-| 15 | 热更新快照 | 运行中更新插件 | 后续任务生效，活动任务不受影响 |
-| 16 | 上传进入待审区 | 上传外部插件 | 不自动执行，待批准 |
-| 17 | 未知 UI 组件 | 未知 component_type | 可见占位+错误提示 |
-| 18 | 第二数据集贯穿 | 无教育字段数据集走完四阶段 | 四阶段均产出标准 DTO |
-| 19 | 示例插件零主干改动 | 新增插件只加包+配置 | `git diff pipeline/ contracts/ converters/ plugin_manager/ infra/` 为空 |
-| 20 | UI 组件配置切换 | Playwright 驱动 dashboard | 组件切换/过滤/刷新/错误提示可用 |
-| 21 | 覆盖率 ≥ 80% | `pytest tests/ --cov=pipeline --cov=contracts --cov=converters --cov=plugins --cov=plugin_manager --cov=infra --cov-report=term` | 整体 ≥ 80%；关键模块单独报告；注明排除范围 |
-| 22 | 配置校验入口修正 | `python -c "from config.validator import validate_all_configs; from config.loader import load_schools_config; r=validate_all_configs(load_schools_config()); print('errors:', len(r['errors']))"` | errors==0 或逐条修复 |
-| 23 | 真实站点可选手工验证 | 可控目标 + 隔离输出 | 标记「手工验证，非自动门槛」 |
-| 24 | 回滚演练 | 恢复配置备份 + V2.2 版本 | 可回滚且数据不损 |
+- 集成顺序：契约→基建/治理→采集/处理/存储/UI→引擎/API→测试；不是机械合并字母顺序。
+- 临时目录运行旧/新链路对照，稳定字段精确相同，时间戳等只按已列白名单比较；Excel 比较单元格/列，不比较 ZIP 二进制。
+- 配置迁移冲突必须解决；备份后切换，禁止运行失败时自动转旧链重复副作用。
+- 命令：`python -m pytest tests/integration/test_legacy_compat.py tests/integration/test_concurrency.py tests/integration/test_recovery.py -q`（拟新增）。
+- 退出：兼容/并发/恢复通过，用户确认激活；回滚：固定版本及配置备份，见 §11.3。
 
-### 11.2 并发与多进程边界
+**Wave 3：验收而非继续扩范围**
 
-- 四线程并发验证通过 = 线程安全证据；**不冒充多进程安全**。多进程同目录支持需进程锁，明确禁止或文档化，不在本期承诺。
+- 使用本地 fixture 建立无学校/导师字段的第二领域（如公开文章目录），贯穿采集/处理/存储/展示。
+- 从冻结核心基线新增示例插件与 renderer；仅插件包/资源/配置有 diff，核心与宿主无改动。
+- 跑全量测试、覆盖率、浏览器验证和回滚演练，生成 `docs/V3.0/ACCEPTANCE.md`。
+- 退出：§11 全部取得证据；真实网络未跑则明确标记，不混同离线验收。
 
-### 11.3 灰度与回滚
+## 11. 验收矩阵、命令与回滚
 
-- 固定 V2.2 版本（tag）+ 配置备份 + `data/` 快照。
-- 新旧对照运行写入**不同输出目录**（如 `data/output_v3/`），同任务禁止自动双跑（防重复副作用）；差异报告人工评审后切换。
-- 回滚步骤：恢复配置 → 切回 V2.2 版本 → 校验旧链路可用。
-- 输出 V3.0 验收报告至 `docs/refactor/acceptance_v3.md`（拟新增），**保留 V2.2 `docs/refactor/interfaces.md` 冻结记录，不覆盖旧交接报告**。
+### 11.1 必须留下的证据
 
-### 11.4 真实网络验证定位
-
-- 真实学校请求仅为**可选手工验证**：可控目标、隔离输出、记录网络/认证限制；**不作为自动验收门槛**。
-- 自动化验收全部离线（fixtures + 临时目录）。
-
----
-
-## 12. 后续扩展路线图（V3.0 之后）
-
-1. 插件市场：内部注册中心，一键安装。
-2. 可视化管道编排：拖拽配置 pipeline.yaml（参考方向待核验）。
-3. 多语言插件：gRPC/HTTP 接入非 Python 插件。
-4. AI 辅助解析：processors 中 LLM 解析插件。
-5. 分布式采集：RequestQueue 多机协同（参考 Crawlee，未核验）。
-6. 消息/通知类 utility 插件与信号系统（延续旧阶段 D 方向）。
-
----
-
-## 附录 A：V2.2 → V3.0 术语映射
-
-| V2.2 术语 | V3.0 术语 | 说明 |
+| 范围 | 验收内容 | 通过标准 |
 |---|---|---|
-| CrawlTask（university/college/category/source/year/force/config） | TaskConfigDTO + education profile | 领域字段进 profile |
-| CrawlResult | RunResult / StageResult | 状态机见 §5.3 |
-| ENGINE_REGISTRY（类/函数两套） | 统一 plugin registry | 兼容视图派生 |
-| plugins.json（overrides/pipeline） | pipeline.yaml + plugins.yaml | 兼容期读取旧 JSON |
-| 七类插件 | 四类插件 | 映射见 §6.1 |
-| data/output/*_faculty.jsonl | RecordBatch → jsonl_store 插件 | 格式不变 |
-| progress.json | ProgressStore（infra）+ progress_store 插件 | 格式不变 |
-| summary.xlsx | xlsx_store 插件 | 格式不变 |
+| 旧 CLI/函数 | 全参数、旧返回值、source A/B、resume/retry/force | 与 V2.2 golden fixtures/契约一致 |
+| 数据兼容 | school_data、JSONL、Excel、进度、失败记录 | 字段/列/路径/状态投影不丢失 |
+| 通用契约 | 非法 DTO/schema/链、空数据、二进制引用 | 明确诊断，执行前或边界拒绝 |
+| 采集处理 | 五引擎、分页终止、详情 fan-out、三阶合并 | 来源与年份隔离，部分失败可解释 |
+| 存储 | JSONL/Excel/SQLite/进度、故障注入、重跑 | 无半文件/重复副作用，回执与真实输出一致 |
+| 并发 | 四线程、多实例同路径读改写 | 无丢失更新；第二进程同输出根被拒绝 |
+| 治理 | metadata-only 发现、禁用不加载、冲突/版本/批准 | 未批准不执行，批准后内容变更拒绝 |
+| 热更新 | 活动任务与新任务并行 | 活动快照不变，新任务使用新版本 |
+| UI | 四组件切换、过滤、分页、刷新、未知类型 | 浏览器可见正确反馈，无任意 HTML 注入 |
+| 扩展性 | 非教育数据集、新插件、新 renderer | 只增插件/配置/资源，核心和宿主零 diff |
+| 回滚 | 配置恢复、固定旧版本、恢复运行 | 旧数据可读，不产生同任务自动双跑 |
 
----
+### 11.2 验收命令约定
 
-## 附录 B：与旧计划书（2026-09 版）的差异摘要
+以下是未来实施时的验收命令，**本次文档修改没有运行这些业务测试**。新增测试文件和脚本必须先在对应 Wave 创建。所有自动测试使用临时根目录与模拟网络，不污染 data/。
 
-| 旧计划书 | 新计划书 |
-|---|---|
-| 7 类插件 + 配置只读页 | 4 类插件 + 契约驱动管道 + 配置迁移 |
-| 最小侵入（不动主流程） | 渐进迁移（垂直切片→并行→集成切换） |
-| 外部插件上传即执行 | 上传进待审区，批准后加载 |
-| 「白名单沙箱」表述 | 如实表述：AST 是静态门禁，非沙箱 |
-| 5–8 天完成 | 8.5–14 人日，标注原型目标 vs 完整交付 |
-| 开源借鉴泛泛背书 | 借鉴机制 + 依赖策略 + 核验状态表 |
-| 无目录章节 | §2 目录结构与放置规则（重点章节） |
-| 无 DTO 语义表 | §4.2 部阶段输入/输出契约表 |
-| 无所有权矩阵 | §10.2 Agent 分工 + 文件独占规则 |
-| 无回滚与灰度 | §11.3 灰度、回滚、双跑禁止 |
-| 未核验内容未标注 | 核验状态如实标注（未在线核验/待核验） |
+```bash
+python -m pytest tests/ -q
+python -m pytest tests/ --cov=pipeline --cov=contracts --cov=converters --cov=plugins --cov=plugin_manager --cov=infra --cov-report=term-missing --cov-fail-under=80
+```
+
+整体覆盖率至少 80%，关键模块逐个报告；不得排除核心实现来抬高分数。可选浏览器/PDF 依赖须安装于专门测试环境，其跳过项单独报告，不能拿大量 skip 当功能已验收。
+
+已有配置校验函数需**实际调用并检查 errors**，不是仅 import 后打印“通过”：
+
+```python
+from config.loader import load_schools_config
+from config.validator import validate_all_configs
+
+result = validate_all_configs(load_schools_config())
+for error in result["errors"]:
+    print(error)
+raise SystemExit(1 if result["errors"] else 0)
+```
+
+CLI 冒烟使用独立子进程和临时工作目录，安装/路径按 Gate 环境固定；旧参数清单至少包含 school/category/source/year/workers/force/resume/retry-failed/delay/max-retries/timeout、缓存、冷却、raw-dir、熔断相关参数，最终以 V2.2 `--help` 快照穷举对照。
+
+Playwright 测试启动临时 Flask 实例、注入 fixture 数据，验证四组件与完整事件链，不只测试 Python DTO。真实学校采集只作可选手工验证，先授权目标及隔离输出，记录认证/网络限制，不作为唯一验收依据。
+
+### 11.3 发布与回滚步骤
+
+1. 记录并保存可恢复的 V2.2 版本；版本/tag 操作由维护者明确执行，不自动提交。
+2. 备份旧配置和受影响数据。新旧对照使用不同输出根，生产默认路径直到切换前不改。
+3. 运行迁移 dry-run，审阅无法映射插件、排序、schema 和路径冲突；无冲突后成对发布配置。
+4. 停止新任务派发，等待活动任务结束或安全取消，获取输出根锁后激活新版本；保留旧数据读取能力。
+5. 如需回滚，先停止并释放新运行，恢复完整旧配置版本及兼容数据快照，再恢复旧代码；不能只切代码留下新 YAML。
+6. 核对旧链路及输出，记录受影响 run_id、已成功副作用和恢复结果；不得自动重复执行已写入目标。
+
+最终验收报告包括：基线/发布版本、环境、每项命令与结果、实际覆盖率、跳过项、配置映射报告、输出对照、浏览器记录、回滚演练。V2.2 文档与验收记录保留。
+
+## 12. 后续路线图
+
+完成上述验收后，再单独评估：插件市场、可视化编排、Scrapy/Crawlee 可选适配器、其他 SQL 数据库、非 Python 插件、LLM 解析、分布式队列、不可信插件隔离、通知信号扩展。每项重新定义信任边界、依赖和验收，不以本期“四类插件已建立”代替这些能力的实现。

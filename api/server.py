@@ -438,6 +438,11 @@ def _run_crawl_task(task_id: str) -> None:
 
         service.run_merge(tasks)
 
+        # 重试成功的学校：关闭其对应的 active 失败记录
+        for failure in load_failures():
+            if failure.get("status") == "active" and failure.get("school") in set(target_schools):
+                update_failure_status(failure["id"], "resolved")
+
         # 全量导出
         _update_task(task_id, progress={
             "total_steps": len(tasks),

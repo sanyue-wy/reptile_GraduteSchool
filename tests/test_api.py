@@ -396,6 +396,28 @@ class TestApiFailuresExtended:
         data = resp.get_json()
         assert data["code"] == 40405
 
+    def test_retry_resolves_failure_after_success(self, client, monkeypatch):
+        """重试采集成功完成后，对应失败记录应标记为 resolved"""
+        import api.server as server
+        import pipelines.export as export_mod
+
+        failure = export_mod.add_failure(
+            "f1", "测试大学", "机械学院", "Source A", "timeout", "模拟失败", "http://test.edu.cn")
+        export_mod.append_failure(failure)
+
+        fake_service = MagicMock()
+        fake_service.build_tasks.return_value = []
+        fake_service.run_merge.return_value = []
+        monkeypatch.setattr("services.CrawlerService", MagicMock(return_value=fake_service))
+
+        resp = client.post("/api/failures/retry", json={"failure_ids": ["f1"]})
+        assert resp.get_json()["code"] == 0
+        task_id = resp.get_json()["data"]["task_id"]
+        server._run_crawl_task(task_id)
+
+        assert fake_service.session.close.called
+        assert export_mod.load_failures()[0]["status"] == "resolved"
+
     def test_config_save_validation_error(self, client):
         """PUT /api/config/schools/xxx 校验失败返回400"""
         resp = client.put("/api/config/schools/测试大学", json={"categories": []})

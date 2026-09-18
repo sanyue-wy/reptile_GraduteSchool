@@ -27,17 +27,17 @@
 - [x] B：storage/**、pipelines/merge.py、pipelines/export.py、utils/progress.py；存储封装及原子读改写。
 - [x] A：services/**、main.py、api/server.py；使用新底层契约，修正 retry-failed 空任务问题。
 - [x] F：tests/**（基类测试创建期间不碰 test_engine_abstraction.py）；隔离真实配置/数据，迁移内部 mock 到服务依赖点，新增真实契约测试，无等待实现 xfail。
-- [ ] G：代码集成与 scripts/acceptance.py、scripts/offline_preview.py 已完成；中文验收报告由最终交接返回，docs/refactor/acceptance.md 待主会话落盘，真实浏览器闭环待主会话验收。
+- [x] G：代码集成与 scripts/acceptance.py、scripts/offline_preview.py 已完成；中文验收报告已落盘 docs/refactor/acceptance.md；真实浏览器闭环已于 2026-09-17 验收通过（详见报告）。
 
 每项执行：先写对应失败测试 → 运行确认失败 → 实现 → 针对性测试 → 交接。共享工作区并行仅修改独占文件，不切分支。C/D/E/B 完成后 A 接入，F 最后运行完整套件；G 按 C→D→E→B→A→F 核对集成。
 
-## G 集成进度（尚未最终验收）
+## G 集成进度（最终验收已完成，2026-09-17）
 
 - A 原交付缺失，G 已补 services 三服务及 CLI/API 接入；修复 retry-failed 构建范围和嵌套 enrollment 丢失。
-- 最近一次完整通过：523 passed、1 skipped；该次核心 services/storage/spiders.engine/security/utils.http 各文件均超过 80%。此结果早于最终 loader/API 存储委托、session.close 和 PDF 职称修复，不代表最终工作区通过。
-- 可选引擎最终专项：8 passed；js_render 91%、pdf_list 88%。
-- 已创建跨平台 scripts/acceptance.py；尚未执行。最新全量复验及 git diff --check 请求被权限系统拒绝，需要用户审核后继续；A/F/G 暂不勾选完成。
-- 不运行真实采集、真实网站验证或进攻测试。未创建最终验收报告；不得将阶段结果作为最终 PASS。
+- 最终全量复验：532 passed、1 skipped；核心 services/storage/spiders.engine/security/utils.http 覆盖率均 ≥80%（总计 94%）。scripts/acceptance.py 退出码 0。
+- 可选引擎专项 8 passed；js_render 91%、pdf_list 88%。
+- 浏览器闭环（offline_preview + Chromium）：采集→导师列表→详情→JSON/Excel 下载→失败重试→resolved 翻转→配置管理，全部通过，无页面 JS 错误。已修复重试成功后失败记录不翻转的缺口（TDD，见 docs/refactor/acceptance.md）。
+- 不运行真实采集、真实网站验证或进攻测试；该范围已在验收报告中如实标记未验证。
 
 ## 验收
 
