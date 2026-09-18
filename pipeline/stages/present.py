@@ -24,6 +24,12 @@ from infra.storage.workspace import ManagedWorkspace
 
 logger = logging.getLogger(__name__)
 
+# Format → presenter name fallback mapping
+# Used when no explicit presenter_instance is specified in OutputSpec
+_FORMAT_FALLBACK: dict[str, str] = {
+    "markdown": "text_presenter",  # markdown mode handled by text_presenter
+}
+
 
 @dataclass
 class PresentPlan:
@@ -75,7 +81,17 @@ def _resolve_presenter(presenter_plugins: dict[str, Any], spec: OutputSpec) -> O
     if spec.presenter_instance:
         return presenter_plugins.get(spec.presenter_instance)
     # 无具名实例时按格式回退到 <format>_presenter
-    return presenter_plugins.get(f"{spec.format}_presenter")
+    key = f"{spec.format}_presenter"
+    plugin = presenter_plugins.get(key)
+    if plugin is None:
+        # Check fallback mapping (e.g., markdown → text_presenter)
+        fallback_key = _FORMAT_FALLBACK.get(spec.format)
+        if fallback_key and fallback_key in presenter_plugins:
+            logger.warning("Presenter '%s' not found, falling back to '%s' for format='%s'",
+                           key, fallback_key, spec.format)
+            return presenter_plugins[fallback_key]
+        logger.warning("No presenter found for format='%s' (tried '%s')", spec.format, key)
+    return plugin
 
 
 def _execute_presenter(plugin: Any, request: PresentationRequest,

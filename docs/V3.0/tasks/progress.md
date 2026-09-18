@@ -324,3 +324,18 @@
 **验收**：
 - `python -c "from contracts.raw import RawDataDTO; RawDataDTO(source_id='x', url='y', content_type='text/html', encoding='utf-8', fetched_at='2024-01-01', assets=[])"` → ValueError
 - `python -m pytest tests/ -q --ignore=tests/test_filter_component.py` → 917 passed, 3 skipped
+
+### B4 已修复（W2 部分）：markdown 格式分发 fallback（2026-09-21）
+
+**问题**：`pipeline/stages/present.py:78` 拼接 `markdown_presenter` 查找键失败，无 fallback → 运行时 PIPELINE_DEPENDENCY_MISSING。
+
+**修复**：
+- `pipeline/stages/present.py` 新增 `_FORMAT_FALLBACK` 映射表：`{"markdown": "text_presenter"}`
+- `_resolve_presenter()` 增加 fallback 逻辑：
+  1. 先尝试 `<format>_presenter`
+  2. 未找到时查 `_FORMAT_FALLBACK`，命中则写 warning 日志并回退
+  3. 仍未找到则写 warning 日志返回 None
+
+**验收**：
+- 单元测试验证：markdown → text_presenter 回退成功
+- `python -m pytest tests/test_presentation_plugins.py -q` → 25 passed, 1 skipped
