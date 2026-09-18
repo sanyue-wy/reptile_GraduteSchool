@@ -51,10 +51,34 @@
 
 ## W2 主干管道
 
-- 分支/worktree：
+- 分支/worktree：feature/v3-w2-pipeline (../reptile-W2)
 - 已完成：
+  - **pipeline/engine.py**：PipelineEngine 四阶段引擎，ThreadPoolExecutor 有界并发（默认 4 线程），PipelineDefinition.from_files 读取 pipeline.yaml/plugins.yaml 构建执行计划，PluginResolver 按 metadata entry_point 动态导入，OutputRootLock 进程锁
+  - **pipeline/stages/acquire.py**：acquire_source 单来源采集（每任务独立插件实例+上下文，setup/execute 异常→ErrorDTO，finally 关闭资源，cancel 检查点，批次结构校验）
+  - **pipeline/stages/process.py**：run_parse_chain（每来源独立 parse 链）+ run_post_steps（多步顺序执行）+ merge_source_batches（按 dataset+profile 分组汇聚，record_id 由自然键 uuid5 生成）；处理器上下文不含 http
+  - **pipeline/stages/store.py**：store_batch fan-out 到全部目标，required 目标失败→run failed，可选失败→partial；RecordBatch 原子落盘为批次引用文件；OSError 自动映射 STORAGE_WRITE_FAILED
+  - **pipeline/stages/present.py**：view_converter→PresentationRequest→PresenterPlugin.execute→RenderedOutputDTO；成品路径须落在受管 outputs 目录下；默认 optional
+  - **infra/context.py**：PipelineContextManager（每任务独立 HTTP 会话+受管上下文，finally 关闭资源，共享 PoliteSession 工厂/CrawlCache/ProgressTracker 实例，不新建第二套熔断器）
+  - **infra/http.py**：ManagedHttpSession（取消检查点，统计快照，is_blocked/tripped 透传同一 PoliteSession 状态）
+  - **infra/cache.py**：ManagedCrawlCache（取消检查点，命中率快照，同一锁语义）
+  - **infra/errors.py**：error_from_exception + classify_http_error（裸 ConnectionError/TimeoutError 也正确映射 HTTP_* 码，OSError 在 store 阶段→STORAGE_WRITE_FAILED，凭据脱敏）
+  - **converters/request_converter.py**：build_task_config（单来源→TaskConfigDTO）+ build_output_specs（格式白名单校验，支持多级 format 推断）+ from_legacy_cli（旧 CLI 参数展开）+ to_task_configs
+  - **converters/view_converter.py**：build_presentation_request（四要素→PresentationRequest）+ build_field_descriptions（schema_id→field descriptions）
+  - **main.py**：新增 `--engine {v2,v3}` 开关（默认 v2，旧参数行为零变化），run_v3() 入口
+  - **api/server.py**：新增 3 个端点（旧端点全部保持）：POST /api/pipeline/validate、POST /api/pipeline/run、GET /api/pipeline/runs/<id>
+  - **tests/test_pipeline_engine.py**：25 tests（配置加载、四阶段端到端、并发边界、required/optional 存储失败、可选展示失败、setup 失败、空结果、取消令牌停止派发、converters、状态映射）
+  - **tests/test_http_context.py**：23 tests（ManagedHttpSession、ManagedCrawlCache、error classifier、PipelineContextManager 会话生命周期、取消令牌、凭据脱敏）
+  - **tests/integration/test_static_slice.py**：3 tests（离线 fixture 四阶段贯穿、失败清理、取消安全检查点）
+- 验收命令实测：
+  - `python -m pytest tests/test_pipeline_engine.py tests/test_http_context.py -q` → **46 passed in 1.25s**（含新增 integration/tests 另 3 passed = 49 total）
+  - `python main.py --help` → 旧参数全集（school/category/source/year/workers/force/resume/retry-failed/delay/max-retries/timeout/缓存/冷却/raw-dir/熔断）全部保留，新增 `--engine {v2,v3}`（默认 v2）
+  - `python -m pytest tests/ -q --ignore=tests/test_filter_component.py` → **710 passed, 1 skipped**（基线 661 passed + W2 新增 49 passed，零回归）
+  - Flask test client 验证新端点：POST /api/pipeline/validate → 400 预检未通过（预期，静态切片缺少真实插件元数据）；POST /api/pipeline/run 空 sources → 400；GET /api/pipeline/runs/nonexistent → 404；旧 /api/overview → 200
 - 未完成：
-- 阻塞/问题：
+  - **Wave 1a 完整集成**：离线 fixture 经真实插件（非桩）跑通 acquire→process→store→present；需 W5 faculty_parser + W6 jsonl_store + W7 html_presenter 就位后替换 test_static_slice 中的桩为真插件重跑
+  - **旧 JSONL 格式逐行一致验证**：待 W6 jsonl_store legacy_education_v1 就位后补
+- 阻塞/问题：无（W7 test_filter_component.py 语法错误不阻塞 W2，已 --ignore）
+- 仲裁提案：**零**（无接口变更需求，所有 DTO 直接使用 INTERFACES.md 冻结契约）
 
 ## W3 插件治理
 

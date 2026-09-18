@@ -1314,6 +1314,111 @@ def api_task_retry(task_id: str):
 
 
 # ------------------------------------------------------------------
+# V3.0 管道端点（拟新增，计划书 §8.2；旧端点全部保持）
+# ------------------------------------------------------------------
+_v3_runs: dict[str, dict] = {}
+_v3_runs_lock = threading.Lock()
+
+
+def _v3_engine():
+    """按当前配置构造引擎（每次调用重建快照；运行期不热替换活动实例）。"""
+    from pathlib import Path as _Path
+    from pipeline.engine import PipelineDefinition, PipelineEngine
+    definition = PipelineDefinition.from_files(
+        _Path("config/pipeline.yaml"), _Path("config/plugins.yaml"))
+    return PipelineEngine(definition, data_root=_Path("data"))
+
+
+@app.route("/api/pipeline/validate", methods=["POST"])
+def api_pipeline_validate():
+    """V3 配置预检：schema/引用/权限检查，不执行插件。"""
+    try:
+        report = _v3_engine().validate()
+    except Exception as e:
+        logger.exception("pipeline validate failed")
+        return jsonify({"code": 40001, "message": "预检失败", "detail": str(e)}), 400
+    status = 200 if report["ok"] else 400
+    return jsonify({"code": 0 if report["ok"] else 40002,
+                    "message": "预检通过" if report["ok"] else "预检未通过",
+                    "data": report}), status
+
+
+@app.route("/api/pipeline/run", methods=["POST"])
+def api_pipeline_run():
+    """V3 受控后台运行：返回 run_id，实际执行在后台线程。
+
+    body: {sources: [{source_id, target_url, config?}], dataset?, profile_id?, outputs?}
+    """
+    data = request.get_json() or {}
+    sources = data.get("sources") or []
+    if not sources:
+        return jsonify({"code": 40001, "message": "sources 参数不能为空"}), 400
+
+    run_id = uuid.uuid4().hex
+    task_data = {
+        "run_id": run_id,
+        "status": "queued",
+        "started_at": datetime.now().isoformat(),
+        "params": {"sources": sources},
+    }
+    with _v3_runs_lock:
+        _v3_runs[run_id] = task_data
+
+    def _worker():
+        try:
+            from converters.request_converter import PipelinePlanInput, build_output_specs
+            plan_input = PipelinePlanInput(
+                dataset=data.get("dataset", "education"),
+                profile_id=data.get("profile_id", "education.tutor.v1"),
+                sources=sources,
+                outputs=build_output_specs(data.get("outputs")),
+            )
+            engine = _v3_engine()
+            with _v3_runs_lock:
+                _v3_runs[run_id]["status"] = "running"
+            result = engine.run(plan_input)
+            with _v3_runs_lock:
+                entry = _v3_runs.setdefault(run_id, {})
+                entry.update({
+                    "status": result.status,
+                    "stages": [s.to_dict() for s in result.stages],
+                    "receipts": [r for s in result.stages for r in s.receipts],
+                    "total_records": result.total_records,
+                    "total_outputs": result.total_outputs,
+                    "errors": result.errors,
+                    "completed_at": result.completed_at,
+                })
+        except Exception as e:
+            logger.exception("v3 pipeline run %s failed", run_id)
+            with _v3_runs_lock:
+                entry = _v3_runs.setdefault(run_id, {})
+                entry["status"] = "failed"
+                entry["errors"] = [{"code": "PLUGIN_EXECUTE_FAILED", "message": str(e)[:500]}]
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return jsonify({"code": 0, "data": {"run_id": run_id, "status": "queued"}})
+
+
+@app.route("/api/pipeline/runs/<run_id>", methods=["GET"])
+def api_pipeline_run_status(run_id: str):
+    """V3 运行状态：阶段结果、存储回执、错误。"""
+    with _v3_runs_lock:
+        entry = _v3_runs.get(run_id)
+        snapshot = dict(entry) if entry else None
+    if snapshot is None:
+        # 内存中无记录时回退读 runs/<run_id>/result.json
+        result_file = Path("data/runs") / run_id / "result.json"
+        if result_file.exists():
+            try:
+                snapshot = json.loads(result_file.read_text(encoding="utf-8"))
+            except Exception:
+                snapshot = None
+    if snapshot is None:
+        return jsonify({"code": 40406, "message": "运行不存在"}), 404
+    return jsonify({"code": 0, "data": snapshot})
+
+
+# ------------------------------------------------------------------
 # 前端页面托管：同源提供 dashboard，避免 CORS / Mock 回退
 # /api/* 已由上方显式路由匹配，不会被此处 catch-all 抢占
 # ------------------------------------------------------------------

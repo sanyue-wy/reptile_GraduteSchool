@@ -126,7 +126,12 @@ def main():
     parser.add_argument("--clear-cache", action="store_true", help="启动前清空页面缓存")
     parser.add_argument("--circuit-break-threshold", type=int, default=5, help="同因熔断阈值")
     parser.add_argument("--circuit-break-window", type=int, default=3600, help="熔断窗口秒数")
+    # V3.0 新链路开关（默认 v2：旧行为零变化）
+    parser.add_argument("--engine", choices=["v2", "v3"], default="v2",
+                        help="执行引擎：v2=V2.2 服务（默认），v3=V3.0 四阶段管道")
     args = parser.parse_args()
+    if args.engine == "v3":
+        return run_v3(args)
     if args.workers < 1:
         parser.error("--workers 必须大于零")
     Path("data/output").mkdir(parents=True, exist_ok=True)
@@ -167,6 +172,50 @@ def main():
                     sum(r.status == "failed" for r in results), session.tripped_domains)
     finally:
         session.close()
+
+
+def run_v3(args):
+    """V3.0 四阶段管道入口（--engine v3）；旧参数全集透传为会话/并发配置。"""
+    from pipeline.engine import PipelineDefinition, PipelineEngine
+    from converters.request_converter import from_legacy_cli
+
+    Path("data/runs").mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
+                        handlers=[logging.StreamHandler(), logging.FileHandler("data/output/crawl.log", encoding="utf-8")])
+    configs = load_schools_config()
+    report = validate_all_configs(configs)
+    if report["summary"]["errors"]:
+        for error in report["errors"]:
+            logger.error("%s", error)
+            raise SystemExit(1)
+    pipeline_cfg = {}
+    try:
+        import yaml
+        with open("config/pipeline.yaml", "r", encoding="utf-8") as stream:
+            pipeline_cfg = (yaml.safe_load(stream) or {}).get("pipeline", {})
+    except FileNotFoundError:
+        logger.warning("config/pipeline.yaml 不存在，使用默认输出规格")
+
+    definition = PipelineDefinition.from_files(Path("config/pipeline.yaml"), Path("config/plugins.yaml"))
+    engine = PipelineEngine(
+        definition, data_root=Path("data"), max_workers=args.workers,
+        session_kwargs={
+            "delay_range": tuple(args.delay), "max_retries": args.max_retries,
+            "raw_dir": args.raw_dir, "cooldown_threshold": args.cooldown_threshold,
+            "cooldown_seconds": args.cooldown_seconds, "timeout": args.timeout,
+            "circuit_threshold": args.circuit_break_threshold,
+            "circuit_window": args.circuit_break_window,
+        },
+    )
+    plan_input = from_legacy_cli(args, configs, pipeline_cfg)
+    if not plan_input.sources:
+        logger.info("无任务可执行")
+        return
+    result = engine.run(plan_input)
+    logger.info("V3 运行完成: status=%s records=%d outputs=%d errors=%d",
+                result.status, result.total_records, result.total_outputs, len(result.errors))
+    if result.status == "failed":
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
