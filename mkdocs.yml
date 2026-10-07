@@ -1,6 +1,16 @@
 site_name: "数据采集平台 V3.0 开发文档"
 site_description: "插件开发指南、API 参考、架构文档"
-site_dir: docs/_site_build
+docs_dir: docs
+site_dir: site_build
+
+exclude_docs: |
+  V0.0/**
+  V2.0/**
+  V2.1/**
+  V2.2/**
+  V3.0/**
+  refactor/**
+  plugin_dev_guide/plugin_index.md
 
 theme:
   name: material
@@ -41,6 +51,8 @@ plugins:
 
 markdown_extensions:
   - admonition
-  - codehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
   - toc:
       permalink: true

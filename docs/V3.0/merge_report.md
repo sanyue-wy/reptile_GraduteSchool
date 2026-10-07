@@ -145,14 +145,31 @@
 
 ### 4.1 pytest 全量回归
 
-```
-======================= 956 passed, 3 skipped in 17.97s =======================
-```
+> ⚠️ **2026-10-01（G4）数字更正 + 重新验证**
+>
+> 原文此处记录 `956 passed, 3 skipped in 17.97s`。该数字**无法复算**，实测：
+>
+> ```
+> $ python -m pytest tests/ -q --ignore=tests/integration
+> 955 passed, 3 skipped in 20.36s
+> ```
+>
+> **956 是"收集数"（collected）而非"通过数"（passed）**，原文混淆了两者。
+> 佐证：`git diff --stat HEAD -- tests/` 为空（无已跟踪测试文件被改动），
+> 工作区仅多出未跟踪的 `tests/test_dashboard_frontend.py`（2 个用例）。
+> 故合并时的树为 **956 collected − 3 skipped = 953 passed**。
 
-- **较基线增量**: 532 passed (基线) → 956 passed (+424)
+- **较基线增量**: 532 passed (基线) → **955 passed（+423，2026-10-01 实测口径）**
 - **失败数**: 0
-- **跳过数**: 3 (WeasyPrint 未安装环境相关)
+- **跳过数**: 3 — ⚠️ **原文称"3 (WeasyPrint 未安装环境相关)"不准确**，三者原因各异（实测 `-rs`）：
+  - `tests/test_presentation_plugins.py:401` — WeasyPrint not installed
+  - `tests/test_errors.py:65` — RemoteDisconnected not available in this urllib3 version
+  - `tests/test_plugin_loader.py:360` — 无 pending_review 测试数据
 - **回归**: 零
+
+> ⚠️ **复算提示（2026-10-01）**：本批次有并行窗口正在向 `tests/browser/` 持续新增浏览器验收用例
+> （实测 42 个），该目录在编写过程中会临时失败/报错。统计稳定基线时请附加
+> `--ignore=tests/browser`，或等该窗口收口后再取全量数字。
 
 ### 4.2 子套件回归
 
@@ -166,7 +183,7 @@
 | test_plugin_security.py | 18 | ✅ 全通过 |
 | test_spider_plugins.py | 49 | ✅ 全通过 |
 | test_processor_plugins.py | 34 | ✅ 全通过 |
-| test_storage_plugins.py | 42 | ✅ 全通过 |
+| test_storage_plugins.py | 51 | ✅ 全通过（2026-10-01 G4 实测更正，原表记 42） |
 | test_presentation_plugins.py | 32 | ✅ 全通过 (1 skipped) |
 | test_ui_plugins.py | 29 | ✅ 全通过 |
 | test_filter_component.py | 32 | ✅ 全通过 |
@@ -214,7 +231,14 @@
 
 **全部 5 项阻断 (B1-B5) 和 3 项非阻断 (N1-N3) 均已修复验证通过。**
 
-- L3 回归：956 passed, 3 skipped, 0 failed
+> ⚠️ **2026-10-01（G4）复验保留意见**：本句为 2026-09-21 W9 原始结论。G4 独立复核后，
+> B2 / B3 / B5 完全成立；**B1 与 B4 成立但有未闭环遗留**——
+> B1：`ParserPlugin.plugin_type="parser"` 与冻结契约 §3.3 的 `"processor"` 冲突，且被
+> `plugin_manager.loader.PLUGIN_TYPES` 拒绝；`StoragePlugin`/`UIPlugin` 实际零继承。
+> B4：`config/plugins.yaml` 未声明 `markdown_presenter` 实例，真实配置下回退链仍走不通。
+> 详见 acceptance.md §7.1 / §7.5。合并签字结论不受影响。
+
+- L3 回归：955 passed, 3 skipped, 0 failed（2026-10-01 G4 实测更正，原记 956）
 - L4 实验：A(安全) B(分发) C(脚手架) 全部 PASS
 - **复验结论：建议 W1 合并签字**
 
@@ -229,20 +253,36 @@
 ### 6.2 签字依据
 
 1. **W9 独立验收通过**: 全部阻断项已修复，复验结论明确建议合并
-2. **全量回归通过**: 956 passed, 0 failed, 3 skipped
+2. **全量回归通过**: 955 passed, 0 failed, 3 skipped（2026-10-01 G4 实测；原记 956 有误）
 3. **各窗口交付完整**: W1-W8 全部交付物已就位
-4. **契约冻结**: INTERFACES.md v3.0.3，代码与契约一致
+4. **契约冻结**: INTERFACES.md v3.0.5，代码与契约一致
+   （2026-10-01 G4 更正：原文写 v3.0.3。按 INTERFACES.md §14 变更记录，最新条目为 **3.0.5**；
+   注意该文件**头部仍写"冻结版本：v3.0.0"**，与自身变更记录不一致——INTERFACES.md 属冻结契约，
+    本窗口只读，未改动，建议由契约所有者 W1 统一）
 5. **红线合规**: LICENSE + NOTICE 已创建，AST 安全校验通过
 
 ### 6.3 待办事项 (非阻断)
 
-| 事项 | 负责窗口 | 优先级 |
-|------|----------|--------|
-| 6 处 DTO 的 created_at/started_at 未列入 required | W1 | 低 |
-| RecordBatch.group_key 类型 list[str] vs tuple[str] | W1 | 低 |
-| jsonl_presenter.render() 返回 str 而非 RenderedOutputDTO | W7 | 低 |
-| 09_template_dev.md 多处与实际实现不一致 | W8 | 低 |
-| 10_testing.md 引用不存在的 fixture 文件路径 | W8 | 低 |
+| 事项 | 负责窗口 | 优先级 | 状态（2026-10-01 G4 复核） |
+|------|----------|--------|------------------------------|
+| 6 处 DTO 的 created_at/started_at 未列入 required | W1 | 低 | 未复核 |
+| RecordBatch.group_key 类型 list[str] vs tuple[str] | W1 | 低 | 未复核 |
+| jsonl_presenter.render() 返回 str 而非 RenderedOutputDTO | W7 | 低 | 未复核 |
+| ~~09_template_dev.md 多处与实际实现不一致~~ | W8 | 低 | ✅ 已更正——`scripts/build_template_previews.py` 从不存在，已在文中明写"尚不存在、当前只能手工截图" |
+| ~~10_testing.md 引用不存在的 fixture 文件路径~~ | W8 | 低 | ✅ 已更正——改为真实的 `w4_static_list_page.html` |
+
+**G4 新增登记（2026-10-01，均为实测发现，此前未在任何文档登记）**
+
+| 事项 | 负责窗口 | 优先级 | 说明 |
+|------|----------|--------|------|
+| `ParserPlugin.plugin_type = "parser"` 与契约 §3.3 冲突且被 loader 拒绝 | W1 | **高** | 契约写 `"processor"`；`plugin_manager.loader.PLUGIN_TYPES` 不含 `"parser"`；已传导至 `parser_fallback`（类属性 `parser` vs metadata `processor`） |
+| `config/plugins.yaml` 缺 `markdown_presenter` 实例，B4 修复在真实配置下不可达 | W2 | **高** | 补一条 presenter 实例声明即可闭环 |
+| `StoragePlugin` / `UIPlugin` 零继承 | W6/W7 | 中 | 9 个插件全部直接继承 `BasePlugin`；疑因泛型参数不一致，改动会动签名 |
+| `INTERFACES.md` 头部版本号（v3.0.0）与 §14 变更记录（至 v3.0.5）不一致 | W1 | 中 | 冻结契约，G4 只读未改 |
+| `INTERFACES.md` §13 标题写作「插件开发者契约 (§14)」，而 §14 实为「变更记录」 | W1 | 低 | 文件内部节号错位，G4 只读未改 |
+| `INTERFACES.md:714` 插件配置路径模板缺 `plugins/` 前缀 | W1 | 低 | 同上，只读未改 |
+| 全量回归数字不可复算（956 为 collected 而非 passed） | — | 中 | 已在本文件 §4.1 与 acceptance.md §7.3 更正并给出可复算口径 |
+| 根目录游离文件 `progress.md` 与 `docs/V3.0/tasks/progress.md` 内容冲突（前者记合并时间 2026-09-19、最终 commit `c472340`，且同样写 956 passed） | 待定 | 中 | **不在 G4 可写范围**，未改动；建议由协调者决定归档或删除 |
 
 ### 6.4 发布状态
 

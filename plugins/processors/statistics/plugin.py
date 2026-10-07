@@ -13,6 +13,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from contracts.record import RecordBatch
+from plugins.base import RecordProcessorPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ DEFAULT_GROUP_BY = ["university", "college", "year"]
 DEFAULT_COUNT_FIELDS = ["source_type", "match_status"]
 
 
-class StatisticsPlugin:
+class StatisticsPlugin(RecordProcessorPlugin):
     """Compute group-by statistics on a RecordBatch.
 
     Results go into RecordBatch.stats only — records are passed through unchanged.

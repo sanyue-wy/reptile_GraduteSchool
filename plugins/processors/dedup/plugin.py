@@ -12,13 +12,14 @@ import logging
 from typing import Any
 
 from contracts.record import NormalizedRecordDTO, RecordBatch
+from plugins.base import RecordProcessorPlugin
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_KEY_FIELDS = ["university", "college", "name", "title"]
 
 
-class DedupPlugin:
+class DedupPlugin(RecordProcessorPlugin):
     """Remove duplicate records within a RecordBatch.
 
     Dedup key is built from configurable fields (default: university, college, name, title).

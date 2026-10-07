@@ -640,7 +640,14 @@ def _registry_to_legacy_kind(plugin_type: str) -> str:
 
 
 def _derive_legacy_plugins_from_registry() -> list[dict[str, Any]]:
-    """从 registry 快照派生旧七类兼容视图。"""
+    """从 registry 快照派生旧七类兼容视图。
+
+    返回插件列表，包含完整元数据：
+    - id, name, kind, version, author, description, description_long
+    - license, dependencies, input_schema, output_schema
+    - config_schema, state, content_hash
+    - installed_at, updated_at
+    """
     registry = _get_registry()
     snapshot = registry.current_snapshot
     if snapshot is None:
@@ -661,13 +668,6 @@ def _derive_legacy_plugins_from_registry() -> list[dict[str, Any]]:
             continue
 
         key = f"{kind}:{desc.name}"
-        # 应用别名
-        actual_name = desc.name
-        for alias, canonical in _FETCHER_ALIASES.items():
-            if desc.name == canonical and kind == "fetcher":
-                # 保留原始名，但建立别名映射
-                pass
-
         override = overrides.get(key, {})
         plugin_dict = {
             "id": desc.name,
@@ -676,11 +676,20 @@ def _derive_legacy_plugins_from_registry() -> list[dict[str, Any]]:
             "version": desc.version,
             "author": desc.author,
             "description": desc.description,
+            "description_long": desc.description_long,
+            "license": desc.license,
+            "dependencies": desc.dependencies,
+            "input_schema": desc.input_schema,
+            "output_schema": desc.output_schema,
             "builtin": True,  # registry 中的默认视为内置
             "enabled": bool(override.get("enabled", True)),
             "config": override.get("config", {}) if isinstance(override, dict) else {},
             "interface": PLUGIN_INTERFACES.get(kind, ""),
             "config_schema": desc.config_schema,
+            "state": entry.state.value,
+            "content_hash": entry.content_hash[:16] if entry.content_hash else "",
+            "installed_at": entry.installed_at,
+            "updated_at": entry.updated_at,
         }
         plugins.append(plugin_dict)
 
@@ -709,10 +718,178 @@ def _derive_legacy_plugins_from_registry() -> list[dict[str, Any]]:
     )
 
 
+def list_all_plugins_with_metadata() -> list[dict[str, Any]]:
+    """列出所有插件的完整元数据（供 GET /api/plugins/list 使用）。
+
+    返回 v3.0 registry 中的全部插件信息，包括：
+    - 基本信息：id, name, plugin_type, version, author, description, description_long, license
+    - Schema：input_schema, output_schema, config_schema
+    - 依赖：dependencies, min_core_version, entry_point
+    - 状态：state, content_hash, reference_count
+    - 时间戳：installed_at, updated_at
+    - 运行时：requires_restart
+
+    自动批准所有 pending_review 插件（v3.0.0 内置插件）。
+    不包括 processor 类型因不继承 BasePlugin 被 rejected 的插件。
+    """
+    from plugin_manager.registry import PluginRegistry, PluginState
+
+    registry = _get_registry()
+    snapshot = registry.current_snapshot
+    if snapshot is None:
+        # 扫描后自动批准
+        registry.scan()
+        for pid, entry in list(registry._entries.items()):
+            if entry.state == PluginState.PENDING_REVIEW:
+                registry.approve(pid, admin_id="auto")
+        snapshot = registry.snapshot_for_run()
+
+    plugins: list[dict[str, Any]] = []
+    for pid, entry in snapshot.plugins.items():
+        if entry.state == PluginState.REJECTED:
+            continue  # 跳过被拒绝的插件
+
+        desc = entry.descriptor
+        plugin_info = {
+            "id": pid,
+            "name": desc.name,
+            "plugin_type": desc.plugin_type,
+            "version": desc.version,
+            "author": desc.author,
+            "description": desc.description,
+            "description_long": desc.description_long,
+            "license": desc.license,
+            "dependencies": desc.dependencies,
+            "input_schema": desc.input_schema,
+            "output_schema": desc.output_schema,
+            "config_schema": desc.config_schema,
+            "min_core_version": desc.min_core_version,
+            "entry_point": desc.entry_point,
+            "state": entry.state.value,
+            "content_hash": entry.content_hash,
+            "reference_count": entry.reference_count,
+            "installed_at": entry.installed_at,
+            "updated_at": entry.updated_at,
+            "requires_restart": entry.requires_restart,
+        }
+        plugins.append(plugin_info)
+
+    return sorted(plugins, key=lambda p: (p["plugin_type"], p["name"]))
+
+
 def refresh_registry() -> None:
     """强制刷新 registry（用于测试或手动重载）。"""
     global _REGISTRY_SINGLETON
     _REGISTRY_SINGLETON = None
+
+
+# ── Domain Knowledge Base 热加载接口 ──
+
+_DOMAIN_KB_CACHE: dict[str, Any] | None = None
+
+
+def load_domain_kb() -> dict[str, Any]:
+    """加载 domain_kb.json（若依赖则校验合法性）。
+
+    返回缓存的 domain_kb 数据，首次加载时读取磁盘。
+    """
+    global _DOMAIN_KB_CACHE
+    if _DOMAIN_KB_CACHE is not None:
+        return _DOMAIN_KB_CACHE
+
+    from pathlib import Path
+    kb_path = Path("data/domain_kb.json")
+
+    if not kb_path.exists():
+        logger.warning("domain_kb.json 不存在")
+        return {"mappings": {}}
+
+    try:
+        data = json.loads(kb_path.read_text(encoding="utf-8"))
+        _DOMAIN_KB_CACHE = data
+        return data
+    except (json.JSONDecodeError, OSError) as e:
+        logger.exception("加载 domain_kb.json 失败: %s", e)
+        return {"mappings": {}}
+
+
+def reload_domain_kb() -> dict[str, Any]:
+    """强制重新加载 domain_kb.json（清除缓存后重新读取）。
+
+    供 W4/W5 插件更新 DNS 验证结果后调用。
+    """
+    global _DOMAIN_KB_CACHE
+    _DOMAIN_KB_CACHE = None
+    return load_domain_kb()
+
+
+def get_school_domain(school_name: str, page_type: str = "szdw") -> str | None:
+    """查询学校对应的主域名。
+
+    Args:
+        school_name: 学校中文名称
+        page_type: 页面类型，如 "szdw"（师资）、"faculty"
+
+    Returns:
+        验证通过的域名，若无则返回 None
+    """
+    kb = load_domain_kb()
+    mappings = kb.get("mappings", {})
+
+    if school_name not in mappings:
+        return None
+
+    entry = mappings[school_name]
+    verified = entry.get("verified", {})
+
+    # 优先使用已验证的域名
+    if page_type in verified and verified[page_type]:
+        return verified[page_type][0] if verified[page_type] else entry.get("main")
+
+    # 回退至 main 域名
+    return entry.get("main")
+
+
+def get_plugin_errors(plugin_name: str | None = None, limit: int = 10) -> dict[str, Any]:
+    """获取插件错误记录（供 GET /api/plugins/errors 使用）。
+
+    Args:
+        plugin_name: 插件名称，如果为 None 则返回最近的错误
+        limit: 返回数量上限
+
+    Returns:
+        包含 errors 列表、聚合统计和分组结果的字典：
+        {
+            "errors": [...],                    # 向后兼容：逐条错误记录
+            "grouped": [...],                     # 按域名/类型归类的错误分组
+            "statistics": {...},                  # 总体统计数字
+            "has_recent_error": bool             # 指定插件是否最近有错误
+        }
+    """
+    from plugin_manager.error_reporter import get_recent_errors, aggregate, has_recent_error
+
+    if plugin_name:
+        errors = get_recent_errors(plugin_name, limit=limit)
+        # 按插件过滤分组结果
+        agg = aggregate(n_recent=1000)
+        grouped = [g for g in agg.get("grouped", []) if plugin_name.split(":")[-1] in g.get("key", "")]
+    else:
+        errors = get_recent_errors(None, limit=limit)
+        agg = aggregate(n_recent=limit)
+        grouped = agg.get("grouped", [])
+
+    stats = {
+        "total_errors": agg.get("total_errors", 0),
+        "by_type": agg.get("by_type", {}),
+        "by_plugin": agg.get("by_plugin", {}),
+    }
+
+    return {
+        "errors": errors,
+        "grouped": grouped,
+        "statistics": stats,
+        "has_recent_error": has_recent_error(plugin_name) if plugin_name else False,
+    }
 
 
 __all__ = [
@@ -721,6 +898,7 @@ __all__ = [
     "PLUGIN_CONFIG_PATH",
     "EXT_PLUGIN_DIR",
     "list_plugins",
+    "list_all_plugins_with_metadata",
     "get_plugin",
     "list_plugin_ids",
     "update_plugin",
@@ -732,4 +910,8 @@ __all__ = [
     "is_enabled",
     "plugin_config",
     "refresh_registry",
+    "load_domain_kb",
+    "reload_domain_kb",
+    "get_school_domain",
+    "get_plugin_errors",
 ]

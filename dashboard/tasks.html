@@ -133,7 +133,7 @@
                   <option value="WARN">WARN</option>
                   <option value="ERROR">ERROR</option>
                 </select>
-                <button class="btn btn-outline btn-sm" onclick="toggleLogPolling()">⏸ 暂停</button>
+                <button class="btn btn-outline btn-sm" onclick="toggleLogStream()">⏸ 暂停</button>
                 <button class="btn btn-outline btn-sm" onclick="clearLogStream()">🗑 清空</button>
                 <span id="log-stream-status" style="font-size:12px;color:var(--text-secondary);margin-left:auto">未连接</span>
               </div>
@@ -288,16 +288,10 @@
     <script>
       // ===== 全局状态 =====
       let taskSSE = null;
+      let logSSE = null;
       let logPollTimer = null;
       let logAutoScroll = true;
       let lastLogTimestamp = 0;
-
-      // ===== 初始化 =====
-      document.addEventListener("DOMContentLoaded", async () => {
-        await checkBackend();
-        loadTasks();
-        startLogPolling("all");
-      });
 
       // ===== 后端检测 =====
       async function checkBackend() {
@@ -595,21 +589,6 @@
         };
       }
 
-      function toggleLogStream() {
-        const btn = event.target;
-        if (logSSE) {
-          logSSE.close();
-          logSSE = null;
-          btn.textContent = "▶ 继续";
-          btn.classList.add("btn-warning");
-          document.getElementById("log-stream-status").textContent = "⏸ 已暂停";
-        } else {
-          setupLogStream(document.getElementById("log-filter-task").value);
-          btn.textContent = "⏸ 暂停";
-          btn.classList.remove("btn-warning");
-        }
-      }
-
       function clearLogStream() {
         document.getElementById("logStream").innerHTML = "";
       }
@@ -687,7 +666,7 @@
       function connectLogStream(taskId) {
         setupLogStream(taskId);
         document.querySelector('#log-stream-status').textContent = "🟢 已连接";
-        document.querySelector('button[onclick="toggleLogPolling()"]').textContent = "⏸ 暂停";
+        document.querySelector('button[onclick="toggleLogStream()"]').textContent = "⏸ 暂停";
       }
 
       // ===== 任务操作 =====

@@ -125,7 +125,10 @@
         // Load templates from registry
         function loadTemplates() {
             fetch('/templates/registry.json', { credentials: 'same-origin' })
-                .then(function(r) { return r.ok ? r.json() : { templates: [] }; })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status + ' loading templates');
+                    return r.json();
+                })
                 .then(function(data) {
                     TEMPLATES = data.templates || [];
                     var sel = document.getElementById('template');
@@ -137,7 +140,10 @@
                         sel.appendChild(opt);
                     });
                 })
-                .catch(function() { /* keep default options */ });
+                .catch(function(err) {
+                    console.error('Failed to load templates:', err);
+                    showStatus('Failed to load template registry: ' + err.message, true);
+                });
         }
 
         document.getElementById('template').addEventListener('change', function() {

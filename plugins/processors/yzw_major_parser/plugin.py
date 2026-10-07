@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-YZW Major Parser Plugin
+Yzw Major Parser Plugin
 =======================
 Parse stage plugin: RawDataBatch -> RecordBatch.
 
@@ -18,6 +18,7 @@ from typing import Any, Optional
 from contracts.profiles.education import EDUCATION_TUTOR_V1
 from contracts.raw import RawDataBatch
 from contracts.record import NormalizedRecordDTO, RecordBatch
+from plugins.base import ParserPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +27,7 @@ _NAME_PLACEHOLDERS = frozenset({"不区分导师", "请登录各学院网站查�
 
 
 def _split_names(raw: str) -> list[str]:
-    """Split advisor names field into individual names.
-
-    Replicates parsers.utils.split_names logic:
-    - Split on whitespace, semicolons, commas, Chinese punctuation
-    - Filter placeholders and single-character fragments
-    """
+    """Split advisor names field into individual names."""
     if not raw or raw.strip() in _NAME_PLACEHOLDERS:
         return []
     names = re.split(r"[\s;；,，、]+", raw.strip())
@@ -39,11 +35,7 @@ def _split_names(raw: str) -> list[str]:
 
 
 def _split_exam_subjects(kskm: str) -> list[str]:
-    """Parse exam subjects string.
-
-    Format: "101 政治 201 英语一 301 数学一 801 机械原理"
-    Returns: ["101 政治", "201 英语一", ...]
-    """
+    """Parse exam subjects string."""
     if not kskm:
         return []
     parts = kskm.split()
@@ -56,13 +48,11 @@ def _split_exam_subjects(kskm: str) -> list[str]:
 
 
 def _generate_record_id(university: str, college: str, name: str, major_code: str) -> str:
-    """Generate deterministic record_id from natural key."""
     key = f"{university}|{college}|{name}|yzw|{major_code}"
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
 
 
 def _build_record(name: str, item: dict, meta: dict, profile: str) -> NormalizedRecordDTO:
-    """Build a NormalizedRecordDTO from a single YZW data item."""
     university = meta["university"]
     college = meta["college"]
     category = meta["category"]
@@ -139,7 +129,7 @@ def _build_record(name: str, item: dict, meta: dict, profile: str) -> Normalized
     )
 
 
-class YzwMajorParserPlugin:
+class YzwMajorParserPlugin(ParserPlugin):
     """Parse YZW API JSON responses into NormalizedRecordDTO records.
 
     Input:  RawDataBatch.v1  (JSON assets from yzw_api spider)
@@ -225,7 +215,6 @@ class YzwMajorParserPlugin:
                 except (json.JSONDecodeError, UnicodeDecodeError) as e:
                     logger.warning("Failed to decode asset JSON: %s", e)
                     return None
-        # Legacy fallback
         if raw_item.content:
             try:
                 return json.loads(raw_item.content)
@@ -252,7 +241,6 @@ class YzwMajorParserPlugin:
 
             names = _split_names(item.get("zdjs", ""))
             if not names:
-                # No specific advisor — generate one record with empty name
                 records.append(_build_record("", item, meta, self._profile))
             else:
                 for name in names:

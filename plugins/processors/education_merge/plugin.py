@@ -20,6 +20,7 @@ from typing import Any, Optional
 
 from contracts.record import NormalizedRecordDTO, RecordBatch
 from pipelines.merge import match_records, merge_pair, normalize_name, strip_name
+from plugins.base import RecordProcessorPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ DEFAULT_FUZZY_THRESHOLD = 0.85
 
 # Source classification from fields.source_type
 FACULTY_SOURCE = "官网师资页"
+NOTICE_SOURCE = "研招网"
 NOTICE_SOURCE = "研招网"
 
 
@@ -106,7 +108,7 @@ def _merged_dict_to_record(
     )
 
 
-class EducationMergePlugin:
+class EducationMergePlugin(RecordProcessorPlugin):
     """Multi-source education record merge using three-phase matching.
 
     Phase 1: exact name match (after normalization)

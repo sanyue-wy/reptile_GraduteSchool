@@ -53,6 +53,10 @@ class StaticHtmlSpiderPlugin(SpiderPlugin):
         selectors = cfg.get("selectors", {})
         max_pages = cfg.get("max_pages", 20)
         base_url = cfg.get("base_url")
+        # Timeout and retry config from plugin params
+        request_timeout = cfg.get("timeout", 30)
+        max_retries = cfg.get("max_retries", 3)
+        retry_backoff = cfg.get("retry_backoff", 2)
 
         if not list_url:
             raise ValueError("list_url is required in config_snapshot")
@@ -85,19 +89,12 @@ class StaticHtmlSpiderPlugin(SpiderPlugin):
             visited_urls.add(current_url)
 
             list_dto, list_error = self._fetch_page(
-                current_url, task_config, f"list_page_{page_num}", session, cache
+                current_url, task_config, f"list_page_{page_num}", session, cache,
+                timeout=request_timeout, max_retries=max_retries, retry_backoff=retry_backoff
             )
             if list_error:
                 errors.append(list_error)
-                if not list_error.get("retryable", False):
-                    break
-                time.sleep(2)
-                list_dto, list_error = self._fetch_page(
-                    current_url, task_config, f"list_page_{page_num}_retry", session, cache
-                )
-                if list_error:
-                    errors.append(list_error)
-                    break
+                break  # 内部已含重试，外层不再二次重试
 
             if list_dto:
                 items.append(list_dto)
@@ -113,7 +110,8 @@ class StaticHtmlSpiderPlugin(SpiderPlugin):
                 visited_urls.add(detail_url)
 
                 detail_dto, detail_error = self._fetch_page(
-                    detail_url, task_config, f"detail_{page_num}_{idx}", session, cache
+                    detail_url, task_config, f"detail_{page_num}_{idx}", session, cache,
+                    timeout=request_timeout, max_retries=max_retries, retry_backoff=retry_backoff
                 )
                 if detail_error:
                     errors.append(detail_error)
@@ -146,38 +144,63 @@ class StaticHtmlSpiderPlugin(SpiderPlugin):
         )
 
     def _fetch_page(self, url: str, task_config: TaskConfigDTO, trace_label: str,
-                    session, cache) -> tuple[Optional[RawDataDTO], Optional[dict]]:
-        try:
-            def _do_fetch() -> str:
-                from utils.http import response_text
-                return response_text(session.get(url))
+                    session, cache, timeout: int = 30, max_retries: int = 3,
+                    retry_backoff: int = 2) -> tuple[Optional[RawDataDTO], Optional[dict]]:
+        last_error: Optional[Exception] = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                def _do_fetch() -> str:
+                    from utils.http import response_text
+                    return response_text(session.get(url, timeout=timeout))
 
-            if cache:
-                html = cache.get_or_fetch(_do_fetch, url, force=False)
-            else:
-                html = _do_fetch()
+                if cache:
+                    html = cache.get_or_fetch(_do_fetch, url, force=False)
+                else:
+                    html = _do_fetch()
 
-            asset = MediaAsset(
-                media_type="text",
-                mime_type="text/html",
-                data=html.encode("utf-8"),
-                metadata={"source_url": url, "trace_label": trace_label},
-            )
-            return RawDataDTO(
-                source_id=task_config.source_id,
-                url=url,
-                content_type="text/html",
-                encoding="utf-8",
-                fetched_at=datetime.now().isoformat(),
-                trace={"trace_label": trace_label, "task_id": task_config.task_id, "status_code": 200},
-                assets=[asset],
-            ), None
+                asset = MediaAsset(
+                    media_type="text",
+                    mime_type="text/html",
+                    data=html.encode("utf-8"),
+                    metadata={"source_url": url, "trace_label": trace_label},
+                )
+                return RawDataDTO(
+                    source_id=task_config.source_id,
+                    url=url,
+                    content_type="text/html",
+                    encoding="utf-8",
+                    fetched_at=datetime.now().isoformat(),
+                    trace={"trace_label": trace_label, "task_id": task_config.task_id, "status_code": 200},
+                    assets=[asset],
+                ), None
 
-        except BlockedError as e:
-            return None, make_error(ERROR_HTTP_BLOCKED, str(e), task_id=task_config.task_id, source_id=task_config.source_id)
-        except Exception as e:
-            logger.exception("Fetch failed for %s", url)
-            return None, make_error("PLUGIN_EXECUTE_FAILED", str(e), task_id=task_config.task_id, source_id=task_config.source_id)
+            except BlockedError as e:
+                # 反爬拦截不可重试，直接返回
+                return None, make_error(ERROR_HTTP_BLOCKED, str(e), task_id=task_config.task_id, source_id=task_config.source_id)
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries:
+                    delay = retry_backoff ** (attempt - 1) * 2
+                    logger.warning("Fetch %s failed (attempt %d/%d): %s, retrying in %ds",
+                                   url, attempt, max_retries, e, delay)
+                    time.sleep(delay)
+                else:
+                    logger.exception("Fetch failed for %s after %d attempts", url, max_retries)
+                    err_type = self._classify_error(e)
+                    return None, make_error(err_type, str(e), task_id=task_config.task_id, source_id=task_config.source_id)
+        return None, make_error("PLUGIN_EXECUTE_FAILED", str(last_error), task_id=task_config.task_id, source_id=task_config.source_id)
+
+    @staticmethod
+    def _classify_error(error: Exception) -> str:
+        """将异常映射到失败分类（与 failures.json error_type 对齐）。"""
+        msg = str(error).lower()
+        if "getaddrinfo" in msg or "name resolution" in msg or "failed to resolve" in msg:
+            return "DNS_ERROR"
+        if "timed out" in msg or "timeout" in msg or "max retries" in msg:
+            return "TIMEOUT"
+        if "404" in msg or "not found" in msg:
+            return "HTTP_ERROR"
+        return "PLUGIN_EXECUTE_FAILED"
 
     def _extract_detail_urls(self, dto: RawDataDTO, selectors: dict, base_url: str) -> list[str]:
         if not dto.assets:

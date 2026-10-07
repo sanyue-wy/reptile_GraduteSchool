@@ -54,6 +54,8 @@ python -m pytest tests/integration/test_static_slice.py -q    # Wave 1a：jsonl 
 
 ## 特别注意
 
-- 旧 exporters/pipelines/export.py 的门面转发由 W1 集成期接线，期间旧 dispatch("jsonl"/"xlsx") 保持可用。
+- 旧 `pipelines/export.py` 的门面转发由 W1 集成期接线，期间旧 dispatch("jsonl"/"xlsx") 保持可用。
+    （⚠️ 2026-10-01 G4 勘误：原文写作 `exporters/pipelines/export.py`，该路径**从未存在**——
+    `exporters/` 至今只有一个空的 `__init__.py`，模块实际位于 `pipelines/export.py`。）
 - 必需目标失败 vs 可选目标失败的 run 级判定由 W2 引擎做，你只需如实填 StoreReceipt.error。
 - 覆盖率 ≥80%；sql_store/media_store 为新代码要求更严，建议 ≥85%。

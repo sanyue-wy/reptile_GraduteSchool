@@ -12,4 +12,31 @@ data/output/
 *.log
 screenshots/
 html_png/
-*preview.png
+# preview.png 仅忽略根目录下的临时预览图，避免误伤 templates/*/preview.png 等正式模板预览
+/preview.png
+
+# ---- G3 补充：CI / 仓库卫生 ----
+
+# mkdocs 构建产物（mkdocs.yml 里 site_dir: site_build）
+site_build/
+
+# 根目录一次性验收截图。仓库当前 0 张已跟踪图片，且这些截图只出现在根目录，
+# 故锚定到根目录，避免误伤将来放进 docs/ 或 templates/ 的正式插图。
+/*.png
+
+# playwright 网络转储（console-network.json / tasks-modal-network.json 等）。
+# 只匹配 *-network.json，根目录已有 test_encoding.json、verified_urls.json
+# 两个正式数据文件入库，不能用宽泛的 /*.json 规则。
+/*-network.json
+
+# 一次性浏览器审计脚本（.audit_*.py，硬编码 5101/5102 临时端口；
+# 功能已被 tests/browser/ 的响应式与 pageerror 用例覆盖）
+/.audit_*.py
+
+# 注意：scripts/_diagnose_*.py **故意不入库忽略**。
+# docs/V3.0/tasks/console_fix_report.md:6,259 与 processor_status_report.md:4,108
+# 把它们写成可复现的验收命令，报告 §2 整节即其输出；忽略会造成入库文档指向不存在的文件。
+
+# Claude Code 本地 agent memory 草稿（非项目文档，
+# 内容为 docs/V3.0/tasks/progress.md §W2 功能迭代 的子集）
+memory/

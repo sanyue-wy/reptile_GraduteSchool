@@ -9,6 +9,7 @@ pipeline:
     source_a:
       acquire: static_fetch
       parse: [faculty_parse]
+      pre_acquire: [url_normalizer, domain_rewriter]
       required: true
   process:
     steps: [normalize_records, merge_records, statistics]

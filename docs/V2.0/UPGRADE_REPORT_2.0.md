@@ -45,7 +45,7 @@
 即便立刻把 222 个 URL 手工填对，现有架构仍有三个结构性短板会在批量阶段暴露：
 
 1. **无 URL 发现能力**：112 校 × 2 学院 = 222 个入口，且高校官网改版频繁（换域名、换建站平台、改目录结构），纯手工维护不可持续；
-2. **仅两种列表模式**：`static_html` 与 `ajax_api`（SudyCMS/WebPlus 特征）。调研（`docs/GITHUB_RESEARCH.md`、`DESIGN.md`）已表明部分学院是 JS 渲染页或 PDF 公示名单，现有引擎无法处理；
+2. **仅两种列表模式**：`static_html` 与 `ajax_api`（SudyCMS/WebPlus 特征）。调研（`docs/V0.0/GITHUB_RESEARCH.md`、`docs/V0.0/DESIGN.md`）已表明部分学院是 JS 渲染页或 PDF 公示名单，现有引擎无法处理；
 3. **失败信号失真**：如本次事故所示，错误分类不准会直接把"配置问题"引导成"反爬问题"，浪费数小时排查。
 
 ---
@@ -149,7 +149,10 @@ key = (domain, error_class)      # error_class ∈ {conn_reset, dns, http_5xx, .
    - 站内 `.pdf` 公告中含"师资""教师名录" → 判定 `pdf_list` 型。
 4. **连通性探测**：复用现有 `POST /api/config/test` 的探测逻辑做最终验证（状态码、编码、内容长度 > 阈值），把结果连同得分一起写入候选文件。
 
-人工确认入口：CLI `python main.py --review-candidates [学校]` 交互式选择；面板「配置管理」页增加"候选 URL"区，点选后一键回填对应学院的 `list_url` / `list_type` 并触发保存前校验。
+人工确认入口：CLI `python scripts/review_candidates.py --school [学校]` 交互式选择；面板「配置管理」页增加"候选 URL"区，点选后一键回填对应学院的 `list_url` / `list_type` 并触发保存前校验。
+> ⚠️ 2026-10-01（G4）实测更正：原文写作 `python main.py --review-candidates [学校]`，
+> 但 `main.py` **无此参数**（实测报 `unrecognized arguments: --review-candidates`）。
+> 该功能实际实现于独立脚本 `scripts/review_candidates.py`，须直接调用该脚本。
 
 ### 4.4 抓取引擎扩展（P1，约 2 人日）
 

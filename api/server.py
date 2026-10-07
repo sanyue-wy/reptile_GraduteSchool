@@ -6,10 +6,15 @@ Flask API 服务层
 提供前端 Dashboard 所需的全部 17 个 REST 接口。
 """
 
+import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
 import queue
+import re
+import secrets
 import threading
 import time
 import uuid
@@ -721,10 +726,131 @@ def api_failures():
         "code": 0,
         "data": {
             "total": total,
+            # 与 /api/schools、/api/tutors 保持一致地回显分页参数：
+            # dashboard/failures.html:199-204 用 data.page / data.page_size 算分页
+            # 文案与总页数，缺失时会渲染成 "显示 NaN-NaN"。Mock 分支带这两个键，
+            # 只有连真实后端时才会暴露。
+            "page": page,
+            "page_size": page_size,
             "summary": summary,
             "items": page_failures,
         }
     })
+
+
+# ------------------------------------------------------------------
+# 2.9b GET /api/failures/grouped（Console Fix：错误按次数归类）
+# ------------------------------------------------------------------
+def _group_key_for_failure(f: dict) -> tuple[str, str]:
+    """归一化分组键：(error_type, domain)。domain 取自 url 的 netloc（去 www）。"""
+    from urllib.parse import urlparse
+    etype = f.get("error_type") or "unknown"
+    url = f.get("url") or ""
+    try:
+        host = (urlparse(url).netloc or "").split("@")[-1].split(":")[0].lower()
+    except Exception:
+        host = ""
+    if host.startswith("www."):
+        host = host[4:]
+    return etype, host or "未知域名"
+
+
+@app.route("/api/failures/grouped", methods=["GET"])
+def api_failures_grouped():
+    """失败记录归一化分组：同 error_type + 同域名合并为一组。
+
+    Query: status（默认不过滤）、source、window_hours（可选时间窗，按 occurred_at）。
+    返回 grouped[]（count 降序）+ items（前 100 条明细，供展开查看）。
+
+    status 默认不过滤，与兄弟端点 /api/failures 的约定一致：本端点是诊断视图，
+    历史 resolved 记录正是复发模式的主要证据。历史上默认 "active" 会让
+    failures.json 里全部为 resolved 的真实数据恒返回空 grouped（HTTP 200），
+    前端那条 .catch 回退分支永远不会触发。需要只看未解决记录时显式传
+    ?status=active。
+    """
+    from collections import OrderedDict
+    status_filter = request.args.get("status", "").strip()
+    source_filter = request.args.get("source", "").strip()
+    window_hours = request.args.get("window_hours", "", type=str).strip()
+
+    failures = load_failures()
+    if status_filter:
+        failures = [f for f in failures if f.get("status") == status_filter]
+    if source_filter:
+        failures = [f for f in failures if f.get("source") == source_filter]
+    if window_hours:
+        try:
+            hours = float(window_hours)
+        except ValueError:
+            hours = 0
+        if hours > 0:
+            cutoff = datetime.now().timestamp() - hours * 3600
+            failures = [f for f in failures if _failure_ts(f) >= cutoff]
+
+    groups: "OrderedDict[tuple, dict]" = OrderedDict()
+    for f in failures:
+        key = _group_key_for_failure(f)
+        g = groups.get(key)
+        if g is None:
+            g = {
+                "key": f"{key[0]}|{key[1]}",
+                "label": f"{key[1]} · {key[0]}",
+                "error_type": key[0],
+                "domain": key[1],
+                "count": 0,
+                "_schools": set(),
+                "first_seen": f.get("occurred_at", ""),
+                "last_seen": f.get("occurred_at", ""),
+                "sample_url": f.get("url", ""),
+            }
+            groups[key] = g
+        g["count"] += 1
+        occurred = f.get("occurred_at", "")
+        if occurred and (not g["first_seen"] or occurred < g["first_seen"]):
+            g["first_seen"] = occurred
+        if occurred and occurred > g["last_seen"]:
+            g["last_seen"] = occurred
+        school = f.get("school")
+        if school:
+            g["_schools"].add(school)
+
+    grouped = []
+    for g in groups.values():
+        schools = sorted(g.pop("_schools"))
+        grouped.append({**g, "sample_schools": schools[:5],
+                        "school_count": len(schools)})
+    grouped.sort(key=lambda x: (-x["count"], x["key"]))
+
+    ordered = sorted(failures, key=lambda x: x.get("occurred_at", ""), reverse=True)
+    # 明细优先按分组取数（每组前 10 条，组内最新在前），保证前端展开时必然有数据
+    detail_items = []
+    seen_ids = set()
+    for g in grouped:
+        etype, domain = g["error_type"], g["domain"]
+        bucket = [f for f in failures if _group_key_for_failure(f) == (etype, domain)]
+        bucket.sort(key=lambda x: x.get("occurred_at", ""), reverse=True)
+        for f in bucket[:10]:
+            fid = f.get("id")
+            if fid in seen_ids:
+                continue
+            seen_ids.add(fid)
+            detail_items.append(f)
+    detail_items.extend(f for f in ordered if f.get("id") not in seen_ids)
+
+    return jsonify({"code": 0, "data": {
+        "total": len(failures),
+        "group_count": len(grouped),
+        "grouped": grouped,
+        "items": detail_items[:200],
+    }})
+
+
+def _failure_ts(f: dict) -> float:
+    raw = f.get("occurred_at") or ""
+    try:
+        return datetime.fromisoformat(raw).timestamp()
+    except (ValueError, TypeError):
+        return 0.0
 
 
 # ------------------------------------------------------------------
@@ -1111,7 +1237,14 @@ def api_config_export():
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins_list():
     from config.plugins import list_plugins
-    return jsonify({"code": 0, "data": {"items": list_plugins()}})
+    items = list_plugins()
+    # 顶层 items 别名：console/plugins.html:234 手写解包链
+    # `Array.isArray(data) ? data : (data.plugins || data.items || data.data || [])`
+    # 在只有 {code,data:{items}} 时会停在 data.data（对象而非数组），导致插件管理页
+    # 恒显 "No plugins found"。补顶层 items 让链条在 data.items 处命中。
+    # dashboard/api.js:255 的 apiCall 只取 json.data，config.html:580 读 items，
+    # 二者均不受影响。
+    return jsonify({"code": 0, "data": {"items": items}, "items": items})
 
 
 @app.route("/api/plugins/pipeline/<pipeline_type>", methods=["PUT"])
@@ -1178,6 +1311,87 @@ def api_plugin_reload(plugin_key: str):
     return jsonify({"code": 0, "data": plugin})
 
 
+# ------------------------------------------------------------------
+# GET /api/plugins/errors
+# ------------------------------------------------------------------
+# 静态规则必须留在 /api/plugins/<path:plugin_key> 之前注册语义上不冲突：
+# Werkzeug 对同一路径的静态规则优先于 path 转换器（/api/plugins/upload 同理）。
+# 详见交付报告中的 url_map 自检输出。
+
+_ERROR_FALLBACK_MESSAGE = "（无错误描述）"
+
+
+def _normalize_plugin_error(record: dict) -> dict:
+    """把 error_reporter 的原始记录映射成 console/plugins.html 实际解构的字段名。
+
+    前端回退链与后端真实字段名的对应关系（前端字段 ← 后端字段）：
+      created_at / timestamp ← timestamp
+      code                  ← error_type   （后端没有 code 字段）
+      message / error       ← error_message（后端没有 message 字段）
+      traceback             ← traceback
+
+    后端不产出修复建议，故不填 suggestion/advice，由前端回退到自身默认文案，
+    不在此处臆造建议内容。
+    """
+    timestamp = str(record.get("timestamp") or "")
+    message = str(record.get("error_message") or _ERROR_FALLBACK_MESSAGE)
+    return {
+        "created_at": timestamp,
+        "timestamp": timestamp,
+        "code": str(record.get("error_type") or "UNKNOWN"),
+        "message": message,
+        "error": message,
+        "traceback": record.get("traceback"),
+        "plugin_type": record.get("plugin_type"),
+        "plugin_name": record.get("plugin_name"),
+        "run_id": record.get("run_id"),
+        "registry_revision": record.get("registry_revision"),
+    }
+
+
+@app.route("/api/plugins/errors", methods=["GET"])
+def api_plugin_errors():
+    """插件错误查询：按 "<plugin_type>:<plugin_name>" 分组，供 plugins.html 消费。
+
+    Query: name（插件名过滤，可选）、limit（返回记录条数上限，默认 20）。
+
+    响应体的 errors 必须在**顶层**：前端写的是 `data.errors || data || {}`，
+    若包在 {"data": {...}} 信封里，前端会退化成整个信封对象，key 全部取不到。
+
+    注意：statistics 走 error_reporter.aggregate()，它会全量扫描 plugin_errors/
+    下的历史文件（上限 10000 个）。当前错误文件量很小，代价可接受；若该目录
+    增长到数千个文件，这里需要改成带时间窗的调用。
+    """
+    from plugin_manager.error_reporter import aggregate, get_recent_errors
+
+    name = request.args.get("name", "").strip()
+    limit = request.args.get("limit", default=20, type=int)
+    limit = min(200, max(1, limit))
+
+    records = get_recent_errors(name or None, limit=limit)
+
+    grouped: dict[str, list[dict]] = {}
+    for record in records:
+        plugin_type = record.get("plugin_type") or "unknown"
+        plugin_name = record.get("plugin_name") or "unknown"
+        grouped.setdefault(f"{plugin_type}:{plugin_name}", []).append(
+            _normalize_plugin_error(record)
+        )
+
+    summary = aggregate(n_recent=limit)
+    return jsonify({
+        "code": 0,
+        "errors": grouped,
+        "total": sum(len(v) for v in grouped.values()),
+        "plugin_count": len(grouped),
+        "statistics": {
+            "total_errors": summary.get("total_errors", 0),
+            "by_type": summary.get("by_type", {}),
+            "by_plugin": summary.get("by_plugin", {}),
+        },
+    })
+
+
 @app.route("/api/cache/clear", methods=["POST"])
 def api_cache_clear():
     from utils.cache import CrawlCache
@@ -1210,6 +1424,30 @@ def _broadcast_log(log_entry: dict):
                     queue.put(message)
                 except Exception:
                     pass
+
+
+@app.route("/api/healthz", methods=["GET"])
+def api_healthz():
+    """存活探测：前端用于区分「后端离线（可回退 Mock）」与「后端在线但业务错误」。"""
+    return jsonify({"code": 0, "data": {"status": "ok"}})
+
+
+@app.route("/api/run/event", methods=["GET"])
+def api_run_event():
+    """强制采集事件：读取 data/output/run_event.json（StateTracker.reset 写入）。
+
+    文件不存在时返回 exists=false，前端据此决定是否显示强制采集 banner。
+    """
+    event_path = Path("data/output/run_event.json")
+    if not event_path.exists():
+        return jsonify({"code": 0, "data": {"exists": False}})
+    try:
+        data = json.loads(event_path.read_text(encoding="utf-8"))
+    except Exception:
+        logger.exception("读取 run_event.json 失败")
+        return jsonify({"code": 50001, "message": "run_event.json 解析失败"}), 500
+    data["exists"] = True
+    return jsonify({"code": 0, "data": data})
 
 
 @app.route("/api/logs/stream")
@@ -1326,7 +1564,22 @@ def _v3_engine():
     from pipeline.engine import PipelineDefinition, PipelineEngine
     definition = PipelineDefinition.from_files(
         _Path("config/pipeline.yaml"), _Path("config/plugins.yaml"))
-    return PipelineEngine(definition, data_root=_Path("data"))
+    # 注入 progress tracker：V3 运行状态投影回 progress.json / crawl.log，
+    # 总览页轮询即可看到变化（Console Fix R1.3）
+    return PipelineEngine(definition, data_root=_Path("data"),
+                          progress=get_progress_tracker())
+
+
+_STATE_TRACKER: Optional[object] = None
+
+
+def get_state_tracker() -> "object":
+    """惰性全局 StateTracker（测试可 monkeypatch 本函数）。"""
+    global _STATE_TRACKER
+    if _STATE_TRACKER is None:
+        from infra.state_tracker import StateTracker
+        _STATE_TRACKER = StateTracker()
+    return _STATE_TRACKER
 
 
 @app.route("/api/pipeline/validate", methods=["POST"])
@@ -1365,6 +1618,14 @@ def api_pipeline_run():
         _v3_runs[run_id] = task_data
 
     def _worker():
+        tracker = get_state_tracker()
+        force = bool(data.get("force"))
+        if force:
+            # 强制采集：重置状态并写 run_event.json（前端 banner 数据源）
+            try:
+                tracker.reset(run_id, force=True)
+            except Exception:
+                logger.exception("state tracker reset failed for %s", run_id)
         try:
             from converters.request_converter import PipelinePlanInput, build_output_specs
             plan_input = PipelinePlanInput(
@@ -1394,14 +1655,196 @@ def api_pipeline_run():
                 entry = _v3_runs.setdefault(run_id, {})
                 entry["status"] = "failed"
                 entry["errors"] = [{"code": "PLUGIN_EXECUTE_FAILED", "message": str(e)[:500]}]
+        finally:
+            try:
+                final_status = _v3_runs.get(run_id, {}).get("status", "failed")
+                tracker.finish(run_id, "done" if final_status in ("succeeded", "completed", "partial") else "failed")
+            except Exception:
+                logger.debug("state tracker finish failed for %s", run_id, exc_info=True)
 
     threading.Thread(target=_worker, daemon=True).start()
     return jsonify({"code": 0, "data": {"run_id": run_id, "status": "queued"}})
 
 
+# ------------------------------------------------------------------
+# 运行时预览：临时只读令牌 + 受管 outputs 目录内的成品投递
+# ------------------------------------------------------------------
+# 令牌是 HMAC 签名、绑定单个 run、带过期时间的只读凭证：
+#   payload = base64url({"run_id": ..., "exp": ...})，签名 = HMAC-SHA256(secret, payload)
+# 仓库里没有任何地方签发过这个令牌（见交付报告），唯一合法的签发点是下面的
+# GET /api/pipeline/runs/<run_id>：运行时先取 preview_token，再带 token 打开
+# /runtime/preview.html。
+_RUNS_DIR = Path("data/runs")
+_PREVIEW_TOKEN_TTL_SECONDS = 3600
+_PREVIEW_TOKEN_SECRET = os.environ.get("PREVIEW_TOKEN_SECRET") or secrets.token_hex(32)
+
+# run_id -> (token, expires_at)。同一 run 的令牌在有效期内保持不变：
+# console/api.js 的 hasStateChanged() 用 JSON.stringify 全量比对来判断轮询是否
+# 有新状态，若每次响应都换一个新令牌，这个判断会恒为 true，每 2 秒触发一次全量重渲染。
+_preview_tokens: dict[str, tuple[str, float]] = {}
+_preview_tokens_lock = threading.Lock()
+
+# 合法 run_id：uuid4().hex 与 console_fix_e2e 这类命名，不含分隔符与点号
+_RUN_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+# 预览只投递可直接在 iframe 里安全渲染的类型；svg/xml/html 之外的脚本载体一律拒绝。
+# 不写 charset：send_file 会自行为 text/* 追加，避免出现重复的 charset 参数。
+_PREVIEW_MIME = {
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".json": "application/json",
+    ".csv": "text/csv",
+    ".md": "text/markdown",
+    ".txt": "text/plain",
+}
+
+
+def _preview_secret() -> bytes:
+    """令牌签名密钥：Flask 配置优先（测试可注入），其次环境变量，最后进程内随机值。"""
+    return str(app.config.get("PREVIEW_TOKEN_SECRET") or _PREVIEW_TOKEN_SECRET).encode("utf-8")
+
+
+def mint_preview_token(run_id: str, ttl_seconds: int = _PREVIEW_TOKEN_TTL_SECONDS) -> str:
+    """签发只读预览令牌：绑定单个 run，过期即失效。"""
+    payload = json.dumps(
+        {"run_id": run_id, "exp": int(time.time()) + int(ttl_seconds)},
+        separators=(",", ":"), sort_keys=True,
+    ).encode("utf-8")
+    body = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    signature = hmac.new(_preview_secret(), body.encode("ascii"), hashlib.sha256).hexdigest()
+    return f"{body}.{signature}"
+
+
+def verify_preview_token(token: str, run_id: str) -> bool:
+    """校验令牌签名、有效期与 run 绑定；任一项不符即 False。"""
+    if not token or token.count(".") != 1:
+        return False
+    body, signature = token.split(".", 1)
+    expected = hmac.new(_preview_secret(), body.encode("ascii"), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        return False
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+    except (ValueError, TypeError):
+        return False
+    if not isinstance(payload, dict) or payload.get("run_id") != run_id:
+        return False
+    try:
+        expires_at = int(payload.get("exp", 0))
+    except (TypeError, ValueError):
+        return False
+    return expires_at > int(time.time())
+
+
+def stable_preview_token(run_id: str) -> str:
+    """取 run 的预览令牌：有效期内复用，过期才重新签发。"""
+    now = time.time()
+    with _preview_tokens_lock:
+        cached = _preview_tokens.get(run_id)
+        if cached and cached[1] > now:
+            return cached[0]
+        token = mint_preview_token(run_id)
+        _preview_tokens[run_id] = (token, now + _PREVIEW_TOKEN_TTL_SECONDS)
+        return token
+
+
+def _resolve_preview_target(raw_path: str) -> tuple[Optional[Path], str]:
+    """把请求里的 path 解析成受管成品路径。
+
+    Returns:
+        (目标绝对路径, run_id)；拒绝时返回 (None, "")。
+    越界一律走同一个出口，错误响应里不回显任何真实文件系统路径。
+    """
+    candidate = Path(raw_path)
+    target = (candidate if candidate.is_absolute() else Path.cwd() / candidate).resolve()
+    try:
+        relative = target.relative_to(_RUNS_DIR.resolve())
+    except ValueError:
+        return None, ""
+    # 受管目录约定与 present.py 的 _ensure_under_outputs_dir 一致：runs/<run_id>/outputs/
+    if len(relative.parts) < 3 or relative.parts[1] != "outputs":
+        return None, ""
+    return target, relative.parts[0]
+
+
+def _run_outputs(run_id: str) -> list[dict]:
+    """把受管 outputs 目录投影成 runtime/preview.html 消费的形状。
+
+    path 输出与 presenter 产出的 RenderedOutputDTO.path 同为项目根相对路径
+    （present.py 的 _ensure_under_outputs_dir 也是按这个形态校验的），避免把
+    主机绝对路径经 API 回显到页面上。
+    """
+    outputs_root = (_RUNS_DIR / run_id / "outputs").resolve()
+    if not outputs_root.is_dir():
+        return []
+    entries = []
+    for file_path in sorted(p for p in outputs_root.rglob("*") if p.is_file()):
+        try:
+            stat_result = file_path.stat()
+            relative = file_path.relative_to(outputs_root)
+        except OSError:
+            continue
+        try:
+            display_path = str(file_path.relative_to(Path.cwd()))
+        except ValueError:
+            display_path = str(file_path)
+        entries.append({
+            "output_id": relative.parts[0] if len(relative.parts) > 1 else file_path.stem,
+            "output_format": file_path.suffix.lstrip(".").lower() or "txt",
+            "path": display_path,
+            "created_at": datetime.fromtimestamp(stat_result.st_mtime).isoformat(),
+            "metadata": {"size_bytes": stat_result.st_size},
+        })
+    return entries
+
+
+@app.route("/api/outputs/serve", methods=["GET"])
+def api_outputs_serve():
+    """按令牌投递受管 outputs 目录内的成品（runtime/preview.html 的 iframe 数据源）。
+
+    Query: path（成品路径，相对项目根或绝对）、token（预览令牌）。
+    """
+    raw_path = request.args.get("path", "")
+    token = request.args.get("token", "")
+    if not raw_path:
+        return jsonify({"code": 40001, "message": "缺少 path 参数"}), 400
+
+    target, run_id = _resolve_preview_target(raw_path)
+    if target is None:
+        return jsonify({"code": 40301, "message": "路径不在受管 outputs 目录内"}), 403
+
+    if not verify_preview_token(token, run_id):
+        return jsonify({"code": 40301, "message": "预览令牌无效或已过期"}), 403
+
+    mimetype = _PREVIEW_MIME.get(target.suffix.lower())
+    if mimetype is None:
+        return jsonify({"code": 40301, "message": "该成品类型不支持在线预览"}), 403
+
+    if not target.is_file():
+        return jsonify({"code": 40401, "message": "成品不存在"}), 404
+
+    response = send_file(str(target), mimetype=mimetype)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
 @app.route("/api/pipeline/runs/<run_id>", methods=["GET"])
 def api_pipeline_run_status(run_id: str):
-    """V3 运行状态：阶段结果、存储回执、错误。"""
+    """V3 运行状态：阶段结果、存储回执、错误、成品清单与预览令牌。
+
+    携带 ?token= 时校验预览令牌（预览页用它换取元数据）；不带 token 的既有调用方
+    （console 的 task-config / output-config）不受影响。
+    """
+    supplied_token = request.args.get("token", "")
+    if supplied_token and not verify_preview_token(supplied_token, run_id):
+        return jsonify({"code": 40301, "message": "预览令牌无效或已过期"}), 403
+
+    # run_id 直接参与 data/runs/<run_id>/ 的路径拼接，而 Werkzeug 会在路由匹配
+    # 之后才对路径段做 unquote，%2F 会还原成 "/"。这里只放行真实 run_id 的字符集
+    # （uuid4().hex 与 console_fix_e2e 这类），挡掉 ../ 一类穿越载荷。
+    if not _RUN_ID_RE.match(run_id or ""):
+        return jsonify({"code": 40001, "message": "run_id 格式非法"}), 400
+
     with _v3_runs_lock:
         entry = _v3_runs.get(run_id)
         snapshot = dict(entry) if entry else None
@@ -1415,7 +1858,33 @@ def api_pipeline_run_status(run_id: str):
                 snapshot = None
     if snapshot is None:
         return jsonify({"code": 40406, "message": "运行不存在"}), 404
-    return jsonify({"code": 0, "data": snapshot})
+
+    # 成品清单 + 预览令牌：runtime/preview.html 靠这两项把 iframe 拉起来，
+    # 内存快照与 result.json 都不含 outputs，故统一从受管目录投影。
+    snapshot.setdefault("outputs", [])
+    snapshot["outputs"] = _run_outputs(run_id) or snapshot["outputs"]
+    snapshot["preview_token"] = stable_preview_token(run_id)
+    snapshot["preview_url"] = f"/runtime/preview.html?run_id={run_id}&token={snapshot['preview_token']}"
+
+    body = {"code": 0, "data": snapshot}
+    # 顶层 outputs 别名：preview.html:52-60 直接读 data.outputs，不做信封解包
+    # （console/api.js:41 与 task-config.html:221 都用 `data.data || data`，
+    # 唯独 preview.html 没有）。只补这一个键，其余仍在 data 信封内。
+    body["outputs"] = snapshot["outputs"]
+    return jsonify(body)
+
+
+# ------------------------------------------------------------------
+# 精确路由：/templates/registry.json —— 仅暴露这一个文件
+# 不把仓库根整体挂出去（安全决策，不在授权内）
+# ------------------------------------------------------------------
+@app.route("/templates/registry.json")
+def templates_registry():
+    """仅提供仓库根目录下的 templates/registry.json 这一个文件。"""
+    registry_path = (Path(__file__).parent.parent / "templates" / "registry.json").resolve()
+    if not registry_path.exists():
+        abort(404)
+    return send_file(str(registry_path), mimetype="application/json")
 
 
 # ------------------------------------------------------------------
@@ -1424,7 +1893,19 @@ def api_pipeline_run_status(run_id: str):
 # ------------------------------------------------------------------
 @app.route("/")
 def dashboard_index():
-    return send_file(str(_DASHBOARD_DIR / "index.html"), mimetype="text/html")
+    """首页分流：已使用过主面板（progress.json 有学校条目）→ 总览；否则 → console 导航卡。
+
+    ?view=console 可显式进入管理台导航页。（Console Fix R1.1：入口歧义）
+    """
+    if request.args.get("view") == "console":
+        return send_file(str(_DASHBOARD_DIR / "console" / "index.html"), mimetype="text/html")
+    try:
+        data = get_progress_tracker()._read_raw()
+        has_usage = bool(data.get("schools"))
+    except Exception:
+        has_usage = False
+    target = _DASHBOARD_DIR / "index.html" if has_usage else _DASHBOARD_DIR / "console" / "index.html"
+    return send_file(str(target), mimetype="text/html")
 
 
 @app.route("/<path:filename>")

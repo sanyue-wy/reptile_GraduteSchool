@@ -18,7 +18,7 @@ pipeline/**                          # engine.py + stages/{acquire,process,store
 infra/context.py                     # PipelineContext
 infra/http.py                        # 对 PoliteSession 的受管包装（委托，不复制熔断逻辑）
 infra/cache.py                       # 对 CrawlCache 的受管包装
-infra/errors.py                      # 错误码 → ErrorDTO 映射
+infra/errors.py                      # 错误码 → ErrorDTO 映射（⚠️ 2026-10-01 G4 勘误：已重构为 infra/errors/ 包）
 converters/request_converter.py      # schema_editor 产物/旧参数 → TaskConfigDTO + OutputSpec
 converters/view_converter.py         # RecordBatch + StoreReceipt[] + OutputSpec + RunState → PresentationRequest
 main.py                              # 只加 --v3-pipeline 类开关或子命令，旧参数行为零变化
@@ -51,7 +51,9 @@ tests/integration/test_static_slice.py   # 与 W4/W5/W6/W7 共建的集成测试
 
 ```bash
 python -m pytest tests/test_pipeline_engine.py tests/test_http_context.py -q
-python main.py --help > /tmp/help_v3.txt && python main.py --help | findstr /c:"resume" /c:"retry-failed"   # 旧参数仍在
+python main.py --help > /tmp/help_v3.txt && python main.py --help | grep -E "resume|retry-failed"   # 旧参数仍在
+# ⚠️ 2026-10-01（G4）实测更正：原文写作 findstr /c:"resume" /c:"retry-failed"，在 Git Bash 下必然失败——
+# MSYS 会把 /c: 开头当作路径做转换（FINDSTR: 无法打开 c:resume），加 MSYS_NO_PATHCONV=1 也无效。改用 grep -E。
 python -m pytest tests/integration/test_static_slice.py -q    # Wave 1a：需 W4/W5/W6/W7 的 static_html/faculty_parse/jsonl_store/table 就位
 ```
 

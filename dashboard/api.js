@@ -3,7 +3,20 @@
 // 在后端未启动时自动回退到 Mock 数据，确保页面不崩溃
 
 const API_BASE = window.location.origin;
-const USE_MOCK_FALLBACK = true;
+// Mock 回退仅在「探测确认后端离线」后启用（Console Fix R1.4）：
+// 首次网络异常时访问 /api/healthz —— 能连通但 404 说明后端在线（真业务错误，不降级）；
+// 完全连不上才允许 Mock 并弹一次提示。离线开发（演示模式）行为保持不变。
+let _backendReachability = null; // null=未探测, "online" | "offline"
+async function probeBackendOnline() {
+    if (_backendReachability !== null) return _backendReachability;
+    try {
+        await fetch(`${API_BASE}/api/healthz`, { method: "GET", signal: AbortSignal.timeout(2500) });
+        _backendReachability = "online";
+    } catch {
+        _backendReachability = "offline";
+    }
+    return _backendReachability;
+}
 
 // ------------------------------------------------------------------
 // Mock 数据 — 与 /api/server.py 响应结构保持一致
@@ -201,7 +214,7 @@ function _getMockData(endpoint) {
 // 统一 API 调用封装
 // ------------------------------------------------------------------
 
-let _mockToastShown = false;
+let _mockToastShown = null; // null=未提示过, true=已提示（Console Fix：区分"从未提示"与"后端恢复"）
 
 async function apiCall(endpoint, options = {}) {
     /**
@@ -220,13 +233,13 @@ async function apiCall(endpoint, options = {}) {
     try {
         const resp = await fetch(url, { ...config, signal: config.signal || AbortSignal.timeout(10000) });
 
-        // 非正常 HTTP 状态 — 回退到 Mock
+        // 非正常 HTTP 状态 — 后端在线时的业务错误直接抛出，不再静默 Mock
         if (!resp.ok && !isWrite) {
-            if (!_mockToastShown) {
-                showToast("后端服务不可用，显示模拟数据", "warning", 5000);
+            if (_mockToastShown === null) {
+                showToast("后端返回异常（HTTP " + resp.status + "），已禁用模拟数据回退", "warning", 5000);
                 _mockToastShown = true;
             }
-            return _getMockData(endpoint);
+            throw new Error(`HTTP ${resp.status}`);
         }
 
         const json = await resp.json();
@@ -243,13 +256,16 @@ async function apiCall(endpoint, options = {}) {
     } catch (err) {
         if (err.code) throw err; // 业务错误 — 由调用方捕获并 Toast
 
-        // 网络错误 — 回退到 Mock
-        if (USE_MOCK_FALLBACK && !isWrite) {
-            if (!_mockToastShown) {
-                showToast("后端服务不可用，显示模拟数据", "warning", 5000);
-                _mockToastShown = true;
+        // 网络错误 — 探测确认离线后才回退 Mock
+        if (!isWrite) {
+            const reachability = await probeBackendOnline();
+            if (reachability === "offline") {
+                if (!_mockToastShown) {
+                    showToast("后端服务不可用，显示模拟数据", "warning", 5000);
+                    _mockToastShown = true;
+                }
+                return _getMockData(endpoint);
             }
-            return _getMockData(endpoint);
         }
         throw new Error(`网络错误: ${err.message}`);
     }
@@ -295,6 +311,10 @@ const api = {
     failures: (params = {}) => {
         const qs = new URLSearchParams(params).toString();
         return apiCall(`/api/failures${qs ? "?" + qs : ""}`);
+    },
+    failuresGrouped: (params = {}) => {
+        const qs = new URLSearchParams(params).toString();
+        return apiCall(`/api/failures/grouped${qs ? "?" + qs : ""}`);
     },
     retryFailures: (ids) => apiCall("/api/failures/retry", {
         method: "POST",

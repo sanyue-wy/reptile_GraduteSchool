@@ -22,8 +22,10 @@ from contracts.asset import MediaAsset
 from contracts.profiles.education import EDUCATION_TUTOR_V1
 from contracts.raw import RawDataBatch
 from contracts.record import NormalizedRecordDTO, RecordBatch
+from plugins.base import ParserPlugin
 
 logger = logging.getLogger(__name__)
+
 
 # Default selectors for common faculty list pages
 DEFAULT_ITEM_SEL = ".teacher"
@@ -57,7 +59,7 @@ def _generate_record_id(university: str, college: str, name: str, url: str) -> s
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
 
 
-class FacultyParserPlugin:
+class FacultyParserPlugin(ParserPlugin):
     """Parse faculty list HTML pages into NormalizedRecordDTO records.
 
     Input:  RawDataBatch.v1  (HTML assets from static_html spider)

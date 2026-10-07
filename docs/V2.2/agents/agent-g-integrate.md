@@ -110,6 +110,9 @@ def test_api_server_import():
 
 创建 `scripts/acceptance.sh`（或 `.bat`）：
 
+> ⚠️ 2026-10-01（G4）勘误：上述 shell 脚本**最终未创建**。验收工具实际以 Python 落地为
+> `scripts/acceptance.py`，下文示例命令需按该脚本的实际接口调整。
+
 ```bash
 #!/bin/bash
 set -e

@@ -11,6 +11,9 @@ instances:
     params:
       max_pages: 20
       delay_range: [1.0, 3.0]
+      timeout: 30
+      max_retries: 3
+      retry_backoff: 2
 
   # Spider: AJAX API 采集
   ajax_fetch:
@@ -54,6 +57,18 @@ instances:
         - "audio/*"
         - "video/*"
         - "application/pdf"
+
+  # Processor: URL 归一化（中文域名 → 官方英文域名，前置插件）
+  url_normalizer:
+    plugin: processor:url_normalizer
+    enabled: true
+    params: {}
+
+  # Processor: 子域重写（domain_kb verified 映射，前置插件）
+  domain_rewriter:
+    plugin: processor:domain_rewriter
+    enabled: true
+    params: {}
 
   # Processor: 师资解析
   faculty_parse:

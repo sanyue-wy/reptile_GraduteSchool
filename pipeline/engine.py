@@ -11,6 +11,8 @@ acquire → process → store → present 四阶段执行：
   命中有效检查点 pending → skipped；对外映射回 V2.2 枚举
 - 运行安全：输出根目录进程锁（同根第二进程启动即拒）
 - 插件解析走 plugin_manager.registry（W3 交付前可用显式注入的实例表）
+- 前置插件链：acquired_plugin_instances 中的插件在 spider 执行前调度
+  （url_normalizer / domain_rewriter / url_prober 等），支持 DNS/URL 问题预处理
 """
 
 import importlib
@@ -37,6 +39,16 @@ from pipeline.stages.acquire import AcquirePlan, acquire_source
 from pipeline.stages.present import PresentPlan, render_outputs
 from pipeline.stages.process import ProcessPlan, merge_source_batches, run_parse_chain, run_post_steps
 from pipeline.stages.store import StorePlan, store_batch
+
+# Legacy kind mapping (mirrors config/plugins.py:_registry_to_legacy_kind)
+# Used to translate V3 plugin_type to legacy kind for error grouping compatibility
+_LEGACY_KIND_MAP = {
+    "spider": "fetcher",
+    "processor": "processor",
+    "storage": "exporter",
+    "presenter": "presenter",
+    "ui": "presenter",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +102,16 @@ class PipelineDefinition:
             for name in parse_instances:
                 if name not in definition.instances:
                     raise PipelineConfigError(f"source {source_id}: unknown parse instance {name!r}")
+            # 前置插件链：在 spider 执行前按顺序调度（url_normalizer / domain_rewriter / url_prober 等）
+            pre_acquire_instances = spec.get("pre_acquire") or []
+            for name in pre_acquire_instances:
+                if name not in definition.instances:
+                    raise PipelineConfigError(f"source {source_id}: unknown pre-acquire plugin {name!r}")
             definition.sources.append(AcquirePlan(
                 source_id=source_id,
                 instance=acquire_instance,
                 parse_instances=list(parse_instances),
+                pre_acquire_instances=list(pre_acquire_instances),
                 required=bool(spec.get("required", True)),
             ))
 
@@ -250,6 +268,8 @@ class PipelineEngine:
                 self._plugin_for(plan.instance)
                 for name in plan.parse_instances:
                     self._plugin_for(name)
+                for name in plan.pre_acquire_instances:
+                    self._plugin_for(name)
             for name in self.definition.process.post_instances:
                 self._plugin_for(name)
             for plan in self.definition.store:
@@ -334,8 +354,12 @@ class PipelineEngine:
             futures = {}
             for source_plan, task_config in source_plans:
                 spider = self._plugin_for(source_plan.instance)
+                # 加载前置插件链（url_normalizer / domain_rewriter / url_prober 等）
+                pre_acquire_plugins = [
+                    self._plugin_for(name) for name in source_plan.pre_acquire_instances
+                ]
                 futures[executor.submit(acquire_source, source_plan, task_config,
-                                        spider, manager)] = source_plan
+                                        spider, manager, pre_acquire_plugins)] = source_plan
             for future in as_completed(futures):
                 if manager.is_cancelled():
                     cancelled = True
@@ -480,6 +504,37 @@ class PipelineEngine:
                 entry["stages"] = [s.to_dict() for s in result.stages]
                 entry["receipts"] = [r for s in result.stages for r in s.receipts]
                 entry["result"] = result.to_dict()
+        self._report_stage_errors(result)
+
+    def _report_stage_errors(self, result: RunResult):
+        """阶段错误落盘 plugin_errors/（best-effort，供 error_reporter.aggregate 聚合）。
+
+        关键修复：将阶段错误归因到真实插件实例，而非泛化的 "pipeline" 类型。
+        分组键 (legacy_kind:instance_name) 必须与前端 dashboard/console/plugins.html:267
+        及 /api/plugins 返回的 list_plugins() 产出的键空间一致。
+        """
+        try:
+            from plugin_manager.error_reporter import PluginErrorContext, report
+            for stage in result.stages:
+                for err in getattr(stage, "errors", []) or []:
+                    if not isinstance(err, dict):
+                        continue
+                    code = err.get("code", "STAGE_ERROR")
+                    message = str(err.get("message", ""))[:500]
+                    source_id = err.get("source_id", "")
+
+                    # 解析真实插件身份：(legacy_kind, instance_name)
+                    legacy_kind, instance_name = self._resolve_plugin_identity(stage.stage, source_id)
+
+                    report(PluginErrorContext(
+                        plugin_name=instance_name,
+                        plugin_type=legacy_kind,
+                        error_type=code,
+                        error_message=message,
+                        run_id=result.run_id,
+                    ))
+        except Exception:
+            logger.debug("plugin error reporting skipped", exc_info=True)
 
     def _sync_v22_projection(self, run_state: TaskRunState):
         """旧进度投影：新链路状态写回 progress.json（兼容层，best-effort）。"""
@@ -496,6 +551,77 @@ class PipelineEngine:
         with self._runs_lock:
             entry = self._runs.get(run_id)
         return bool(entry)
+
+    # ------------------------------------------------------------------
+    # 插件身份解析（用于错误归因）
+    # ------------------------------------------------------------------
+
+    def _legacy_kind(self, plugin_type: str) -> str:
+        """将 V3 plugin_type 映射为旧版 kind（用于错误分组键兼容前端）。"""
+        return _LEGACY_KIND_MAP.get(plugin_type, plugin_type)
+
+    def _resolve_plugin_identity(self, stage_name: str, source_id: str) -> tuple[str, str]:
+        """
+        根据阶段名和 source_id 解析出 (legacy_kind, plugin_instance_name)。
+
+        返回的键将用于 /api/plugins/errors 的分组，必须与前端
+        dashboard/console/plugins.html:267 的计算口径一致：
+        (p.plugin_type || p.kind || '') + ':' + (p.name || p.id || '')
+
+        其中 /api/plugins 返回的 items 由 list_plugins() 产出，其 kind 为 legacy 值。
+        """
+        # Acquire 阶段：spider 实例 → legacy kind = "fetcher"
+        if stage_name == "acquire":
+            for plan in self.definition.sources:
+                if plan.source_id == source_id:
+                    return "fetcher", plan.instance
+            return "fetcher", source_id  # fallback
+
+        # Process 阶段：parse 链 + post 链
+        if stage_name == "process":
+            # 优先尝试按 source_id 匹配 parse 实例
+            for plan in self.definition.sources:
+                if plan.source_id == source_id and plan.parse_instances:
+                    # 取第一个 parser 实例；多实例时错误归因粒度以首个为准
+                    parser_instance = plan.parse_instances[0]
+                    # 从 instances 配置中推断 legacy kind
+                    plugin_ref = self.definition.instances.get(parser_instance, {})
+                    plugin_ref_str = plugin_ref.get("plugin", "") if isinstance(plugin_ref, dict) else ""
+                    if plugin_ref_str.startswith("spider:"):
+                        return "fetcher", parser_instance
+                    # fallback：按实例名推断
+                    return "processor", parser_instance
+            # 无 source_id 匹配或无 parse 实例：退回 post_instances
+            post_instances = self.definition.process.post_instances
+            if post_instances:
+                return "processor", post_instances[0]
+            return "processor", source_id
+
+        # Store 阶段：exporter 实例
+        if stage_name == "store":
+            for plan in self.definition.store:
+                if plan.source_id == source_id or source_id == "":
+                    return "exporter", plan.instance
+            # fallback：取第一个 store plan
+            if self.definition.store:
+                return "exporter", self.definition.store[0].instance
+            return "exporter", source_id
+
+        # Present 阶段：presenter 实例
+        if stage_name == "present":
+            for spec_dict in self.definition.present.outputs:
+                instance = spec_dict.get("presenter_instance")
+                if not instance:
+                    fmt = spec_dict.get("format")
+                    if fmt:
+                        instance = f"{fmt}_presenter"
+                if instance:
+                    return "presenter", instance
+            # fallback
+            return "presenter", source_id
+
+        # 未知阶段：兜底
+        return "pipeline", f"stage:{stage_name}"
 
 
 def _now_iso() -> str:

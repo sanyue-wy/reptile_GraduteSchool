@@ -1,6 +1,7 @@
 # 01 - 平台总览与架构
 
-> **状态**：初稿
+> **版本**：v3.0.0（稳定版）
+> **状态**：已对齐 v3.0.0
 > **读者**：新加入的插件开发者
 
 ## 架构模型
@@ -70,7 +71,7 @@ TaskConfigDTO
 ### scaffolds/templates vs templates/
 
 - **`scaffolds/templates/`**：脚手架模板目录，存放插件包生成的骨架代码。由 `scaffolds.cli` 使用。
-- **`templates/`**：成品模板库，存放20套完整的 HTML 呈现模板（layout.html + style.css + variables.json + preview.png）。由 W7 维护，呈现器加载。
+- **`templates/`**：成品模板库，存放20套完整的 HTML 呈现模板（layout.html + style.css + variables.json）。preview.png 存在于工作区但被 `.gitignore` 原规则 `*preview.png` 命中，**干净克隆上不存在**；H3 正在通过锚定根目录 `/preview.png` 修正忽略规则。由 W7 维护，呈现器加载。
 
 两者**完全不同**，不要混淆。
 

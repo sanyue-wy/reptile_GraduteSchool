@@ -22,7 +22,7 @@ def tmp_workspace(tmp_path):
 参考现有测试模式：
 - `tests/test_spider_plugins.py` — spider 插件测试（49 passed）
 - `tests/test_processor_plugins.py` — processor 插件测试（34 passed）
-- `tests/test_pipeline_engine.py` — pipeline 引擎测试（25 passed）
+- `tests/test_pipeline_engine.py` — pipeline 引擎测试（23 passed；2026-10-01 G4 实测更正，原文写 25）
 
 ## 离线模拟网络
 
@@ -32,8 +32,12 @@ def tmp_workspace(tmp_path):
 @pytest.fixture
 def mock_html():
     """提供离线 HTML fixture。"""
-    return Path("tests/fixtures/raw_pages/w4_static_sample.html").read_text(encoding="utf-8")
+    return Path("tests/fixtures/raw_pages/w4_static_list_page.html").read_text(encoding="utf-8")
 ```
+
+> ⚠️ 更正（2026-10-01，G4）：原文写 `w4_static_sample.html`，该文件**不存在**，
+> 照抄会 `FileNotFoundError`。实际文件名为 `w4_static_list_page.html`。
+> 该目录下真实样本请先 `ls tests/fixtures/raw_pages/` 确认，勿凭记忆书写。
 
 Fixture 文件位置：
 - `tests/fixtures/raw_pages/` — 原始页面样本
@@ -129,3 +133,77 @@ python -m pytest tests/ -q           # 全部离线
 ### NOTICE 文件维护
 
 `NOTICE` 文件记录项目的借鉴来源，不随依赖变化。仅在设计上新增重要借鉴对象时才需更新。
+
+## 命名 / 版本 / 依赖 / 错误处理 清单
+
+### 命名规范
+
+| 规则 | 示例 | 说明 |
+|---|---|---|
+| 插件目录名 | `static_html`, `jsonl_store` | 小写 + 下划线 |
+| 类名 | `StaticHtmlSpiderPlugin`, `JsonlStorePlugin` | PascalCase + 对应后缀 |
+| entry_point | `plugins.spiders.static_html.plugin:StaticHtmlSpiderPlugin` | `module.path:ClassName` 格式 |
+| schema ID | `TaskConfigDTO.v1` | `<DTO名>.v<版本>` |
+
+**反面示例**：
+```python
+# 错误：类名双后缀
+class MyPluginPlugin(BasePlugin): ...
+entry_point: "plugins.spiders.my_plugin.plugin:MyPluginPlugin"
+```
+
+**修复后**：
+```python
+# 正确：类名无双后缀
+class MyPlugin(BasePlugin): ...
+entry_point: "plugins.spiders.my_plugin.plugin:MyPlugin"
+```
+
+### 版本控制
+
+| 场景 | 版本号 |
+|---|---|
+| 初始插件 | `1.0.0` |
+| 小幅修复 | `1.0.1`, `1.0.2` |
+| 功能增量 | `1.1.0`, `1.2.0` |
+| 大版本破坏 | `2.0.0` |
+
+**red line**：`entry_point` 中的类名变更后，`metadata.json` 中 `entry_point` 必同步更新。
+
+### 依赖声明
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `dependencies` | 否 | 运行时依赖列表 |
+| `min_core_version` | 否 | 最低平台版本 |
+| `license` | 否 | 插件许可证 |
+
+**错误清单**：
+1. `dependencies` 遗漏运行时必需库 → 部署失败
+2. `min_core_version` 填太低 → 接口不兼容
+3. `license` 填 GPL 类 → 触发警告，要求特殊评估
+
+### 错误处理模式
+
+```python
+from contracts.result import ErrorDTO
+
+error = ErrorDTO(
+    code="VALIDATION_MISSING_REQUIRED",
+    message="字段 title 必填",
+    stage="process",
+    retryable=False,
+)
+```
+
+| 常见错误码 | 可重试 | 原因 |
+|---|---|---|
+| HTTP_TIMEOUT | 是 | 网络波动 |
+| PARSE_FAILED | 否 | 内容结构变化 |
+| VALIDATION_SCHEMA_MISMATCH | 否 | schema 版本不匹配 |
+| PIPELINE_CONFIG_INVALID | 否 | 配置错误 |
+
+**调试建议**：
+- 检查 `stage` 字段定位问题阶段
+- 查看 `diagnostics`（脱敏后）辅助定位
+- `retryable=True` 时注意重试次数上限

@@ -13,6 +13,7 @@ from copy import deepcopy
 from typing import Any
 
 from contracts.record import NormalizedRecordDTO, RecordBatch
+from plugins.base import RecordProcessorPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def _normalize_fields(fields: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-class NormalizePlugin:
+class NormalizePlugin(RecordProcessorPlugin):
     """Normalize text fields in all records of a RecordBatch.
 
     Applies: full-width → half-width space, whitespace collapsing,

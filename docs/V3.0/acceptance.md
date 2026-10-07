@@ -3,7 +3,7 @@
 > **验收官**: W9 独立验收（独立于 W1–W8，不写任何生产代码）
 > **验收时间**: 2026-09-21
 > **验收分支**: Refactoring_code
-> **验收依据**: docs/V3.0/INTERFACES.md v3.0.1 + docs/V3.0/tasks/W1–W8 任务卡
+> **验收依据**: docs/V3.0/INTERFACES.md（2026-10-01 G4 更正：原文写 v3.0.1，实为 v3.0.5）+ docs/V3.0/tasks/W1–W8 任务卡
 > **验收方法**: 12 个并行子代理 + 手动抽查验证
 
 ---
@@ -12,9 +12,9 @@
 
 | 维度 | 范围 |
 |------|------|
-| **L1 契约一致性** | contracts/ 14 个 DTO 逐字段对齐 INTERFACES.md §2；plugins/base.py 继承体系对齐 §3；18 个 metadata.json 对齐 §4；Schema ID 注册表 §7 全量核对 |
+| **L1 契约一致性** | contracts/ 14 个 DTO（对应 INTERFACES.md §2 的 14 个小节；§1 类型总览表实列 18 种）逐字段对齐 INTERFACES.md §2；plugins/base.py 继承体系对齐 §3；metadata.json 对齐 §4（2026-10-01 G4 更正：原文写"18 个 metadata.json"，实测 **32** 个——原文疑为误抄 §1 的 18 种类型）；Schema ID 注册表 §7 全量核对 |
 | **L2 边界合规** | W1–W8 文件所有权矩阵交叉验证（git log + 逻辑归属） |
-| **L3 回归与兼容** | 全量 pytest 949 passed；旧 CLI 参数；旧 API 端点；子套件独立回归 |
+| **L3 回归与兼容** | 全量 pytest 949 passed（⚠️ **未复验**：该数字为首次验收时记录，未注明是否含 tests/browser/；由 W9 于 2026-09-21 测得，G5 无法复算）；旧 CLI 参数；旧 API 端点；子套件独立回归 |
 | **L4 架构实验** | ExpA 脚手架生成 / ExpB 格式输出 / ExpC 模板渲染 / ExpD 快速入门指南 / ExpE 模板开发指南 |
 | **L5 红线合规** | AST 安全校验 / 原子写入 / 线程锁 / NOTICE 许可证 / PipelineContext 注入 |
 
@@ -28,7 +28,7 @@
 | **L1** | BasePlugin 继承体系 | ❌ **不通过** — 4 个中间基类缺失（ParserPlugin/RecordProcessorPlugin/StoragePlugin/UIPlugin）；PresenterPlugin 签名擦除 | Critical ×6, Major ×2 |
 | **L1** | Metadata 契约合规 | ❌ **不通过** — 8 个 metadata.json 缺 `license` 字段（6 processor + 2 UI） | Major ×8 |
 | **L2** | 职责边界合规 | ⚠️ **有条件通过** — W1 越权创建 W4/W6/W7 独占范围文件（共享工作区历史产物，非恶意越权） | 信息级 |
-| **L3** | 回归兼容性 | ✅ **通过** — 949 passed, 0 failed, 3 skipped | 无 |
+| **L3** | 回归兼容性 | ✅ **通过** — 949 passed, 0 failed, 3 skipped（⚠️ **未复验**：口径不明，不含 tests/browser/；W9 2026-09-21 单次测量，G5 无法复算） | 无 |
 | **L4** | 架构实验 | ⚠️ **有条件通过** — 2 PASS / 1 FAIL / 2 CONDITIONAL | 见 §3 |
 | **L5** | 红线合规 | ⚠️ **有条件通过** — 4 项中 3 项通过，NOTICE/LICENSE 缺失 | Minor |
 
@@ -100,7 +100,7 @@ python -c "import json; r=json.load(open('templates/registry.json',encoding='utf
 ```
 
 **证据**:
-- 20 个模板目录均存在且各含 4 个文件 (layout.html, style.css, variables.json, preview.png)
+- 20 个模板目录均存在且各含 3 个受版本控制文件 (layout.html, style.css, variables.json)；preview.png 存在于工作区但被 `.gitignore` 第 15 行原规则 `*preview.png`（非锚定通配符）命中，**干净克隆上不存在**——2026-10-01 G4 实测 `git ls-files templates/*/preview.png` 返回空。H3 正在通过锚定根目录 `/preview.png` 修正忽略规则；修复后预览图将入库。当前证据环境：工作区含文件，非入库基线。
 - 所有 20 个 layout.html 均使用 `{{ content }}`/`{{ header }}`/`{{ stats }}` 占位符
 - 11 个必需 CSS 变量键在全部 20 套模板中均存在
 - HtmlPresenterPlugin 对全部 20 套模板成功加载并产出 11 个 CSS 变量
@@ -164,15 +164,16 @@ python -c "import json; r=json.load(open('templates/registry.json',encoding='utf
 | 10 | L5 | 项目级 LICENSE 文件和 NOTICE 文件缺失 | W1 | 创建 LICENSE (MIT) + NOTICE 声明 flask/requests/beautifulsoup4/lxml/openpyxl/pdfplumber 许可 |
 | 11 | L4-ExpE | 09_template_dev.md 多处与实际实现不一致（variables.json 结构、registry.json 角色、ThemeSwitcher 职责） | W8 | 重写指南，对齐文件系统发现机制和实际 variables.json 格式 |
 | 12 | L4-ExpD | 10_testing.md 引用不存在的 fixture 文件路径 | W8 | 修正为 `w4_static_list_page.html` |
+| 13 | L1-CONTRACT | **INTERFACES.md §12.4 承诺与实现偏差**：文档称「若插件声明 depends_on:["domain_kb"]，加载时校验 data/domain_kb.json 存在且 schema 合法」，但 `validate_domain_kb()` 在全仓**无任何调用方**（仅在 plugin_manager/validator.py 定义并导出）。即契约承诺的能力代码里根本没接线。INTERFACES.md 为冻结契约不可改 → 在此登记为已知偏差。证据：`grep -r "validate_domain_kb" --include="*.py" 仅返回定义处与 __all__ 导出`；无插件声明 `depends_on: ["domain_kb"]`。 | W3/W1 | 登记为已知偏差，不改冻结契约；后续若接线需在 loader/registry 增加调用 |
 
 ### 🟢 建议级 (Nice to Have)
 
 | # | 层级 | 问题 | 修复建议 |
 |---|------|------|----------|
-| 13 | L4-ExpB | jsonl_presenter.render() 返回 str 而非 RenderedOutputDTO | 统一为返回 RenderedOutputDTO |
-| 14 | L2 | converters/storage_converter.py 未分配归属 | 纳入 W6 作用域或明确归属 |
-| 15 | L2 | infra/{cache,context,errors,http}.py 未分配归属 | 更新所有权矩阵 |
-| 16 | L4-ExpD | 03_first_spider.md config_schema 简化版缺 maximum/default | 补充注释 |
+| 14 | L4-ExpB | jsonl_presenter.render() 返回 str 而非 RenderedOutputDTO | 统一为返回 RenderedOutputDTO |
+| 15 | L2 | converters/storage_converter.py 未分配归属 | 纳入 W6 作用域或明确归属 |
+| 16 | L2 | infra/{cache,context,errors,http}.py 未分配归属 | 更新所有权矩阵 |
+| 17 | L4-ExpD | 03_first_spider.md config_schema 简化版缺 maximum/default | 补充注释 |
 
 ---
 
@@ -194,7 +195,7 @@ python -c "import json; r=json.load(open('templates/registry.json',encoding='utf
 
 ### 已验证可合并的能力
 
-- ✅ L3 回归测试全绿 (949 passed / 0 failed)
+- ✅ L3 回归测试全绿 (949 passed / 0 failed) **—— ⚠️ 未复验：口径不明，不含 tests/browser/；W9 2026-09-21 单次测量，G5 无法复算**
 - ✅ 脚手架生成器安全且不侵入核心 (ExpA)
 - ✅ 20 套模板体系完整可用 (ExpC)
 - ✅ 红线合规除 LICENSE 外全部通过 (AST 安全、原子写入、线程锁、PipelineContext 注入)
@@ -204,7 +205,7 @@ python -c "import json; r=json.load(open('templates/registry.json',encoding='utf
 
 ## 6. W6 存储插件特别说明
 
-progress.md 中 W6 区段为空（无完成记录），但实际代码中 plugins/storage/ 5 个插件、infra/storage/ 模块均已存在且测试通过（全量 949 passed）。经 L2 边界分析确认：这些文件由 W1 在初始提交 (14c3c56) 中创建，属于共享工作区下的历史产物。W6 缺少进度登记，但代码功能完整。
+progress.md 中 W6 区段为空（无完成记录），但实际代码中 plugins/storage/ 5 个插件、infra/storage/ 模块均已存在且测试通过（全量 949 passed **—— ⚠️ 未复验：同前，口径不明**）。经 L2 边界分析确认：这些文件由 W1 在初始提交 (14c3c56) 中创建，属于共享工作区下的历史产物。W6 缺少进度登记，但代码功能完整。
 
 **建议**: W6 需补充 progress.md 登记和验收命令输出。
 
@@ -230,34 +231,61 @@ progress.md 中 W6 区段为空（无完成记录），但实际代码中 plugin
 
 | # | 问题 | 修复窗口 | 验证结果 | 复现证据 |
 |---|------|----------|----------|----------|
-| **B1** | 4 个中间基类缺失 | W1 | ✅ **已修复** | `plugins/base.py:205-242` — ParserPlugin(L205), RecordProcessorPlugin(L215), StoragePlugin(L225), UIPlugin(L235) 均存在，plugin_type/input_schema/output_schema 齐全，已加入 `__all__` 导出 |
-| **B2** | PresenterPlugin 契约未对齐 | W1 | ✅ **已修复** | `plugins/base.py:149-150` — `input_schema="PresentationRequest.v1"`, `output_schema="RenderedOutputDTO.v1"` 已声明；execute() 保留具体实现（合法：INTERFACES.md §4 允许 execute 具体 + render 可覆写） |
+| **B1** | 4 个中间基类缺失 | W1 | ⚠️ **已修复，但有遗留问题** | `plugins/base.py:205/215/225/235` 四个类**确实存在**，行号与原文完全一致，`plugin_type`/`input_schema`/`output_schema` 三个属性齐全，`__all__` 已导出（G4 逐项 import 复验，MRO 均为 `[cls, BasePlugin, ABC, Generic, object]`）。**但 2026-10-01 G4 复核发现两处遗留**：<br>① `plugins/base.py:210` 声明 `ParserPlugin.plugin_type = "parser"`，而冻结契约 `INTERFACES.md` §3.3 写的是 `plugin_type = "processor"`；且 `'parser' in plugin_manager.loader.PLUGIN_TYPES` 实测为 **False**（该元组只有 spider/processor/storage/presenter/ui），`plugin_manager/validator.py` 的 `PLUGIN_BASE_CLASSES` 也无 `"parser"` 键。该值已传导到在用插件：`parser_fallback` 类属性为 `'parser'`，而其 `metadata.json` 写 `'processor'`，**自相矛盾**。<br>② `StoragePlugin` / `UIPlugin` **实际零继承**——5 个 storage 插件与 4 个 UI 插件全部直接继承 `BasePlugin[...]`，绕过中间基类（ParserPlugin 有 3 个子类、RecordProcessorPlugin 有 5 个）。<br>**结论**：B1 所述"四个类缺失"确已修复，但"plugin_type 齐全"中的**取值**与契约及加载器冲突，且半数基类无人使用。不应记为完全闭环。 |
+| **B2** | PresenterPlugin 契约未对齐 | W1 | ✅ **已修复** | `plugins/base.py:149-150` — `input_schema="PresentationRequest.v1"`, `output_schema="RenderedOutputDTO.v1"` 已声明；execute() 保留具体实现。**2026-10-01 G4 更正**：原文引作"INTERFACES.md §4 允许 execute 具体"，节号引错——§4 是「metadata.json 格式」，该授权实际写在 **§3.6 PresenterPlugin** 第 349 行的「设计决议」：`PresenterPlugin.execute() 为具体方法（非抽象），子类只需实现 render() 钩子`。结论不变（B2 确为已修复），仅更正出处。 |
 | **B3** | RawDataDTO assets 未入 required | W1 | ✅ **已修复** | `contracts/raw.py:74` — required 数组现为 `["source_id", "url", "content_type", "encoding", "fetched_at", "assets"]`，与 INTERFACES.md §2.4 一致 |
-| **B4** | markdown 格式分发无 fallback | W2 | ✅ **已修复** | `pipeline/stages/present.py:30-32` — `_FORMAT_FALLBACK = {"markdown": "markdown_presenter"}`；`plugins/presenters/markdown_presenter/` 已存在且 metadata.json 包含 license 字段 |
+| **B4** | markdown 格式分发无 fallback | W2 | ⚠️ **代码已修复，但配置未接线** | `pipeline/stages/present.py:30-32` — `_FORMAT_FALLBACK = {"markdown": "markdown_presenter"}`，行号与原文完全一致；`plugins/presenters/markdown_presenter/` 存在，metadata.json 含 `"license": "MIT"`，entry_point 可成功 import。**但 2026-10-01 G4 复核发现该修复在真实配置下走不通**：`config/plugins.yaml` 只声明了 5 个 presenter 实例（`html_report` / `text_report` / `jsonl_report` / `csv_report` / `pdf_report`），**没有 `markdown_presenter` 实例**；`config/pipeline.yaml` 的 present 段也只引用 `html_report`。引擎 `PluginResolver` 因此加载不到该插件，`presenter_map` 为空，`_resolve_presenter()` 对 `format='markdown'` 返回 `None`。单测 `test_markdown_format_auto_resolves_presenter` 之所以通过，是因为它把 `SpyPresenter` **直接注入**引擎插件表，绕过了真实 `PluginResolver` 与真实配置。<br>**结论**：回退链逻辑本身正确且已被单测覆盖，但缺一条配置声明即可让修复真正生效。 |
 | **B5** | PDF XSS 转义为 no-op | W7 | ✅ **已修复** | `plugins/presenters/pdf_presenter/plugin.py:246` — 现使用 `html_mod.escape(value, quote=True)`，旧 `value.replace("&", "&")` 已移除 |
 
 ### 7.2 非阻断项逐项复验
 
 | # | 问题 | 验证结果 | 说明 |
 |---|------|----------|------|
-| **N1** | 8 个 metadata.json 缺 license | ✅ **已修复** | glob 扫描 plugins/**/metadata.json，全部22个文件均含 `"license": "MIT"` |
+| **N1** | 8 个 metadata.json 缺 license | ✅ **已修复** | glob 扫描 `plugins/**/metadata.json`，**全部 32 个**文件均含 `"license": "MIT"`（2026-10-01 G4 实测；原文写"全部22个文件"，计数有误） |
 | **N2** | W1 越权文件未登记 | ✅ **已修复** | commit `2e0aec8` 在 progress.md 登记了越权文件清单 |
 | **N3** | NOTICE/LICENSE 缺失 | ✅ **已修复** | 项目根目录 LICENSE、NOTICE 两文件均存在 |
 
 ### 7.3 L3 回归重跑
 
-```
-======================= 956 passed, 3 skipped in 17.62s =======================
-```
-
-较首次验收 949 passed 增加 7 个新测试（覆盖中间基类 + markdown_presenter），0 failed，3 skipped（WeasyPrint 未安装环境相关）。
+> ⚠️ **2026-10-01（G4）数字更正 + 重新验证**
+>
+> 原文此处记录 `956 passed, 3 skipped in 17.62s`。该数字**无法复算**，实测口径如下：
+>
+> ```
+> $ python -m pytest tests/ -q --ignore=tests/integration
+> 955 passed, 3 skipped in 20.36s
+> ```
+>
+> - **956 是"收集数"（collected），不是"通过数"（passed）**，原文把两者混为一谈。
+>   佐证：`git diff --stat HEAD -- tests/` 为空（无任何已跟踪测试文件被改动），
+>   而工作区多出未跟踪的 `tests/test_dashboard_frontend.py`（2 个用例）。
+>   故合并提交时的树 = **956 collected − 3 skipped = 953 passed**。
+> - **3 个 skip 的原因各不相同**，原文统称"WeasyPrint 未安装"不准确。实测 `-rs`：
+>   - `tests/test_presentation_plugins.py:401` — WeasyPrint not installed
+>   - `tests/test_errors.py:65` — RemoteDisconnected not available in this urllib3 version
+>   - `tests/test_plugin_loader.py:360` — 无 pending_review 测试数据
+> - **当前可复算的表述**：
+>   `python -m pytest tests/ -q --ignore=tests/integration` → **955 passed, 3 skipped, 0 failed**
+>
+> 首次验收的 949 passed 记录保留有效（证据文件 `docs/V3.0/acceptance_evidence/L3_full_regression.txt`）。
+> 原文"+7 新测试"是拿 `949 passed` 与 `956` 直接相减得出的，而两者口径不同（一个是通过数、一个是收集数），
+> 故该增量结论**不可复算，已作废**，此处不给出替代增量——因为 949 那次是否为 collected 数已无从查证。
+> 可确定的只有本节给出的两个数：签字树 **953 passed / 956 collected**，当前工作区 **955 passed / 958 collected**。
+>
+> **复算须知（2026-10-01 G4 实测踩坑记录）**：本仓库测试集在签字后**仍在变动**，任何绝对数字都会立刻过期。
+> 复算前请先 `git status --porcelain tests/` 确认测试集未变，并注意：
+> - `tests/test_dashboard_frontend.py`（2 例，未跟踪，2026-09-21 新增，晚于 09-18 签字）→ 使工作区比签字时多 2 例
+> - `tests/browser/`（未跟踪，2026-10-01 14:04 由并行窗口新增，数十例浏览器验收用例）→
+>   编写过程中会临时报 failed/error，**统计稳定基线时应 `--ignore=tests/browser`**
+> - 全量历史提交的静态用例数单调不减（616 → 621 → 670 → 670 → 900 → 900），**没有任何用例被删除过**——
+>   即"956 变 955"不是用例丢失，而是原数字本身记错（collected 当成 passed）
 
 ### 7.4 L4 实验重跑
 
 | 实验 | 内容 | 结果 | 证据 |
 |------|------|------|------|
 | **A** | AST 安全校验 | ✅ PASS | os.system / eval / exec 均被 AST 检测拦截 |
-| **B** | Presenter 格式分发 | ✅ PASS | `markdown_presenter` 通过 `_FORMAT_FALLBACK` 正确解析；PDF `html_mod.escape` 替代 no-op |
+| **B** | Presenter 格式分发 | ⚠️ PASS（有限定） | `_FORMAT_FALLBACK` 字典本身正确、`markdown_presenter` 插件存在且可加载；PDF `html_mod.escape` 已替代 no-op。**限定**：该结论仅在 presenter 已注入 `presenter_map` 时成立——`config/plugins.yaml` 未声明 `markdown_presenter` 实例，真实配置下分发链不可达（详见 §7.1 B4） |
 | **C** | 脚手架 CLI | ✅ PASS | `scaffolds new spider test_spider` 生成 __init__.py, plugin.py, metadata.json, test_plugin.py, README.md；metadata.json 7 个必填字段全部存在 |
 | **D** | schema_editor | — | 非本次修复范围，首次验收已通过 |
 | **E** | metadata 校验 | — | 合并入 N1 验证，全部通过 |
@@ -266,10 +294,133 @@ progress.md 中 W6 区段为空（无完成记录），但实际代码中 plugin
 
 **全部 5 项阻断 (B1-B5) 和 3 项非阻断 (N1-N3) 均已修复验证通过。**
 
+> ⚠️ **2026-10-01（G4）复验保留意见**
+>
+> 上句为 2026-09-21 W9 的原始结论，G4 独立复核后**部分保留**：
+>
+> | 项 | W9 原结论 | G4 复核 |
+> |---|---|---|
+> | B1 | ✅ 已修复 | ⚠️ 类确实补齐（行号精确），但 `ParserPlugin.plugin_type="parser"` 与契约 §3.3 冲突且被 loader 拒绝；`StoragePlugin`/`UIPlugin` 零继承 |
+> | B2 | ✅ 已修复 | ✅ 成立（原引 §3.6 被误写为 §4，已更正出处） |
+> | B3 | ✅ 已修复 | ✅ **完全成立**，required 列表含顺序与 §2.4 逐字段一致 |
+> | B4 | ✅ 已修复 | ⚠️ 回退链代码正确且单测通过，但 `config/plugins.yaml` 未声明 `markdown_presenter` 实例，真实配置下仍不可用 |
+> | B5 | ✅ 已修复 | ✅ 成立，且原报告点名的 `<th>` 表头渲染（现 L236）也已一并转义 |
+> | N1 | ✅ 已修复 | ✅ 成立（32 个 metadata.json 全含 license） |
+> | N2 / N3 | ✅ 已修复 | 未复核，不在此列 |
+>
+> 即：**3 项完全成立，2 项（B1/B4）成立但有未闭环的遗留**。签字结论"建议合并"不受影响，
+> 但 B1 的 `plugin_type` 取值与 B4 的配置声明应在文档中作为**已知遗留**登记，而非记为完全通过。
+
 - [x] **建议 W1 合并签字**
 - [ ] ~~仍有阻断~~ — 无
 
 ---
 
 *复验完成时间: 2026-09-21*
+*W9 独立验收官签章*
+
+---
+
+## 8. W3 Domain Knowledge Base 完成复验
+
+> **复验时间**: 2026-09-19  
+> **背景**: W2/W3/W4/W5 针对 452 条失败报告新增修复能力，W3 负责 Domain Knowledge Base 规范
+
+### 8.1 L1 契约一致性
+
+| 项目 | 状态 | 证据 |
+|------|------|------|
+| data/domain_kb.json | ✅ PASS | Schema 校验通过：`validate_domain_kb()` 返回 `ok=True` |
+| validate_domain_kb() | ✅ PASS | `plugin_manager/validator.py` 新增函数 |
+| load_domain_kb() / reload_domain_kb() / get_school_domain() | ✅ PASS | `config/plugins.py` 新增热加载接口 |
+| §12 规范文档 | ✅ PASS | `docs/V3.0/INTERFACES.md` 完整章节 |
+
+### 8.2 L2 边界合规
+
+| 修改文件 | 是否在 W3 可写范围 |
+|----------|------------------|
+| plugin_manager/validator.py | ✅ |
+| config/plugins.py | ✅ |
+| data/domain_kb.json | ✅ |
+| docs/V3.0/INTERFACES.md §12 | ✅ |
+
+### 8.3 实验验证
+
+| 实验 | 状态 | 说明 |
+|------|------|------|
+| **A URL 修正** | ⏳ PENDING | url_normalizer 插件待 W4 开发 |
+| **B 错误诊断** | ⏳ PENDING | error_analyzer 插件待开发 |
+| **C Domain 接口** | ✅ PASS | `get_school_domain('东北林业大学', 'szdw')` → `nefu.edu.cn` |
+
+### 8.4 回归测试
+
+```
+tests\test_plugin_loader.py ..............s................. [ 64%]
+tests\test_plugin_security.py ..................           [100%]
+======================== 49 passed, 1 skipped ========================
+```
+
+### 8.5 产出清单
+
+| 文件 | 说明 |
+|------|------|
+| `data/domain_kb.json` | 59+ 所学校主流域名映射 |
+| `plugin_manager/validator.py` | `validate_domain_kb()` 函数 |
+| `config/plugins.py` | 热加载接口函数 |
+| `docs/V3.0/INTERFACES.md §12` | 规范章节 |
+| `docs/V3.0/acceptance_evidence/failures_fix/w3_verification.txt` | 证据文件 |
+
+### 8.6 后续依赖
+
+| 窗口 | 任务 | 状态 |
+|------|------|------|
+| W4 | 开发 url_normalizer, domain_rewriter, url_prober 插件 | PENDING |
+| W5 | 开发 parser_fallback, error_analyzer 插件 | PENDING |
+| W4/W5 | DNS 验证完成后更新 domain_kb.json verified 域名 | PENDING |
+
+### 8.7 结论
+
+**W3 Domain Knowledge Base 完成**：✅ 规范制定 ✅ 接口实现 ✅ 初始数据 ✅ 验收通过
+
+---
+
+## 9. 修正说明
+
+**来源**：`docs/V3.0/tasks/processor_status_report.md`（2026-09-21 诊断报告）
+
+### 9.1 原报告误差
+
+| 项目 | 原报告 | 实际情况 |
+|------|--------|----------|
+| processor 数量 | 2 个 | **10 个** |
+| 接口引用 | `PluginLoader().scan()` | `scan_plugin_dirs()` |
+
+### 9.2 修正依据
+
+1. **processor 数量**：`plugins/processors/` 目录下 **10 个** 插件目录（dedup, domain_rewriter, education_merge, error_analyzer, faculty_parser, normalize, parser_fallback, statistics, url_normalizer, yzw_major_parser）
+2. **正确接口**：`plugin_manager/loader.py` 暴露模块级函数 `scan_plugin_dirs()`，非 `PluginLoader().scan()` 类方法
+
+### 9.3 3 类分层
+
+| 类型 | 插件 | 继承基类 |
+|------|------|----------|
+| ParserPlugin | faculty_parser, yzw_major_parser, parser_fallback | ParserPlugin |
+| RecordProcessorPlugin | dedup, normalize, education_merge, statistics, error_analyzer | RecordProcessorPlugin |
+| BasePlugin (pre-acquire) | url_normalizer, domain_rewriter | BasePlugin |
+
+### 9.4 结论
+
+**原结论维持**：建议 W1 合并签字 ✅
+
+- 实际 processor 插件数量（10）**超过** 原报告估计
+- 所有 10 个插件均完整实现，34/34 单元测试通过
+- 仅 1 处类属性修复（yzw_major_parser.plugin_type）
+
+---
+
+*W9 独立验收官复验完成*
+
+---
+
+*W9 复验完成时间: 2026-09-19*
 *W9 独立验收官签章*

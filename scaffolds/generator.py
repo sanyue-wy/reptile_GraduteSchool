@@ -44,6 +44,8 @@ KIND_CONFIGS: dict[str, dict[str, Any]] = {
         "execute_body": (
             "        # TODO: 实现采集逻辑\n"
             "        # 使用 context.http 发起请求，解析页面，构建 RawDataBatch\n"
+            "        # 参考指南：docs/plugin_dev_guide/03_first_spider.md\n"
+            "        # 约束：不得绕过 context.http；不得写业务解析逻辑\n"
             "        cfg = data.config_snapshot\n"
             "        return RawDataBatch(\n"
             "            schema_version=\"1\",\n"
@@ -67,6 +69,8 @@ KIND_CONFIGS: dict[str, dict[str, Any]] = {
         "execute_body": (
             "        # TODO: 实现解析/处理逻辑\n"
             "        # 从 data.items 提取字段，构建 RecordBatch\n"
+            "        # 参考指南：docs/plugin_dev_guide/04_writing_processor.md\n"
+            "        # 约束：parse 阶段不得发起网络请求\n"
             "        return RecordBatch(\n"
             "            schema_version=\"1\",\n"
             "            records=[],\n"
@@ -87,6 +91,8 @@ KIND_CONFIGS: dict[str, dict[str, Any]] = {
         "execute_body": (
             "        # TODO: 实现存储逻辑\n"
             "        # 原子写入，返回 StoreReceipt\n"
+            "        # 参考指南：docs/plugin_dev_guide/05_writing_storage.md\n"
+            "        # 约束：幂等写入，allowed_paths 内写，os.replace 原子提交\n"
             "        return StoreReceipt(\n"
             "            target_id=data.target_id,\n"
             "            written=0,\n"
@@ -111,6 +117,8 @@ KIND_CONFIGS: dict[str, dict[str, Any]] = {
         "execute_body": (
             "        # TODO: 实现渲染逻辑\n"
             "        # 或覆盖 render() 方法\n"
+            "        # 参考指南：docs/plugin_dev_guide/06_presenter_ui.md\n"
+            "        # 注意：render() 必须返回 str 或 RenderedOutputDTO\n"
             "        return RenderedOutputDTO(\n"
             "            output_id=uuid4().hex,\n"
             "            output_format=\"text\",\n"
@@ -130,6 +138,9 @@ KIND_CONFIGS: dict[str, dict[str, Any]] = {
         "output_schema": "UIComponentDTO.v1",
         "execute_body": (
             "        # TODO: 实现组件描述生成\n"
+            "        # 返回 UIComponentDTO 供前端渲染\n"
+            "        # 参考指南：docs/plugin_dev_guide/06_presenter_ui.md\n"
+            "        # 约束：仅返回声明式描述，不返回 HTML\n"
             "        return UIComponentDTO(\n"
             "            component_id=uuid4().hex,\n"
             "            component_type=\"custom\",\n"

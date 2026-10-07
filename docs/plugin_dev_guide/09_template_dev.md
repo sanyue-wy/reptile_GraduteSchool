@@ -94,5 +94,6 @@ preview.png 在构建时由 headless browser 截图生成：
 
 ```bash
 # 需要 playwright 或 selenium（未自动安装）
-# 具体构建命令见 scripts/build_template_previews.py（计划中）
+# ⚠️ 截止 2026-10-01（G4 核查）：构建脚本 scripts/build_template_previews.py **尚不存在**，
+#    当前仓库无任何自动生成 preview.png 的入口。该步骤目前只能手工截图。
 ```

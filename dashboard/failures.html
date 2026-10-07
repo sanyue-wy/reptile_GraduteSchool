@@ -31,7 +31,8 @@
         <h1>⚠️ 失败记录</h1>
         <div class="topbar-actions">
           <div class="view-toggle">
-            <button class="view-btn active" onclick="setView('card')">卡片视图</button>
+            <button class="view-btn active" onclick="setView('grouped')">分组视图</button>
+            <button class="view-btn" onclick="setView('card')">卡片视图</button>
             <button class="view-btn" onclick="setView('table')">表格视图</button>
           </div>
           <button class="btn btn-danger btn-sm" onclick="retryAll()" id="retry-all-btn">🔄 重试全部</button>
@@ -64,8 +65,17 @@
           <div class="error-stat"><h3 style="color:#3b82f6">0</h3><p>DNS 错误</p></div>
         </div>
 
+        <!-- Grouped View (default, Console Fix R2.1) -->
+        <div id="groupedView">
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <div id="failureGroupList"><!-- 由 JS 填充 --></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Card View -->
-        <div id="cardView">
+        <div id="cardView" style="display:none">
           <div class="card">
             <div class="card-body" id="failureCardList">
               <!-- 由 JS 填充 -->
@@ -125,6 +135,7 @@
     let currentPage = 1;
     const pageSize = 20;
     let currentData = null;
+    let groupedData = null;   // /api/failures/grouped 响应
     let taskTimer = null;
 
     // 修改后：与后端 classify_error() 产出的 6 种类型完全对齐
@@ -168,12 +179,21 @@
         if (status) params.status = status;
         if (source) params.source = source;
         params.page = currentPage;
-        params.page_size = pageSize;
+        // 分组视图时请求更多数据（默认 200 条），确保展开明细时有足够条目
+        params.page_size = (groupedData !== null || true) ? 200 : pageSize;
 
         const data = await api.failures(params);
         currentData = data;
         renderCardView(data.items || []);
         renderTableView(data.items || []);
+
+        // 分组数据（与筛选条件一致；失败时静默降级为纯列表视图）
+        try {
+          groupedData = await api.failuresGrouped({ status: params.status || "", source: params.source || "" });
+        } catch {
+          groupedData = null;
+        }
+        renderGroupedView();
 
         const total = data.total || 0;
         const start = (data.page - 1) * (data.page_size || 0) + 1;
@@ -191,10 +211,23 @@
 
         // 更新摘要统计
         updateSummary(data.summary || {});
+
+        // 自适应轮询：存在待重试失败时 10s 刷新（Console Fix R1.2）
+        scheduleAutoRefresh(data);
       } catch (err) {
         showToast(err.message, "error");
       }
     }
+
+    let autoTimer = null;
+    function scheduleAutoRefresh(data) {
+      if (autoTimer) clearTimeout(autoTimer);
+      const hasActive = (data.total || 0) > 0;
+      autoTimer = setTimeout(() => { if (!document.hidden) loadData(); }, hasActive ? 10000 : 30000);
+    }
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadData();
+    });
 
     function updateSummary(summary) {
       const items = currentData?.items || [];
@@ -204,7 +237,8 @@
       const dnsCount = summary.dns_error || 0;
 
       const stats = document.querySelectorAll("#error-summary .error-stat h3");
-      stats[0].textContent = items.length;
+      // 总数用全量 total（分页前），与分组视图口径一致
+      stats[0].textContent = currentData?.total ?? items.length;
       stats[1].textContent = httpCount;
       stats[2].textContent = timeoutCount;
       stats[3].textContent = parseCount;
@@ -213,11 +247,75 @@
 
     // ==================== 视图切换 ====================
     function setView(view) {
+      document.getElementById("groupedView").style.display = view === "grouped" ? "block" : "none";
       document.getElementById("cardView").style.display = view === "card" ? "block" : "none";
       document.getElementById("tableView").style.display = view === "table" ? "block" : "none";
       document.querySelectorAll(".view-btn").forEach((b, i) => {
-        b.classList.toggle("active", (i === 0 && view === "card") || (i === 1 && view === "table"));
+        b.classList.toggle("active", (i === 0 && view === "grouped") || (i === 1 && view === "card") || (i === 2 && view === "table"));
       });
+    }
+
+    // ==================== 分组视图（默认）====================
+    function renderGroupedView() {
+      const el = document.getElementById("failureGroupList");
+      if (!el) return;
+      const groups = (groupedData && groupedData.grouped) || [];
+      if (groups.length === 0) {
+        el.innerHTML = '<div class="empty-state"><span class="emoji">🎉</span><p>暂无失败记录</p></div>';
+        return;
+      }
+      const itemsForDetail = groupedData?.items || currentData?.items || [];
+      el.innerHTML = groups.map((g, i) => {
+        const et = getErrorTypeInfo(g.error_type);
+        const schools = (g.sample_schools || []).join("、");
+        const detailItems = itemsForDetail.filter(f => sameGroup(f, g)).slice(0, 5);
+        const detailHtml = detailItems.map(f => {
+          const msg = escapeHtmlText((f.error_message || "").slice(0, 120));
+          return '<div style="font-size:12px;color:var(--text-secondary);padding:4px 0;border-top:1px dashed #eee">' +
+            '<strong>' + escapeHtmlText(f.school || "") + '</strong> · ' +
+            escapeHtmlText(f.college || "") + ' · ' + escapeHtmlText(f.source || "") +
+            ' — ' + msg +
+            '<button class="btn btn-outline btn-xs" style="margin-left:8px" onclick="retryOne(\'' + f.id + '\')">重试</button>' +
+          '</div>';
+        }).join("");
+        const moreHtml = g.count > 5 ?
+          '<div style="font-size:12px;color:var(--text-secondary);padding-top:6px">…该组共 ' + g.count + ' 条，切到表格视图查看完整明细</div>' : "";
+        return '<div style="border-bottom:1px solid var(--border)">' +
+          '<div onclick="toggleGroup(' + i + ')" style="display:flex;align-items:center;gap:12px;padding:14px 8px;cursor:pointer">' +
+            '<span id="group-icon-' + i + '" style="font-size:12px;color:var(--text-secondary)">▼</span>' +
+            '<span class="badge" style="background:' + et.bg + ';color:' + et.color + '">' + et.label + '</span>' +
+            '<strong>' + escapeHtmlText(g.domain) + '</strong>' +
+            '<span style="font-size:13px;color:var(--text-secondary)">覆盖 ' + (g.school_count || 0) + ' 所学校' + (schools ? '：' + escapeHtmlText(schools) : '') + '</span>' +
+            '<span style="margin-left:auto;font-weight:600;color:var(--danger)">' + g.count + ' 次</span>' +
+            '<span style="font-size:12px;color:var(--text-secondary)">' + formatTime(g.last_seen || "") + '</span>' +
+          '</div>' +
+          '<div id="group-detail-' + i + '" style="display:block;padding:0 8px 12px 32px">' +
+            detailHtml + moreHtml +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    function sameGroup(f, g) {
+      const host = ((f.url || "").replace(/^https?:\/\//, "").split("/")[0] || "").toLowerCase().replace(/^www\./, "");
+      if (f.error_type !== g.error_type) return false;
+      // 分组键为精确域名；items 中同组条目的 url 可能指向主站（如 faculty.seu.edu.cn vs au.seu.edu.cn），
+      // 故仅按 error_type + 学校名匹配展示明细
+      const schools = (g.sample_schools || []).map(s => String(s));
+      return schools.length === 0 || schools.includes(f.school);
+    }
+
+    window.toggleGroup = function(i) {
+      const detail = document.getElementById("group-detail-" + i);
+      const icon = document.getElementById("group-icon-" + i);
+      if (!detail || !icon) return;
+      const open = detail.style.display !== "none";
+      detail.style.display = open ? "none" : "block";
+      icon.textContent = open ? "▶" : "▼";
+    };
+
+    function escapeHtmlText(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     // ==================== 渲染 ====================

@@ -1,6 +1,8 @@
 # 技术设计与执行流程
 
-> 配套文档：[REQUIREMENTS.md](REQUIREMENTS.md)（需求）｜本文档回答：**用什么技术、代码怎么跑、整体思路是什么**
+> 配套文档：[REQUIREMENTS.md](../V2.0/REQUIREMENTS.md)（需求）｜本文档回答：**用什么技术、代码怎么跑、整体思路是什么**
+> ⚠️ 2026-10-01（G4）勘误：原链接指向同目录 `REQUIREMENTS.md`，该文件在 `docs/V0.0/` 下**不存在**；
+> 需求文档后来归档至 `docs/V2.0/REQUIREMENTS.md`，上方链接已更正。
 
 ---
 
@@ -30,7 +32,8 @@
                     ┌─────────────────────────────────────────────────┐
                     │              main.py (CLI 编排)                  │
                     │  --school --category --year --force              │
-                    │  --retry-failed --limit                          │
+                    │  --retry-failed --max-retries                     │
+                    │  ⚠️ G4 勘误：原文写 --limit，main.py 无此参数       │
                     └──────────────┬──────────────────────────────────┘
                                    │ 读取 config/schools.py
          ┌─────────────────────────┼──────────────────────────┐
@@ -69,7 +72,9 @@
 ### 命令示例
 ```bash
 python main.py --school 东南大学 --year 2026          # 单校试点
-python main.py --all --year 2026 --workers 4          # 全量 147 所
+python main.py --school __all__ --year 2026 --workers 4   # 全量 147 所
+# ⚠️ 2026-10-01（G4）实测更正：原文写作 `--all`，但 main.py 无该参数（实测报
+# unrecognized arguments: --all）。全量模式须用 `--school __all__`。
 python main.py --retry-failed                         # 补跑失败项
 python main.py --school 东南大学 --force               # 强制刷新已完成的
 ```

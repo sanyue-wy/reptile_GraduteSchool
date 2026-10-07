@@ -5,3 +5,8 @@ black>=23.0
 flake8>=6.0
 isort>=5.12
 mypy>=1.5
+
+# 浏览器验收套件（tests/browser/）。仅装 Python 包，浏览器二进制需另行下载：
+#   pip install playwright && python -m playwright install chromium
+# CI 不装——缺浏览器时该套件整体 skip，装包不装浏览器会造成静默假绿。
+playwright>=1.40

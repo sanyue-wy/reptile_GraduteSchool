@@ -300,6 +300,8 @@ __all__ = [
     "validate_plugin_source_v3",
     "check_content_integrity",
     "compute_content_hash",
+    "validate_domain_kb",
+    "DOMAIN_KB_PATH",
 ]
 
 
@@ -334,3 +336,71 @@ def validate_all_metadata(plugins_root: Path | None = None) -> list[dict[str, An
             })
 
     return missing_list
+
+
+# ── Domain Knowledge Base 校验 ──
+
+DOMAIN_KB_PATH = Path("data/domain_kb.json")
+
+_DOMAIN_KB_SCHEMA = {
+    "type": "object",
+    "required": ["_schema_version", "mappings"],
+    "properties": {
+        "_schema_version": {"type": "string"},
+        "_author": {"type": "string"},
+        "_last_updated": {"type": "string"},
+        "description": {"type": "string"},
+        "mappings": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "required": ["main"],
+                "properties": {
+                    "main": {"type": "string", "pattern": "^[a-zA-Z0-9.-]+$"},
+                    "subdomains": {"type": "object"},
+                    "verified": {"type": "object"}
+                }
+            }
+        }
+    }
+}
+
+
+def validate_domain_kb(kb_path: Path | None = None) -> ValidationResult:
+    """校验 domain_kb.json 是否存在且 schema 合法。
+
+    供插件依赖 `depends_on: ["domain_kb"]` 时使用。
+    """
+    import jsonschema
+
+    if kb_path is None:
+        kb_path = DOMAIN_KB_PATH
+
+    errors: list[str] = []
+
+    if not kb_path.exists():
+        return ValidationResult(
+            ok=False,
+            errors=[f"Domain knowledge base 文件不存在: {kb_path}"],
+        )
+
+    try:
+        data = json.loads(kb_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        return ValidationResult(
+            ok=False,
+            errors=[f"Domain knowledge base JSON 解析失败: {e}"],
+        )
+
+    # 验证 schema
+    try:
+        jsonschema.validate(instance=data, schema=_DOMAIN_KB_SCHEMA)
+    except jsonschema.ValidationError as e:
+        errors.append(f"Domain knowledge base schema 验证失败: {e.message}")
+
+    # 额外检查：是否存在至少一个学校映射
+    mappings = data.get("mappings", {})
+    if not mappings:
+        errors.append("Domain knowledge base 中没有学校映射")
+
+    return ValidationResult(ok=not errors, errors=errors)

@@ -8,34 +8,79 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
-        .header { background: #2c3e50; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
-        .header h1 { font-size: 1.3rem; }
+        .header { background: #2c3e50; color: #fff; padding: 0.75rem 2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .header h1 { font-size: 1.1rem; }
         .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
         .header a:hover { color: #fff; }
+        .guidance { padding: 1rem 2rem; background: #e3f2fd; border-bottom: 1px solid #bbdefb; font-size: 0.95rem; color: #1976d2; }
         .toolbar { padding: 1rem 2rem; display: flex; gap: 0.75rem; align-items: center; background: #fff; border-bottom: 1px solid #dee2e6; }
-        .toolbar input { padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; width: 300px; }
+        .toolbar input { padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; width: 280px; }
         .toolbar button { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
         .toolbar button:hover { background: #34495e; }
         .toolbar button.secondary { background: #fff; color: #2c3e50; }
-        .plugin-grid { padding: 1.5rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-        .plugin-card { background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 1.25rem; }
-        .plugin-card .name { font-size: 1.05rem; font-weight: 600; color: #2c3e50; }
-        .plugin-card .type { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 3px; background: #e8f4fd; color: #2980b9; margin-left: 0.5rem; }
-        .plugin-card .type.spider { background: #fdf2e8; color: #e67e22; }
-        .plugin-card .type.processor { background: #e8fde8; color: #27ae60; }
-        .plugin-card .type.storage { background: #fde8f8; color: #8e44ad; }
-        .plugin-card .type.presenter { background: #f0e8fd; color: #6c3483; }
-        .plugin-card .type.ui { background: #e8f0fd; color: #2471a3; }
-        .plugin-card .meta { font-size: 0.8rem; color: #666; margin-top: 0.5rem; }
-        .plugin-card .actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
-        .plugin-card .actions button { padding: 0.3rem 0.75rem; border: 1px solid #ccc; background: #fff; border-radius: 3px; cursor: pointer; font-size: 0.8rem; }
-        .plugin-card .actions button:hover { background: #f5f5f5; }
-        .badge { display: inline-block; font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; }
-        .badge.approved { background: #d4edda; color: #155724; }
-        .badge.pending { background: #fff3cd; color: #856404; }
-        .badge.disabled { background: #f8d7da; color: #721c24; }
+        .plugin-grid { padding: 1rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+        .plugin-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
+        .plugin-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+        .plugin-card-title { font-size: 1rem; font-weight: 600; color: #2c3e50; margin: 0; }
+        .plugin-card-switch { position: relative; width: 36px; height: 18px; }
+        .plugin-card-switch input { opacity: 0; width: 0; height: 0; }
+        .plugin-card-switch label { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 18px; }
+        .plugin-card-switch label:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
+        .plugin-card-switch input:checked + label { background: #27ae60; }
+        .plugin-card-switch input:checked + label:before { transform: translateX(18px); }
+        .plugin-badge { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 3px; font-weight: 500; }
+        .badge-type { font-size: 0.7rem; padding: 2px 8px; border-radius: 3px; }
+        .badge.type-spider { background: #fff3cd; color: #856404; }
+        .badge.type-processor { background: #d1ecf1; color: #0c5460; }
+        .badge.type-storage { background: #e2e3e5; color: #383d41; }
+        .badge.type-presenter { background: #f8d7da; color: #721c24; }
+        .badge.type-ui { background: #d4edda; color: #155724; }
+        .badge-approved { background: #d4edda; color: #155724; }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-disabled { background: #f8d7da; color: #721c24; }
+        .badge-status-ok { background: #d4edda; color: #155724; }
+        .badge-status-warning { background: #fff3cd; color: #856404; }
+        .badge-status-error { background: #f8d7da; color: #721c24; }
+        .plugin-meta { font-size: 0.75rem; color: #666; margin-bottom: 0.5rem; }
+        .plugin-meta span { margin-right: 1rem; }
+        .plugin-config { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid #f0f0f0; }
+        .config-warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 0.5rem; margin-bottom: 0.5rem; font-size: 0.8rem; color: #856404; display: none; }
+        .config-form { display: flex; flex-direction: column; gap: 0.4rem; }
+        .config-form input[type="text"], .config-form textarea, .config-form select { padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
+        .config-form textarea { min-height: 60px; resize: vertical; }
+        .config-form button { padding: 0.4rem 0.8rem; background: #2c3e50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; align-self: flex-start; }
+        .config-form button:hover { background: #34495e; }
+        .plugin-actions { margin-top: 0.5rem; display: flex; gap: 0.4rem; }
+        .plugin-actions button { padding: 0.3rem 0.6rem; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        .plugin-actions button:hover { background: #f5f5f5; }
+        .detail-content { font-size: 0.8rem; color: #555; line-height: 1.4; margin-bottom: 0.5rem; }
+        .detail-content pre { background: #f8f9fa; padding: 0.6rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; }
+        .collapse-toggle { color: #666; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
+        .collapse-toggle:hover { color: #2c3e50; }
         .empty-state { text-align: center; padding: 3rem; color: #999; }
         .error-msg { padding: 1rem 2rem; background: #f8d7da; color: #721c24; display: none; }
+        .global-error-center { padding: 1rem 2rem; background: #fff3cd; border-bottom: 1px solid #ffc107; }
+        .global-error-center a { color: #856404; text-decoration: none; font-weight: 500; }
+        .global-error-center a:hover { text-decoration: underline; }
+        /* Error Detail Drawer */
+        .error-drawer { position: fixed; top: 0; right: 0; width: 400px; height: 100vh; background: #fff; box-shadow: -2px 0 8px rgba(0,0,0,0.15); transform: translateX(100%); transition: transform 0.3s ease; z-index: 1000; }
+        .error-drawer.open { transform: translateX(0); }
+        .drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #e0e0e0; background: #f8f9fa; }
+        .drawer-header h3 { font-size: 1rem; color: #2c3e50; }
+        .drawer-close { cursor: pointer; font-size: 1.2rem; color: #666; }
+        .drawer-close:hover { color: #2c3e50; }
+        .drawer-content { padding: 1rem 1.5rem; overflow-y: auto; }
+        .error-item { border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; background: #fafafa; }
+        .error-time { font-size: 0.75rem; color: #888; margin-bottom: 0.25rem; }
+        .error-code { font-family: monospace; font-size: 0.7rem; background: #e0e0e0; padding: 2px 6px; border-radius: 3px; color: #333; }
+        .error-message { font-size: 0.8rem; color: #555; margin: 0.25rem 0; }
+        .error-suggestion { font-size: 0.75rem; color: #1976d2; background: #e3f2fd; padding: 0.4rem; border-radius: 4px; margin-top: 0.4rem; }
+        .error-traces { margin-top: 0.5rem; }
+        .trace-toggle { font-size: 0.75rem; color: #666; cursor: pointer; text-decoration: underline; }
+        .trace-content { background: #270c30; color: #e0e0e0; padding: 0.75rem; border-radius: 4px; font-family: monospace; font-size: 0.7rem; margin-top: 0.5rem; display: none; }
+        .error-traces button { margin-top: 0.5rem; padding: 0.3rem 0.6rem; background: #2c3e50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        .error-traces button:hover { background: #34495e; }
     </style>
 </head>
 <body>
@@ -43,36 +88,151 @@
         <a href="index.html">&larr; Console</a>
         <h1>Plugin Management</h1>
     </header>
+
+    <div class="guidance">
+        <strong>配置提示：</strong> 启用插件后，点击卡片下方的"配置"按钮来设置参数。<br>
+        <span id="global-error-link" style="display: none;">
+            <a href="javascript:void(0)" onclick="showGlobalErrors()">全局错误中心</a>
+        </span>
+    </div>
+
     <div id="error" class="error-msg"></div>
+
     <div class="toolbar">
-        <input type="text" id="search" placeholder="Search plugins by name..." />
+        <input type="text" id="search" placeholder="Search plugins by name or type..." />
         <button id="refresh-btn" class="secondary">Refresh</button>
     </div>
+
     <main id="plugin-list" class="plugin-grid">
         <div class="empty-state">Loading plugins...</div>
     </main>
+
+    <!-- Error Detail Drawer -->
+    <div id="error-drawer" class="error-drawer">
+        <div class="drawer-header">
+            <h3 id="drawer-title">Error Details</h3>
+            <span class="drawer-close" onclick="closeDrawer()">&times;</span>
+        </div>
+        <div class="drawer-content" id="drawer-content">
+            <div class="empty-state">Select a plugin to view errors</div>
+        </div>
+    </div>
+
     <script>
     (function() {
         'use strict';
         var API = '/api/plugins';
+        var ERRORS_API = '/api/plugins/errors';
         var container = document.getElementById('plugin-list');
         var searchInput = document.getElementById('search');
         var refreshBtn = document.getElementById('refresh-btn');
         var errorDiv = document.getElementById('error');
         var allPlugins = [];
+        var pluginErrors = {};
 
         function escapeHtml(str) {
             if (str === null || str === undefined) return '';
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
         }
+
+        function formatDate(ts) {
+            if (!ts) return 'Unknown';
+            try {
+                return new Date(ts).toLocaleString();
+            } catch { return ts; }
+        }
+
+        function getPluginStatus(errorCount) {
+            if (errorCount > 0) return { cls: 'badge-status-error', text: 'Error ' + errorCount };
+            return { cls: 'badge-status-ok', text: 'OK' };
+        }
+
+        function getTypeTagClass(p) {
+            var type = (p.plugin_type || p.kind || '').toLowerCase();
+            var mapping = { spider: 'type-spider', processor: 'type-processor', storage: 'type-storage', presenter: 'type-presenter', ui: 'type-ui' };
+            return mapping[type] || '';
+        }
+
+        function getTypeLabel(p) {
+            var type = (p.plugin_type || p.kind || '').toLowerCase();
+            type = type.replace(/_/g, ' ');
+            return type.charAt(0).toUpperCase() + type.slice(1);
+        }
+
+        function renderConfigSchema(plugin) {
+            var schema = plugin.config_schema || {};
+            var config = plugin.config || {};
+            var name = plugin.name || plugin.id || '';
+            var hasSchema = schema && Object.keys(schema.properties || {}).length > 0;
+            var isConfigured = Object.keys(config).length > 0;
+            var showWarning = hasSchema && !isConfigured;
+
+            return '<div class="plugin-config">' +
+                '<div class="config-warning"' + (showWarning ? '' : ' style="display:none;"') + '>' +
+                '<strong>提示：</strong> 此插件尚未配置，启用后点击下方"配置"按钮进行设置。' +
+                '</div>' +
+                '<details>' +
+                '<summary style="cursor: pointer; color: #2c3e50; font-weight: 500; margin-bottom: 0.5rem;">配置</summary>' +
+                '<div class="config-form">' +
+                (hasSchema ? renderFormFields(schema, config, name) :
+                 '<p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">此插件无需额外配置，启用即可生效。</p>') +
+                '</div>' +
+                '</details>' +
+                '</div>';
+        }
+
+        function renderFormFields(schema, config, pluginName) {
+            var props = schema.properties || {};
+            if (Object.keys(props).length === 0) {
+                return '<p style="color: #666; font-size: 0.9rem;">此插件无需额外配置，启用即可生效。</p>';
+            }
+
+            var fields = [];
+            for (var key in props) {
+                if (!props.hasOwnProperty(key)) continue;
+                var prop = props[key];
+                var value = config[key] !== undefined ? config[key] : '';
+                fields.push(renderField(key, prop, value, config, pluginName));
+            }
+            return fields.join('');
+        }
+
+        function renderField(name, prop, value, config, pluginName) {
+            var label = prop.label || prop.title || name;
+            var type = prop.type || 'string';
+            var isRequired = prop.required || false;
+            var placeholder = prop.placeholder || '';
+
+            var inputHtml = '';
+            switch (type) {
+                case 'number':
+                    inputHtml = '<input type="number" name="' + escapeHtml(name) + '" placeholder="' + escapeHtml(placeholder) + '" value="' + escapeHtml(value) + '">';
+                    break;
+                case 'boolean':
+                    inputHtml = '<input type="checkbox" name="' + escapeHtml(name) + '" ' + (value ? 'checked' : '') + '>';
+                    break;
+                case 'array':
+                case 'object':
+                default:
+                    inputHtml = '<textarea name="' + escapeHtml(name) + '" placeholder="' + escapeHtml(placeholder || '请输入值...') + '">' + escapeHtml(JSON.stringify(value, null, 2)) + '</textarea>';
+                    break;
+            }
+
+            return '<div style="margin-bottom: 0.5rem;">' +
+                '<label style="display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.25rem;">' +
+                label + (isRequired ? '<span style="color: #d32f2f;"> *</span>' : '') +
+                '</label>' + inputHtml +
+                '</div>';
+        }
+
 
         function loadPlugins() {
             errorDiv.style.display = 'none';
             fetch(API, { credentials: 'same-origin' })
                 .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                 .then(function(data) {
-                    allPlugins = Array.isArray(data) ? data : (data.plugins || data.items || []);
-                    renderPlugins(allPlugins);
+                    allPlugins = Array.isArray(data) ? data : (data.plugins || data.items || data.data || []);
+                    loadPluginErrors();
                 })
                 .catch(function(err) {
                     errorDiv.textContent = 'Failed to load plugins: ' + err.message;
@@ -81,42 +241,143 @@
                 });
         }
 
+        function loadPluginErrors() {
+            fetch(ERRORS_API, { credentials: 'same-origin' })
+                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function(data) {
+                    pluginErrors = data.errors || data || {};
+                    var hasErrors = Object.keys(pluginErrors).length > 0;
+                    document.getElementById('global-error-link').style.display = hasErrors ? 'inline' : 'none';
+                    renderPlugins(allPlugins);
+                })
+                .catch(function(err) {
+                    pluginErrors = {};
+                    renderPlugins(allPlugins);
+                });
+        }
+
         function renderPlugins(plugins) {
             if (!plugins.length) {
                 container.innerHTML = '<div class="empty-state">No plugins found</div>';
                 return;
             }
+
             container.innerHTML = plugins.map(function(p) {
-                var name = escapeHtml(p.name || p.plugin_id || 'unknown');
-                var ptype = escapeHtml(p.plugin_type || p.kind || 'unknown');
-                var version = escapeHtml(p.version || '—');
-                var author = escapeHtml(p.author || '—');
-                var approved = p.approved !== false;
-                var enabled = p.enabled !== false;
-                return '<div class="plugin-card">' +
-                    '<div><span class="name">' + name + '</span><span class="type ' + ptype + '">' + ptype + '</span></div>' +
-                    '<div class="meta">v' + version + ' &middot; ' + author + '</div>' +
-                    '<div class="meta"><span class="badge ' + (approved ? 'approved' : 'pending') + '">' + (approved ? 'Approved' : 'Pending') + '</span> ' +
-                    '<span class="badge ' + (enabled ? 'approved' : 'disabled') + '">' + (enabled ? 'Enabled' : 'Disabled') + '</span></div>' +
-                    '<div class="actions">' +
-                    '<button onclick="togglePlugin(\'' + escapeHtml(p.name || p.plugin_id) + '\', ' + !enabled + ')">' + (enabled ? 'Disable' : 'Enable') + '</button>' +
-                    '<button onclick="reloadPlugin(\'' + escapeHtml(p.name || p.plugin_id) + '\')">Reload</button>' +
-                    '</div></div>';
+                var name = escapeHtml(p.name || p.id || 'unknown');
+                var key = (p.plugin_type || p.kind || '') + ':' + (p.name || p.id || '');
+                var errorList = pluginErrors[key] || [];
+                var errorCount = errorList.length;
+                var statusInfo = getPluginStatus(errorCount);
+
+                return '<div class="plugin-card" id="card-' + name.replace(/[^a-zA-Z0-9]/g, '-') + '">' +
+                    '<div class="plugin-card-header">' +
+                    '<h3 class="plugin-card-title">' + name + '</h3>' +
+                    '<div class="plugin-card-switch">' +
+                        '<input type="checkbox" id="switch-' + name.replace(/[^a-zA-Z0-9]/g, '-') + '" ' + (p.enabled !== false ? 'checked' : '') + '>' +
+                        '<label for="switch-' + name.replace(/[^a-zA-Z0-9]/g, '-') + '"></label>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="plugin-badge">' +
+                    '<span class="badge type-' + getTypeTagClass(p) + '">' + getTypeLabel(p) + '</span>' +
+                    '<span class="badge ' + statusInfo.cls + '" onclick="showErrorDrawer(\'' + name + '\')">' + statusInfo.text + '</span>' +
+                    '<span class="badge ' + (p.approved !== false ? 'badge-approved' : 'badge-pending') + '">' + (p.approved !== false ? 'Approved' : 'Pending') + '</span>' +
+                    '<span class="badge ' + (p.enabled !== false ? 'badge-approved' : 'badge-disabled') + '">' + (p.enabled !== false ? 'Enabled' : 'Disabled') + '</span>' +
+                    '</div>' +
+                    '<div class="plugin-meta">' +
+                    '<span><strong>Version:</strong> ' + escapeHtml(p.version || '—') + '</span>' +
+                    '<span><strong>Author:</strong> ' + escapeHtml(p.author || '—') + '</span>' +
+                    '<span><strong>安装时间:</strong> ' + formatDate(p.installed_at || p.install_time || 'Unknown') + '</span>' +
+                    '</div>' +
+                    '<div style="margin-bottom: 0.5rem;">' +
+                    '<a href="javascript:void(0)" class="collapse-toggle" onclick="toggleDetail(this)">展开详情 ▼</a>' +
+                    '</div>' +
+                    '<div class="detail-content" style="display: none;">' +
+                    (p.description_long || p.long_description || p.description || '暂无详细介绍') +
+                    '</div>' +
+                    renderConfigSchema(p) +
+                    '<div class="plugin-actions">' +
+                    '<button onclick="showErrorDrawer(\'' + name + '\')' + (errorCount > 0 ? ' class="error-trigger"' : '') + '>' + (errorCount > 0 ? '查看错误' : '配置') + '</button>' +
+                    '<button onclick="togglePlugin(\'' + escapeHtml(name) + '\', ' + (p.enabled !== false ? false : true) + ')">' + (p.enabled !== false ? 'Disable' : 'Enable') + '</button>' +
+                    '<button onclick="reloadPlugin(\'' + escapeHtml(name) + '\')">Reload</button>' +
+                    '</div>' +
+                    '</div>';
             }).join('');
         }
 
-        searchInput.addEventListener('input', function() {
-            var q = searchInput.value.toLowerCase();
-            var filtered = allPlugins.filter(function(p) {
-                return (p.name || '').toLowerCase().indexOf(q) >= 0 || (p.plugin_type || '').toLowerCase().indexOf(q) >= 0;
-            });
-            renderPlugins(filtered);
-        });
+        window.showErrorDrawer = function(pluginName) {
+            var key = allPlugins.find(function(p) { return p.name === pluginName || p.id === pluginName; });
+            if (!key) return;
+            var actualKey = (key.plugin_type || key.kind || '') + ':' + (key.name || key.id || '');
+            var errorList = pluginErrors[actualKey] || [];
+            var drawer = document.getElementById('error-drawer');
+            var title = document.getElementById('drawer-title');
+            var content = document.getElementById('drawer-content');
+            title.textContent = pluginName + ' - 错误详情';
 
-        refreshBtn.addEventListener('click', loadPlugins);
+            if (!errorList.length) {
+                content.innerHTML = '<div class="empty-state" style="padding: 2rem;">暂无错误记录</div>';
+            } else {
+                content.innerHTML = errorList.slice(0, 5).map(function(e, i) {
+                    return '<div class="error-item">' +
+                        '<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.25rem;">' +
+                            escapeHtml(e.created_at || e.timestamp || '') + ' · ' +
+                            '<span class="error-code">' + escapeHtml(e.code || 'UNKNOWN') + '</span>' +
+                        '</div>' +
+                        '<p style="font-size: 0.8rem; color: #555; margin: 0.25rem 0;">' + escapeHtml(e.message || e.error || 'Unknown error') + '</p>' +
+                        '<div class="error-suggestions">' +
+                            '<div class="error-suggestion">' + (e.suggestion || e.advice || '请检查配置或查看文档') + '</div>' +
+                        '</div>' +
+                        '<div class="error-traces">' +
+                            '<span class="trace-toggle" onclick="toggleTrace(this)">显示 Traceback ▼</span>' +
+                            '<div class="trace-content" id="trace-' + i + '"></div>' +
+                            '<button onclick="copyReport(\'' + escapeHtml(JSON.stringify(e).substring(0, 100)) + '\')">复制错误报告</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            }
+            drawer.classList.add('open');
+        };
+
+        window.closeDrawer = function() {
+            document.getElementById('error-drawer').classList.remove('open');
+        };
+
+        window.toggleDetail = function(el) {
+            var content = el.previousElementSibling;
+            if (!content) return;
+            var isDisplayNone = content.style.display === 'none';
+            content.style.display = isDisplayNone ? 'block' : 'none';
+            el.textContent = isDisplayNone ? '收起详情 ▲' : '展开详情 ▼';
+        };
+
+        window.toggleTrace = function(el) {
+            var trace = el.nextElementSibling;
+            if (!trace) return;
+            var isDisplayNone = trace.style.display === 'none';
+            trace.style.display = isDisplayNone ? 'block' : 'none';
+            el.textContent = isDisplayNone ? '隐藏 Traceback ▲' : '显示 Traceback ▼';
+        };
+
+        window.showGlobalErrors = function() {
+            var errorItems = Object.keys(pluginErrors).map(function(key) {
+                var list = pluginErrors[key];
+                return list.map(function(e) {
+                    return { plugin: key, code: e.code || 'UNKNOWN', message: e.message || e.error || 'Unknown error', created_at: e.created_at || e.timestamp, suggestion: e.suggestion || e.advice };
+                });
+            }).flat().sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+
+            if (!errorItems.length) return;
+
+            alert('发现 ' + errorItems.length + ' 条错误\n（点击插件卡片上的"查看错误"按钮查看详情）\n\n最新错误：\n' +
+                errorItems.slice(0, 3).map(function(e) { return e.plugin + ': ' + e.message; }).join('\n'));
+        };
 
         window.togglePlugin = function(name, enable) {
-            fetch(API + '/' + encodeURIComponent(name), {
+            var plugin = allPlugins.find(function(p) { return p.name === name || p.id === name; });
+            if (!plugin) return;
+            var kind = plugin.plugin_type || plugin.kind || 'presenter';
+            var key = kind + ':' + name;
+            fetch(API + '/' + encodeURIComponent(key), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
@@ -126,7 +387,11 @@
         };
 
         window.reloadPlugin = function(name) {
-            fetch(API + '/' + encodeURIComponent(name) + '/reload', {
+            var plugin = allPlugins.find(function(p) { return p.name === name || p.id === name; });
+            if (!plugin) return;
+            var kind = plugin.plugin_type || plugin.kind || 'presenter';
+            var key = kind + ':' + name;
+            fetch(API + '/' + encodeURIComponent(key) + '/reload', {
                 method: 'POST',
                 credentials: 'same-origin'
             }).then(function() { loadPlugins(); })

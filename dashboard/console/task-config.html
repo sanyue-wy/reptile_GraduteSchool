@@ -30,6 +30,7 @@
         .status { margin-top: 1rem; padding: 0.75rem; border-radius: 4px; display: none; font-size: 0.85rem; }
         .status.success { display: block; background: #d4edda; color: #155724; }
         .status.error { display: block; background: #f8d7da; color: #721c24; }
+        .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:#fff;animation:spin 1s linear infinite;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}
     </style>
 </head>
 <body>
@@ -78,6 +79,13 @@
                 </div>
             </div>
             <div class="form-group">
+                <label>
+                    <input type="checkbox" id="force" name="force" value="true" style="margin-right: 0.5rem;">
+                    强制采集 (重置状态后重新采集)
+                </label>
+                <div class="hint">启用后将清除上一轮结果，从头开始采集</div>
+            </div>
+            <div class="form-group">
                 <label for="params">Additional Parameters (JSON)</label>
                 <div class="hint">Plugin-specific configuration overrides</div>
                 <textarea id="params" name="params" placeholder='{"max_pages": 20, "selectors": {...}}'></textarea>
@@ -89,9 +97,13 @@
         </form>
         <div id="status" class="status"></div>
     </div>
+    <script src="api.js"></script>
     <script>
     (function() {
         'use strict';
+
+        var FORCE_BANNER = null;
+        var RUN_ID = null;
 
         function escapeHtml(str) {
             return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -103,8 +115,14 @@
             el.className = 'status ' + (isError ? 'error' : 'success');
         }
 
+        function showToast(message, isError, duration) {
+            duration = duration || 3000;
+            if (window.showToast) window.showToast(message, isError, duration);
+        }
+
         function buildPayload() {
             var form = document.getElementById('task-form');
+            var force = form.force.checked;
             var params = {};
             var paramsStr = form.params.value.trim();
             if (paramsStr) {
@@ -116,14 +134,81 @@
                 target_url: form.target_url.value,
                 profile_id: form.profile_id.value,
                 spider: form.spider.value,
-                params: params
+                force: force,
+                params: params,
+                // 后端契约：sources[] 必填（Console Fix R3.1）
+                sources: [{
+                    source_id: form.source_id.value,
+                    target_url: form.target_url.value,
+                    config: Object.assign({ spider: form.spider.value }, params)
+                }]
             };
+        }
+
+        function checkForceEvent() {
+            fetch('/api/run/event', { credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) {
+                        if (r.status === 404) return null; // no event yet
+                        throw new Error('HTTP ' + r.status);
+                    }
+                    return r.json();
+                })
+                .then(function(json) {
+                    var data = json && (json.data || {});
+                    if (data.exists && data.force === true && data.started_at) {
+                        showForceBanner(data.started_at);
+                        stopForceEventPolling();
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Force event check failed:', err);
+                });
+        }
+
+        var FORCE_POLL_ID = null;
+        function startForceEventPolling() {
+            stopForceEventPolling();
+            var deadline = Date.now() + 60000;
+            FORCE_POLL_ID = setInterval(function() {
+                if (Date.now() > deadline) { stopForceEventPolling(); return; }
+                checkForceEvent();
+            }, 2000);
+        }
+        function stopForceEventPolling() {
+            if (FORCE_POLL_ID) { clearInterval(FORCE_POLL_ID); FORCE_POLL_ID = null; }
+        }
+
+        function showForceBanner(startedAt) {
+            if (!FORCE_BANNER) {
+                FORCE_BANNER = document.createElement('div');
+                FORCE_BANNER.style.cssText = 'position:fixed;top:50px;left:0;right:0;background:#fff3cd;color:#856404;padding:12px 2rem;font-size:14px;z-index:1000;border-bottom:1px solid #ffc107;';
+                document.body.insertBefore(FORCE_BANNER, document.body.firstChild);
+            }
+            FORCE_BANNER.textContent = '本轮为强制采集，起始时间 ' + startedAt;
+            FORCE_BANNER.style.display = 'block';
         }
 
         document.getElementById('task-form').addEventListener('submit', function(e) {
             e.preventDefault();
             try {
                 var payload = buildPayload();
+                var submitBtn = document.querySelector('button[type="submit"]');
+                RUN_ID = payload.dataset;
+
+                // 1. 按钮置灰 + spinner
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner"></span> 创建中...';
+                submitBtn.style.opacity = '0.6';
+
+                // 2. Toast 提示（force 时文案为重置状态）
+                if (payload.force) {
+                    showToast('强制采集已启动，正在重置状态...', false, 5000);
+                } else {
+                    showToast('采集任务创建中...', false, 3000);
+                }
+
+                // 3. 发送请求
                 fetch('/api/pipeline/run', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -132,13 +217,61 @@
                 }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
                 .then(function(result) {
                     if (result.ok) {
-                        showStatus('Task created: run_id=' + (result.data.run_id || 'unknown'), false);
+                        var runId = (result.data && result.data.data && result.data.data.run_id) || 'unknown';
+                        RUN_ID = runId;
+                        showStatus('Task created: run_id=' + runId, false);
+
+                        // 4. 立即拉 run_state 确认
+                        setTimeout(function() {
+                            fetch('/api/pipeline/runs/' + runId, { credentials: 'same-origin' })
+                                .then(function(r) {
+                                    if (!r.ok) {
+                                        if (r.status === 404) return null; // run not found yet
+                                        throw new Error('HTTP ' + r.status);
+                                    }
+                                    return r.json();
+                                })
+                                .then(function(data) {
+                                    if (data && (data.data || data).status === 'running') {
+                                        showToast('正在采集中，进度将实时更新', false, 4000);
+                                    }
+                                })
+                                .catch(function(err) {
+                                    console.error('Run state check failed:', err);
+                                });
+                        }, 1000);
+
+                        // 检查 run_event（force 时后端已写入；每 2s 轮询直至 banner 出现）
+                        if (payload.force) {
+                            startForceEventPolling();
+                        } else {
+                            checkForceEvent();
+                        }
+
+                        // 5. 开始轮询 run_state
+                        if (window.startRunStatePolling) window.startRunStatePolling(runId);
                     } else {
                         showStatus('Error: ' + (result.data.error || result.data.message || 'Validation failed'), true);
+                        showToast('任务创建失败: ' + (result.data.error || result.data.message), true, 5000);
                     }
-                }).catch(function(err) { showStatus('Request failed: ' + err.message, true); });
-            } catch(err) { showStatus(err.message, true); }
+                }).catch(function(err) {
+                    showStatus('Request failed: ' + err.message, true);
+                    showToast('请求失败: ' + err.message, true, 5000);
+                }).finally(function() {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Validate & Create';
+                    submitBtn.style.opacity = '1';
+                });
+            } catch(err) {
+                showStatus(err.message, true);
+                showToast(err.message, true, 5000);
+            }
         });
+
+        // CSS spinner
+        var style = document.createElement('style');
+        style.textContent = '.spinner{display:inline-block;width:14px;height:14px;border:2px solid #fff;border-radius:50%;border-top-color:transparent;animation:spin 1s linear infinite;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}';
+        document.head.appendChild(style);
 
         window.validateOnly = function() {
             try {
@@ -152,12 +285,17 @@
                 .then(function(result) {
                     if (result.ok) {
                         showStatus('Validation passed', false);
+                        showToast('验证通过', false, 2000);
                     } else {
                         showStatus('Validation failed: ' + JSON.stringify(result.data.errors || result.data.message), true);
+                        showToast('验证失败', true, 5000);
                     }
                 }).catch(function(err) { showStatus('Request failed: ' + err.message, true); });
             } catch(err) { showStatus(err.message, true); }
         };
+
+        // 初始检查 force event
+        checkForceEvent();
     })();
     </script>
 </body>

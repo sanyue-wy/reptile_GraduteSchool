@@ -5,6 +5,7 @@ beautifulsoup4>=4.12.0
 lxml>=4.9.0
 openpyxl>=3.1.0
 pdfplumber>=0.10.0
+PyYAML>=6.0            # pipeline/engine.py 顶层 import yaml，用于解析 pipeline.yaml / plugins.yaml
 
 # 开发/测试依赖（可选）
 # pytest>=7.0.0

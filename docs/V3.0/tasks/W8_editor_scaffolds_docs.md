@@ -20,7 +20,7 @@ scaffolds/generator.py
 scaffolds/templates/**             # 五类插件骨架 + HTML 模板骨架（注意：与 templates/ 成品模板库是两回事）
 docs/plugin_dev_guide/**           # 十篇指南
 docs/api/**                        # mkdocstrings 源页面
-mkdocs.yml                         # site_dir 指向独立构建目录（如 docs/_site_build），不与现有 docs 混淆
+mkdocs.yml                         # site_dir 指向独立构建目录（⚠️ 2026-10-01 G4 勘误：原文举例 docs/_site_build 从未采用；终值为 site_build/，见 mkdocs.yml:3）
 tests/test_schema_editor.py
 tests/test_scaffolds.py
 ```

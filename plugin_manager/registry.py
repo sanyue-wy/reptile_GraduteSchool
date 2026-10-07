@@ -60,6 +60,10 @@ class PluginEntry:
     reference_count: int = 0
     module: Any = None  # loaded 后才有值
 
+    # 运行时元数据
+    installed_at: str = ""      # ISO 8601，首次加载/批准时间
+    updated_at: str = ""        # ISO 8601，每次加载/上传更新
+
 
 @dataclass
 class RegistrySnapshot:
@@ -94,8 +98,16 @@ class RegistrySnapshot:
                     "name": e.descriptor.name,
                     "version": e.descriptor.version,
                     "plugin_type": e.descriptor.plugin_type,
+                    "author": e.descriptor.author,
+                    "license": e.descriptor.license,
+                    "description_long": e.descriptor.description_long,
+                    "dependencies": e.descriptor.dependencies,
+                    "input_schema": e.descriptor.input_schema,
+                    "output_schema": e.descriptor.output_schema,
                     "state": e.state.value,
                     "content_hash": e.content_hash[:16] if e.content_hash else "",
+                    "installed_at": e.installed_at,
+                    "updated_at": e.updated_at,
                 }
                 for pid, e in self.plugins.items()
             },
@@ -306,6 +318,10 @@ class PluginRegistry:
         entry.approved_by = admin_id
         entry.approved_at = datetime.now(timezone.utc).isoformat()
         entry.reject_reason = ""
+        now_iso = entry.approved_at
+        if not entry.installed_at:
+            entry.installed_at = now_iso
+        entry.updated_at = now_iso
 
         self._audit(
             "approved", plugin_id,
@@ -734,11 +750,68 @@ _PLUGIN_TYPE_TO_DIR = {
 }
 
 
+def snapshot(
+    plugins_root: Path | None = None,
+    output_path: Path | str | None = None,
+) -> dict[str, Any]:
+    """生成 v3.0.0 时点的注册表快照并写入 JSON 文件。
+
+    扫描全部内置插件，自动批准所有 pending_review 的插件，
+    输出 registry_snapshot.json 供版本发布使用。
+
+    Args:
+        plugins_root: 插件根目录，默认为 ./plugins
+        output_path: 输出文件路径，默认为 plugin_manager/registry_snapshot.json
+
+    Returns:
+        快照字典（含 registry_revision, created_at, plugin_count, plugins）
+    """
+    if plugins_root is None:
+        plugins_root = Path("plugins")
+    if output_path is None:
+        output_path = Path(__file__).parent / "registry_snapshot.json"
+    else:
+        output_path = Path(output_path)
+
+    registry = PluginRegistry(core_version="3.0.0")
+    count, messages = registry.scan(plugins_root)
+
+    # 自动批准所有 pending_review 的插件（v3.0.0 内置插件）
+    approved_count = 0
+    for pid, entry in list(registry._entries.items()):
+        if entry.state == PluginState.PENDING_REVIEW:
+            ok, msg = registry.approve(pid, admin_id="v3.0.0-release")
+            if ok:
+                approved_count += 1
+
+    # 发布最终快照
+    snap = registry.snapshot_for_run()
+    snap_dict = snap.to_dict()
+
+    # 补充元信息
+    snap_dict["release_tag"] = "v3.0.0"
+    snap_dict["plugins_root"] = str(plugins_root)
+    snap_dict["scan_messages"] = messages
+
+    # 写入 JSON 文件
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(snap_dict, f, indent=2, ensure_ascii=False)
+
+    logger.info(
+        "快照已生成: %s (%d 插件, %d 已批准, revision=%d)",
+        output_path, count, approved_count, snap_dict["registry_revision"],
+    )
+
+    return snap_dict
+
+
 __all__ = [
     "PluginState",
     "PluginEntry",
     "RegistrySnapshot",
     "PluginRegistry",
+    "snapshot",
     "upload_to_pending",
     "approve_upload",
     "UPLOAD_DIR",

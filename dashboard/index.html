@@ -265,10 +265,24 @@
         renderOverview(data);
         document.getElementById("loading-skeleton").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
+        scheduleOverviewPoll(data);
       } catch (err) {
         showToast(err.message, "error");
       }
     }
+
+    // 自适应轮询：采集中 2s，空闲 15s；后台暂停、回前台立即拉（Console Fix R1.2）
+    let overviewTimer = null;
+    function scheduleOverviewPoll(data) {
+      if (overviewTimer) clearTimeout(overviewTimer);
+      const stats = (data && data.stats) || {};
+      const busy = (stats.running || 0) > 0;
+      const interval = busy ? 2000 : 15000;
+      overviewTimer = setTimeout(() => { if (!document.hidden) refreshOverview(); }, interval);
+    }
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && backendOnline !== false) refreshOverview();
+    });
 
     function renderOverview(data) {
       // 统计卡片
@@ -546,15 +560,38 @@
       }
     }
 
+    // 强制采集 banner（Console Fix R3.4）：轮询 /api/run/event，force=true 时显示
+    let forceBanner = null;
+    async function checkForceEvent() {
+      try {
+        const resp = await fetch(`${API_BASE}/api/run/event`, { signal: AbortSignal.timeout(3000) });
+        if (!resp.ok) return;
+        const json = await resp.json();
+        const evt = json.data || {};
+        if (evt.exists && evt.force === true && evt.started_at) showForceBanner(evt.started_at);
+        else hideForceBanner();
+      } catch { /* 后端不可达时忽略 */ }
+    }
+    function showForceBanner(startedAt) {
+      if (!forceBanner) {
+        forceBanner = document.createElement("div");
+        forceBanner.style.cssText = "position:sticky;top:0;left:0;right:0;background:#fff3cd;color:#856404;padding:10px 2rem;font-size:14px;z-index:10000;border-bottom:1px solid #ffc107;text-align:center;";
+        document.body.insertBefore(forceBanner, document.body.firstChild);
+      }
+      forceBanner.textContent = "本轮为强制采集，起始时间 " + String(startedAt).replace("T", " ");
+      forceBanner.style.display = "block";
+    }
+    function hideForceBanner() {
+      if (forceBanner) forceBanner.style.display = "none";
+    }
+
     // ==================== Init ====================
     let backendOnline = false;
     document.addEventListener("DOMContentLoaded", async () => {
       backendOnline = await checkBackend();
       refreshOverview();
-      // 仅在后端在线时轮询概览数据（每 30s 刷新一次）
-      if (backendOnline) {
-        setInterval(refreshOverview, 30000);
-      }
+      checkForceEvent();
+      setInterval(checkForceEvent, 10000);
     });
   </script>
 </body>

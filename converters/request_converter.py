@@ -133,6 +133,10 @@ def from_legacy_cli(args: Any, school_configs: list[dict[str, Any]],
                         "list_url": url,
                         "selectors": selectors,
                         "max_pages": cat.get("max_pages", 20),
+                        # 采集健壮性参数（与 plugins.yaml static_fetch params 对齐）
+                        "timeout": 30,
+                        "max_retries": 3,
+                        "retry_backoff": 2,
                     },
                 })
     present = (pipeline_cfg or {}).get("present", {}) or {}

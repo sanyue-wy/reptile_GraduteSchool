@@ -554,7 +554,217 @@ print(len(r['errors']))
 
 ---
 
-## 12. 变更记录
+## 12. Domain Knowledge Base 规范
+
+### 12.1 目的
+
+URL 生成逻辑缺少「学校 → 主域名」知识库，导致爬虫插件尝试访问非法域名（如 `nefu.东北林业.edu.cn`），触发 DNS 解析失败。
+
+### 12.2 数据文件
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| file_path | string | `data/domain_kb.json` |
+| schema_version | string | `"1.0"` |
+| mappings | object | 学校名 → 域名映射 |
+
+### 12.3 映射结构
+
+```json
+{
+  "mappings": {
+    "学校中文名": {
+      "main": "primary-domain.edu.cn",
+      "subdomains": {
+        "szdw": ["szdw-domain.edu.cn"],
+        "faculty": ["faculty-domain.edu.cn"]
+      },
+      "verified": {
+        "szdw": ["verified-domain.edu.cn"],
+        "faculty": []
+      }
+    }
+  }
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `main` | 学校主域名（首选） |
+| `subdomains.szdw` | 师资页面子域名候选列表 |
+| `verified.szdw` | 已验证可用的域名（替换 `subdomains`） |
+
+### 12.4 使用约定
+
+1. **加载时校验**：若插件声明 `depends_on: ["domain_kb"]`，加载时校验 `data/domain_kb.json` 存在且 schema 合法
+2. **URL 生成**：优先使用 `verified.szdw`，其次回退至 `main` 或 `subdomains.szdw`
+3. **更新流程**：DNS 验证失败时更新 `verified` 字段；新增学校需经 W4/W5 验证后填入
+4. **格式**：域名仅限 ASCII 字符，禁止包含中文
+
+### 12.5 维护者
+
+- **负责窗口**：W3（知识库规范）
+- **提交窗口**：W4（校园采集） / W5（处理器）负责 DNS 验证与 `verified` 更新
+
+---
+
+## 13. 插件开发者契约 (§14)
+
+### 13.1 五类插件必填字段清单
+
+| 必填字段 | spider | processor | storage | presenter | ui |
+|----------|--------|-----------|---------|-----------|-----|
+| name | ✓ | ✓ | ✓ | ✓ | ✓ |
+| version | ✓ | ✓ | ✓ | ✓ | ✓ |
+| author | ✓ | ✓ | ✓ | ✓ | ✓ |
+| plugin_type | ✓ | ✓ | ✓ | ✓ | ✓ |
+| input_schema | ✓ | ✓ | ✓ | ✓ | ✓ |
+| output_schema | ✓ | ✓ | ✓ | ✓ | ✓ |
+| entry_point | ✓ | ✓ | ✓ | ✓ | ✓ |
+| dependencies | - | - | - | - | - |
+| optional_dependencies | - | - | - | - | - |
+| min_core_version | ✓ | ✓ | ✓ | ✓ | ✓ |
+| config_schema | ✓ | ✓ | ✓ | ✓ | ✓ |
+| license | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+### 13.2 插件生命周期钩子
+
+所有插件继承自 `plugins.base.BasePlugin`，具有以下生命周期方法：
+
+```python
+class BasePlugin(ABC, Generic[InputT, OutputT]):
+    def on_load(self) -> None:
+        """插件加载时调用（可选）。
+        用于初始化常量、加载模型、建立连接。
+        """
+        pass
+
+    def setup(self, context: PluginContext) -> None:
+        """执行前初始化。由框架调用，context 包含 HTTP/cache/storage 等。
+        """
+        pass
+
+    def execute(self, data: InputT, context: PluginContext) -> OutputT:
+        """核心逻辑：必须实现。"""
+        raise NotImplementedError
+
+    def on_error(self, error: Exception, context: PluginContext) -> bool:
+        """错误处理钩子。返回 True 表示已处理，框架不再包装。"""
+        return False
+
+    def on_unload(self) -> None:
+        """插件卸载时调用（可选）。
+        用于释放资源、关闭连接、清理临时文件。
+        """
+        pass
+
+    def close(self) -> None:
+        """执行后清理。由框架调用，确保资源释放。
+        """
+        pass
+```
+
+**PresenterPlugin 特殊实现**（§3.6）：
+- `execute()` 为具体方法（非抽象），内部调用 `render()` 钩子并包装结果
+- 子类只需实现 `render()` 即可；如需完全自定义，可同时覆盖 `execute()`
+
+### 13.3 插件调用约定
+
+#### 3.3.1 插件与主干（允许调用 / 禁止调用）
+
+| 允许调用 | 说明 |
+|----------|------|
+| `context.http` (PoliteSession) | 受管 HTTP 会话，统一限速/重试/熔断 |
+| `context.cache` (CrawlCache) | 任务级缓存，避免重复请求 |
+| `context.storage` (ManagedStorage) | 原子写入、媒体引用 |
+| `context.allowed_paths` | 插件读写的白名单目录 |
+| `context.config_snapshot` | 只读配置快照 |
+| contracts/ 目录下的 DTO 和 Schema | 契约定义的类型 |
+
+| 禁止调用 | 说明 |
+|----------|------|
+| 直接创建 `requests.Session` 或 `httpx.AsyncClient` | 绕过 PoliteSession 熔断/限速 |
+| `context.storage` 之外的文件写入 | 破坏隔离性 |
+| `plugins/` 之外的共享状态 | 跨插件数据竞争 |
+| 变更 `context` 对象 | SDK 禁止修改传入 context |
+| 未声明依赖的第三方库 | 安装许可证不明
+
+#### 3.3.2 插件与插件（允许调用 / 禁止调用）
+
+| 允许调用 | 说明 |
+|----------|------|
+| 通过 `context` 的共享服务 (cache, storage) | 通过 SDK 接口通信 |
+| 调用相邻阶段的标准输入输出 | 例如 spider → parser，processor → storage |
+
+| 禁止调用 | 说明 |
+|----------|------|
+| 跨窗口代码 (W2→W4→W6 等) | 通过 DTO Schema 传递数据 |
+| 硬编码 URL、域名、配置 | 破坏可配置性 |
+| 直接导入其他插件的 execute 方法 | 破坏模块边界 |
+| 共享内存或进程间通信 | 必须使用 context 注入的受管接口 |
+
+### 13.4 命名规范
+
+| 位置 | 规范 | 示例 |
+|------|------|------|
+| 目录名 | `{plugin_type}s/{name}/` | `plugins/spiders/static_html/` |
+| name 字段 | lowercase_with_underscores | `static_html`, `faculty_parser` |
+| entry_point | `plugins.{type}s.{name}.plugin:{Name}Plugin` | `plugins.spiders.static_html.plugin:StaticHtmlSpiderPlugin` |
+| 类名 | `{Name}{Type}Plugin` | `StaticHtmlSpiderPlugin`, `FacultyParserProcessorPlugin` |
+| 配置文件 | `{type}/{name}/metadata.json` | `spiders/static_html/metadata.json` |
+
+**约束**：目录名、name 字段、entry_point 的 module 部分 MUST 一致。
+
+### 13.5 版本规范
+
+| 项目 | 规范 | 说明 |
+|------|------|------|
+| version | semver (MAJOR.MINOR.PATCH) | 语义化版本 |
+| min_core_version | 3.0.0+ | 最低支持的 reptile 核心版本 |
+| 兼容矩阵 | 主版本号匹配 | v3.x 插件不兼容 v2.x 核心 |
+
+**版本升级规则**：
+- MAJOR: 破坏现有契约或行为
+- MINOR: 新增向后兼容功能
+- PATCH: 仅修复 bug，不改变行为
+
+### 13.6 依赖规范
+
+#### 13.6.1 依赖声明
+
+在 metadata.json 中声明：
+
+```json
+{
+  "dependencies": ["requests", "beautifulsoup4"],
+  "optional_dependencies": ["playwright", "pdfplumber"]
+}
+```
+
+#### 13.6.2 依赖隔离
+
+- **requirements.txt**：每个插件目录下可声明插件级 requirements.txt
+- **可选依赖**：插件在 precheck() 时检查可用性，不可用时报 "dependency missing" 而非崩溃
+- **GPL 类许可证**：若声明 AGPL/GPL/LGPL，加载器在安装时发出告警
+
+#### 13.6.3 依赖检查钩子
+
+```python
+class SpiderPlugin(BasePlugin):
+    def precheck(self) -> tuple[bool, Optional[str]]:
+        """检查依赖是否可用。返回 (ok, error_message)。
+        如果返回 (False, "...")，execute 前抛 PluginDependencyMissing 错误。
+        """
+        try:
+            import playwright.sync_api
+            return True, None
+        except ImportError:
+            return False, "Playwright not installed"
+```
+
+---
+
+## 14. 变更记录
 
 | 版本 | 日期 | 变更 | 操作人 |
 |------|------|------|--------|
@@ -562,6 +772,8 @@ print(len(r['errors']))
 | 3.0.1 | 2026-09-20 | 契约验收复核：迁移器映射表对齐示例 YAML 实例名（纯脚本，不改契约）；裁决仲裁提案 #1–#4 | W1 |
 | 3.0.2 | 2026-09-21 | B2 PresenterPlugin 契约对齐：execute() 为具体方法（调用 render() 钩子），更新 §3.6 描述与代码一致；B3 RawDataDTO assets 加入 v1_schema() required 列表（§2.4） | W1 |
 | 3.0.3 | 2026-09-21 | B3 RawDataDTO assets 运行时校验：`__post_init__` 在 assets 为空且无 raw_ref 时抛 ValueError；更新 §2.4 说明 | W1 |
+| 3.0.4 | 2026-09-19 | Domain Knowledge Base 规范：新增 data/domain_kb.json（101 所学校映射），plugin_manager/validator.py 增加 validate_domain_kb()，config/plugins.py 增加 load_domain_kb/reload_domain_kb/get_school_domain 热加载接口 | W3 |
+| 3.0.5 | 2026-09-20 | 新增 §14 Plugin Developer Contract：插件必填字段清单、生命周期钩子、调用约定、命名规范、版本规范、依赖规范；新增 plugins/plugin_manifest.py | W1 |
 
 ---
 

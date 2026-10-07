@@ -201,10 +201,23 @@
         };
         const data = await api.schools(params);
         renderTable(data);
+        scheduleAutoRefresh(data);
       } catch (err) {
         showToast(err.message, "error");
       }
     }
+
+    // 自适应轮询：有学校采集中 3s，否则 20s（Console Fix R1.2）
+    let autoTimer = null;
+    function scheduleAutoRefresh(data) {
+      if (autoTimer) clearTimeout(autoTimer);
+      const summary = data.summary || {};
+      const busy = (summary.running || 0) > 0;
+      autoTimer = setTimeout(() => { if (!document.hidden) loadData(); }, busy ? 3000 : 20000);
+    }
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadData();
+    });
 
     // ==================== 渲染 ====================
     function renderTable(data) {

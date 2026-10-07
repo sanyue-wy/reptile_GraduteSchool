@@ -35,6 +35,7 @@ OPTIONAL_METADATA_FIELDS = (
     "min_core_version",
     "config_schema",
     "description",
+    "description_long",
 )
 
 VALID_ENTRY_POINT_RE = re.compile(
@@ -75,6 +76,7 @@ class PluginDescriptor:
         "config_schema",
         "license",
         "description",
+        "description_long",
         "metadata_path",
         "package_dir",
     )
@@ -93,6 +95,7 @@ class PluginDescriptor:
         config_schema: dict[str, Any] | None = None,
         license: str = "",
         description: str = "",
+        description_long: str = "",
         metadata_path: Path | None = None,
         package_dir: Path | None = None,
     ):
@@ -108,6 +111,7 @@ class PluginDescriptor:
         self.config_schema = config_schema or {}
         self.license = license
         self.description = description
+        self.description_long = description_long
         self.metadata_path = metadata_path
         self.package_dir = package_dir
 
@@ -135,6 +139,7 @@ class PluginDescriptor:
             "config_schema": self.config_schema,
             "license": self.license,
             "description": self.description,
+            "description_long": self.description_long,
         }
 
 
@@ -296,3 +301,39 @@ def scan_plugin_dirs(
                 all_errors.append(f"[待审] {exc}")
 
     return descriptors, all_warnings, all_errors
+
+
+def check_plugin_errors(plugin_name: str, hours: int = 24) -> bool:
+    """检查指定插件最近 N 小时内是否有错误。
+
+    Args:
+        plugin_name: 插件名称
+        hours: 时间范围（小时）
+
+    Returns:
+        True 如果最近有错误
+    """
+    from plugin_manager.error_reporter import has_recent_error
+    return has_recent_error(plugin_name, hours=hours)
+
+
+def scan_with_error_markers(plugins_root: Path | None = None) -> tuple[list[PluginDescriptor], list[str], list[str]]:
+    """扫描插件，自动检查历史错误并标记。
+
+    返回的描述符列表中，若插件最近报错，descriptor 上会有
+    has_recent_error 属性（默认 False）。
+    """
+    descriptors, warnings, errors = scan_plugin_dirs(plugins_root)
+
+    # 检查每个插件的历史错误
+    for desc in descriptors:
+        # 延迟导入避免循环依赖
+        try:
+            has_error = check_plugin_errors(desc.name)
+            desc._has_recent_error = has_error  # type: ignore[attr-defined]
+            if has_error:
+                warnings.append(f"该插件最近报过错: {desc.name}")
+        except Exception:
+            pass  # 错误检查失败不影响扫描
+
+    return descriptors, warnings, errors
