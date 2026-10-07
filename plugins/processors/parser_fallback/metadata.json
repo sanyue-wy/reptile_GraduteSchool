@@ -1,0 +1,23 @@
+{
+  "name": "parser_fallback",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RawDataBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.parser_fallback.plugin:ParserFallbackPlugin",
+  "dependencies": ["beautifulsoup4"],
+  "min_core_version": "1.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "profile": {
+        "type": "string",
+        "enum": ["education.tutor.v1", "education.major.v1"],
+        "default": "education.tutor.v1"
+      }
+    },
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "error_analyzer",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "license": "MIT",
+  "plugin_type": "processor",
+  "input_schema": "RecordBatch.v1",
+  "output_schema": "RecordBatch.v1",
+  "entry_point": "plugins.processors.error_analyzer.plugin:ErrorAnalyzerPlugin",
+  "dependencies": [],
+  "min_core_version": "1.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

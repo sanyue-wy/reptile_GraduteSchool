@@ -5,6 +5,11 @@
 把各层异常统一映射为 contracts.result.ErrorDTO。
 错误码表与 INTERFACES.md §2.14 标准错误码表一致；未知异常按阶段给出
 默认可重试标记，并保留脱敏后的诊断信息（不写凭据/完整请求体）。
+
+插件专属错误码（§14 on_error 策略支持）：
+- CONTRACT_VIOLATION：违反契约（输入/输出 schema 不匹配）
+- MISSING_DEPENDENCY：依赖项缺失或不可用
+- CONFIG_INVALID：配置项无效
 """
 
 import re
@@ -68,6 +73,28 @@ def classify_http_error(error: Exception) -> str:
             exc.__cause__, exc.__context__, getattr(exc, "reason", None), *exc.args
         ) if isinstance(item, BaseException))
     return "HTTP_CONNECTION_ERROR"
+
+
+def classify_plugin_error(error: Exception, stage: str) -> str:
+    """插件专属错误分类。
+
+    返回插件错误码，用于 on_error 策略决策。
+    """
+    error_msg = str(error).lower()
+    
+    # 契约违反：schema 不匹配、返回类型错误、必填字段缺失
+    if any(kw in error_msg for kw in ("schema", "contract", "expected", "required", "validation")):
+        return "CONTRACT_VIOLATION"
+    
+    # 丢失依赖：模块未找到、导入错误、缺失配置
+    if any(kw in error_msg for kw in ("no module named", "import", "missing", "dependency", "not found")):
+        return "MISSING_DEPENDENCY"
+    
+    # 配置无效：配置项错误、非法值
+    if any(kw in error_msg for kw in ("config", "invalid", "illegal", "param", "setting")):
+        return "CONFIG_INVALID"
+    
+    return "PLUGIN_EXECUTE_FAILED"
 
 
 def error_from_exception(

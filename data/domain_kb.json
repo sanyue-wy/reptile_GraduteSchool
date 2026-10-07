@@ -1,0 +1,1931 @@
+{
+  "_schema_version": "1.0",
+  "_author": "W3",
+  "_last_updated": "2026-09-19",
+  "description": "Domain knowledge base mapping Chinese university names to their official English domain names for URL generation in spider plugins.",
+  "mappings": {
+    "东北林业大学": {
+      "main": "neau.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "neau.edu.cn",
+          "nefu.edu.cn",
+          "www.nefu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "nefu.edu.cn",
+          "www.nefu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "东华大学": {
+      "main": "dhu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "dhu.edu.cn",
+          "dhu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "dhu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "东南大学": {
+      "main": "seu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "seu.edu.cn",
+          "au.seu.edu.cn",
+          "seu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "au.seu.edu.cn",
+          "seu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中南大学": {
+      "main": "csu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "csu.edu.cn",
+          "me.csu.edu.cn",
+          "csu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "me.csu.edu.cn",
+          "csu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华中科技大学": {
+      "main": "hust.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hust.edu.cn",
+          "me.hust.edu.cn",
+          "hust.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "me.hust.edu.cn",
+          "hust.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京大学": {
+      "main": "pku.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "pku.edu.cn",
+          "www.eecs.pku.edu.cn",
+          "www.eng.pku.edu.cn",
+          "pku.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.eecs.pku.edu.cn",
+          "www.eng.pku.edu.cn",
+          "pku.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "复旦大学": {
+      "main": "fudan.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "fudan.edu.cn",
+          "www.fudan.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.fudan.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "上海交通大学": {
+      "main": "sjtu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "sjtu.edu.cn",
+          "www.sjtu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.sjtu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "浙江大学": {
+      "main": "zju.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "zju.edu.cn",
+          "www.zju.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.zju.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "清华大学": {
+      "main": "tsinghua.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "tsinghua.edu.cn",
+          "www.tsinghua.edu.cn",
+          "www.au.tsinghua.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.tsinghua.edu.cn",
+          "www.au.tsinghua.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京师范大学": {
+      "main": "bnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bnu.edu.cn",
+          "www.bnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国人民大学": {
+      "main": "ruc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ruc.edu.cn",
+          "www.ruc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ruc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南京大学": {
+      "main": "nju.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nju.edu.cn",
+          "www.nju.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nju.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "武汉大学": {
+      "main": "whu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "whu.edu.cn",
+          "www.whu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.whu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西安交通大学": {
+      "main": "xjtu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "xjtu.edu.cn",
+          "www.xjtu.edu.cn",
+          "xjtu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.xjtu.edu.cn",
+          "xjtu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华东师范大学": {
+      "main": "ecnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ecnu.edu.cn",
+          "www.ecnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ecnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "武汉理工大学": {
+      "main": "whut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "whut.edu.cn",
+          "www.whut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.whut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "浙江工业大学": {
+      "main": "zjut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "zjut.edu.cn",
+          "www.zjut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.zjut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "同济大学": {
+      "main": "tongji.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "tongji.edu.cn",
+          "www.tongji.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.tongji.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "上海大学": {
+      "main": "shu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "shu.edu.cn",
+          "www.shu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.shu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南京航空航天大学": {
+      "main": "nuaa.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nuaa.edu.cn",
+          "www.nuaa.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nuaa.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南京理工大学": {
+      "main": "njust.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "njust.edu.cn",
+          "www.njust.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.njust.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "哈尔滨工程大学": {
+      "main": "hrbeu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hrbeu.edu.cn",
+          "www.hrbeu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hrbeu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "哈尔滨工业大学": {
+      "main": "hit.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hit.edu.cn",
+          "www.hit.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hit.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国科学技术大学": {
+      "main": "ustc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ustc.edu.cn",
+          "www.ustc.edu.cn",
+          "ee.ustc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ustc.edu.cn",
+          "ee.ustc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京航空航天大学": {
+      "main": "buaa.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "buaa.edu.cn",
+          "www.buaa.edu.cn",
+          "www.sse.buaa.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.buaa.edu.cn",
+          "www.sse.buaa.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国医科大学": {
+      "main": "cmu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cmu.edu.cn",
+          "www.cmu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cmu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国药科大学": {
+      "main": "cpu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cpu.edu.cn",
+          "www.cpu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cpu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国矿业大学": {
+      "main": "cumt.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cumt.edu.cn",
+          "www.cumt.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cumt.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国地质大学（北京）": {
+      "main": "cugb.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cugb.edu.cn",
+          "www.cugb.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cugb.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国地质大学（武汉）": {
+      "main": "cug.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cug.edu.cn",
+          "www.cug.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cug.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国民族大学": {
+      "main": "unmp.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "unmp.edu.cn",
+          "www.unmp.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.unmp.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国传媒大学": {
+      "main": "cuc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cuc.edu.cn",
+          "www.cuc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cuc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国科学院大学": {
+      "main": "ucas.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ucas.edu.cn",
+          "www.ucas.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ucas.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京工业大学": {
+      "main": "bjut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bjut.edu.cn",
+          "www.bjut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bjut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京理工大学": {
+      "main": "bit.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bit.edu.cn",
+          "www.bit.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bit.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京交通大学": {
+      "main": "bjtu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bjtu.edu.cn",
+          "www.bjtu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bjtu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京邮电大学": {
+      "main": "bupt.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bupt.edu.cn",
+          "www.bupt.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bupt.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京化工大学": {
+      "main": "buct.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "buct.edu.cn",
+          "www.buct.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.buct.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京外国语大学": {
+      "main": "bfsu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bfsu.edu.cn",
+          "www.bfsu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bfsu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "河北工业大学": {
+      "main": "hebut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hebut.edu.cn",
+          "www.hebut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hebut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "河海大学": {
+      "main": "hhu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hhu.edu.cn",
+          "www.hhu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hhu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华中农业大学": {
+      "main": "hzau.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hzau.edu.cn",
+          "www.hzau.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hzau.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华中师范大学": {
+      "main": "ccnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ccnu.edu.cn",
+          "www.ccnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ccnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华南理工大学": {
+      "main": "scut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "scut.edu.cn",
+          "www.scut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.scut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华南师范大学": {
+      "main": "scnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "scnu.edu.cn",
+          "www.scnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.scnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "云南大学": {
+      "main": "ynu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ynu.edu.cn",
+          "www.ynu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ynu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "内蒙古大学": {
+      "main": "imu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "imu.edu.cn",
+          "www.imu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.imu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "内蒙古师范大学": {
+      "main": "hneu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hneu.edu.cn",
+          "www.hneu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hneu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "内蒙古工业大学": {
+      "main": "impu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "impu.edu.cn",
+          "www.impu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.impu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "宁夏大学": {
+      "main": "nxu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nxu.edu.cn",
+          "www.nxu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nxu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "安徽大学": {
+      "main": "ahu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ahu.edu.cn",
+          "www.ahu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ahu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "安徽师范大学": {
+      "main": "ahnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ahnu.edu.cn",
+          "www.ahnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ahnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "安徽医科大学": {
+      "main": "ahmu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ahmu.edu.cn",
+          "www.ahmu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ahmu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "天津大学": {
+      "main": "me.tju.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "me.tju.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "me.tju.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "上海外国语大学": {
+      "main": "shisu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "shisu.edu.cn",
+          "www.shisu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.shisu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "上海财经大学": {
+      "main": "shufe.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "shufe.edu.cn",
+          "www.shufe.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.shufe.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "东北农业大学": {
+      "main": "neau.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "neau.edu.cn",
+          "www.neau.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.neau.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "东北大学": {
+      "main": "neu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "neu.edu.cn",
+          "www.neu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.neu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "东北师范大学": {
+      "main": "nenu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nenu.edu.cn",
+          "www.nenu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nenu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中南财经政法大学": {
+      "main": "zuel.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "zuel.edu.cn",
+          "www.zuel.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.zuel.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国中医科学院": {
+      "main": "cam.ac.cn",
+      "subdomains": {
+        "szdw": [
+          "cam.ac.cn",
+          "www.cam.ac.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cam.ac.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国农业大学": {
+      "main": "cau.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cau.edu.cn",
+          "www.cau.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cau.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国政法大学": {
+      "main": "cupl.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cupl.edu.cn",
+          "www.cupl.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cupl.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国海洋大学": {
+      "main": "ouc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ouc.edu.cn",
+          "www.ouc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ouc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国石油大学（北京）": {
+      "main": "cup.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cup.edu.cn",
+          "www.cup.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cup.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国石油大学（华东）": {
+      "main": "upc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "upc.edu.cn",
+          "www.upc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.upc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中国矿业大学（北京）": {
+      "main": "cumtb.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cumtb.edu.cn",
+          "www.cumtb.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cumtb.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中央民族大学": {
+      "main": "muc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "muc.edu.cn",
+          "www.muc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.muc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中央财经大学": {
+      "main": "cufe.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cufe.edu.cn",
+          "www.cufe.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cufe.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中央音乐学院": {
+      "main": "comc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "comc.edu.cn",
+          "www.comc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.comc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "中山大学": {
+      "main": "sysu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "sysu.edu.cn",
+          "www.sysu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.sysu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "兰州大学": {
+      "main": "lzu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "lzu.edu.cn",
+          "www.lzu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.lzu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京体育大学": {
+      "main": "bsu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bsu.edu.cn",
+          "www.bsu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bsu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京林业大学": {
+      "main": "bjfu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "bjfu.edu.cn",
+          "www.bjfu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.bjfu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "北京科技大学": {
+      "main": "ustb.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ustb.edu.cn",
+          "www.ustb.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ustb.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华东理工大学": {
+      "main": "ecust.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ecust.edu.cn",
+          "www.ecust.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ecust.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "华北电力大学": {
+      "main": "ncepu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ncepu.edu.cn",
+          "www.ncepu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ncepu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南京农业大学": {
+      "main": "njau.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "njau.edu.cn",
+          "www.njau.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.njau.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南京师范大学": {
+      "main": "njnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "njnu.edu.cn",
+          "www.njnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.njnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南开大学": {
+      "main": "nankai.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nankai.edu.cn",
+          "www.nankai.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nankai.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "南昌大学": {
+      "main": "ncu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ncu.edu.cn",
+          "www.ncu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ncu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "厦门大学": {
+      "main": "xmu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "xmu.edu.cn",
+          "www.xmu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.xmu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "合肥工业大学": {
+      "main": "hfut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hfut.edu.cn",
+          "www.hfut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hfut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "吉林大学": {
+      "main": "jlu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "jlu.edu.cn",
+          "www.jlu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.jlu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "四川大学": {
+      "main": "scu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "scu.edu.cn",
+          "www.scu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.scu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "国防科技大学": {
+      "main": "nudt.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nudt.edu.cn",
+          "www.nudt.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nudt.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "大连海事大学": {
+      "main": "dlmu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "dlmu.edu.cn",
+          "www.dlmu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.dlmu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "大连理工大学": {
+      "main": "dlut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "dlut.edu.cn",
+          "www.dlut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.dlut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "天津医科大学": {
+      "main": "tmu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "tmu.edu.cn",
+          "www.tmu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.tmu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "太原理工大学": {
+      "main": "tyut.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "tyut.edu.cn",
+          "www.tyut.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.tyut.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "对外经济贸易大学": {
+      "main": "uibe.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "uibe.edu.cn",
+          "www.uibe.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.uibe.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "山东大学": {
+      "main": "sdu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "sdu.edu.cn",
+          "www.sdu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.sdu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "广西大学": {
+      "main": "gxu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "gxu.edu.cn",
+          "www.gxu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.gxu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "延边大学": {
+      "main": "ybu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "ybu.edu.cn",
+          "www.ybu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.ybu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "新疆大学": {
+      "main": "xju.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "xju.edu.cn",
+          "www.xju.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.xju.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "暨南大学": {
+      "main": "jnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "jnu.edu.cn",
+          "www.jnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.jnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "江南大学": {
+      "main": "jiangnan.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "jiangnan.edu.cn",
+          "www.jiangnan.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.jiangnan.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "海南大学": {
+      "main": "hainanu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hainanu.edu.cn",
+          "www.hainanu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hainanu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "湖南大学": {
+      "main": "hnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hnu.edu.cn",
+          "www.hnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "湖南师范大学": {
+      "main": "hunnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "hunnu.edu.cn",
+          "www.hunnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.hunnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "电子科技大学": {
+      "main": "uestc.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "uestc.edu.cn",
+          "www.uestc.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.uestc.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "石河子大学": {
+      "main": "shzu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "shzu.edu.cn",
+          "www.shzu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.shzu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "福州大学": {
+      "main": "fzu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "fzu.edu.cn",
+          "www.fzu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.fzu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "苏州大学": {
+      "main": "suda.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "suda.edu.cn",
+          "www.suda.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.suda.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西北农林科技大学": {
+      "main": "nwafu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nwafu.edu.cn",
+          "www.nwafu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nwafu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西北大学": {
+      "main": "nwu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nwu.edu.cn",
+          "www.nwu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nwu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西北工业大学": {
+      "main": "nwpu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "nwpu.edu.cn",
+          "www.nwpu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.nwpu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西南交通大学": {
+      "main": "swjtu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "swjtu.edu.cn",
+          "www.swjtu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.swjtu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西南大学": {
+      "main": "swu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "swu.edu.cn",
+          "www.swu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.swu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西南财经大学": {
+      "main": "swufe.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "swufe.edu.cn",
+          "www.swufe.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.swufe.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西安电子科技大学": {
+      "main": "xidian.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "xidian.edu.cn",
+          "www.xidian.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.xidian.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "西藏大学": {
+      "main": "xtu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "xtu.edu.cn",
+          "www.xtu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.xtu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "贵州大学": {
+      "main": "gzu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "gzu.edu.cn",
+          "www.gzu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.gzu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "辽宁大学": {
+      "main": "lnu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "lnu.edu.cn",
+          "www.lnu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.lnu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "郑州大学": {
+      "main": "zzu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "zzu.edu.cn",
+          "www.zzu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.zzu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "重庆大学": {
+      "main": "cqu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "cqu.edu.cn",
+          "www.cqu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.cqu.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "长安大学": {
+      "main": "chd.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "chd.edu.cn",
+          "www.chd.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.chd.edu.cn"
+        ],
+        "faculty": []
+      }
+    },
+    "青海大学": {
+      "main": "qhu.edu.cn",
+      "subdomains": {
+        "szdw": [
+          "qhu.edu.cn",
+          "www.qhu.edu.cn"
+        ],
+        "faculty": []
+      },
+      "verified": {
+        "szdw": [
+          "www.qhu.edu.cn"
+        ],
+        "faculty": []
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "domain_rewriter",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "processor",
+  "input_schema": "TaskConfigDTO.v1",
+  "output_schema": "TaskConfigDTO.v1",
+  "entry_point": "plugins.processors.domain_rewriter.plugin:DomainRewriterProcessor",
+  "dependencies": ["domain_kb"],
+  "min_core_version": "1.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

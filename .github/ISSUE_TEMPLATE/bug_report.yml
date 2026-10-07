@@ -1,0 +1,79 @@
+name: Bug 报告
+description: 报告一个可复现的缺陷
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填写完整，这能显著缩短定位时间。
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / commit
+      description: 触发问题的 commit（`git rev-parse --short HEAD`）或 CHANGELOG 中的版本号
+      placeholder: "7880629"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 出问题的模块
+      options:
+        - Spider 插件
+        - Processor 插件
+        - Storage 插件
+        - Presenter / UI 插件
+        - 采集引擎 pipeline
+        - 插件管理 plugin_manager
+        - HTTP / 重试 / 错误上报 infra
+        - 主面板 dashboard
+        - 管理台 dashboard/console
+        - 文档
+        - 其他 / 不确定
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: 复现命令
+      description: 触发问题的完整命令，含全部参数
+      render: shell
+      placeholder: "python main.py --school 清华 --category mechanical --engine v3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+      description: 你认为应该发生什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 实际发生了什么；如有报错请粘贴完整 traceback
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 可选。粘贴报错前后的日志，或指出日志文件路径
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 复现确认
+      options:
+        - label: 我在最新 main 上重新复现过此问题
+          required: true
+        - label: 我搜索过现有 issue，确认没有重复

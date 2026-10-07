@@ -1,0 +1,29 @@
+{
+  "name": "url_prober",
+  "version": "1.0.0",
+  "author": "maintainers",
+  "plugin_type": "spider",
+  "input_schema": "TaskConfigDTO.v1",
+  "output_schema": "RawDataBatch.v1",
+  "entry_point": "plugins.spiders.url_prober.plugin:UrlProberSpiderPlugin",
+  "dependencies": [],
+  "min_core_version": "1.0.0",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "candidate_paths": {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": ["/szdw/list.htm", "/szdw/zzjs.htm", "/dept/list.htm", "/faculty/", "/teachers/", "/", "/index.htm"]
+      },
+      "timeout": {
+        "type": "integer",
+        "minimum": 5,
+        "maximum": 60000,
+        "default": 10000
+      }
+    },
+    "additionalProperties": false
+  },
+  "license": "MIT"
+}

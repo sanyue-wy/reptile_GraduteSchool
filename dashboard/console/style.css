@@ -1,0 +1,64 @@
+/* Console Stylesheet */
+/* Console 样式表 */
+
+/* 卡片网格布局 */
+.plugin-grid { padding: 1rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.plugin-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.plugin-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.plugin-card-title { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin: 0; }
+
+/* 开关按钮（干净版） */
+.plugin-card-switch { position: relative; width: 40px; height: 20px; }
+.plugin-card-switch input { opacity: 0; width: 0; height: 0; }
+.plugin-card-switch label { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
+.plugin-card-switch label:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
+.plugin-card-switch input:checked + label { background: #27ae60; }
+.plugin-card-switch input:checked + label:before { transform: translateX(20px); }
+
+/* 徽章 */
+.plugin-badge { display: inline-flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; font-weight: 500; }
+.badge-type { font-size: 0.7rem; padding: 2px 8px; border-radius: 3px; }
+
+/* 类型标签颜色 */
+.badge.type-spider { background: #fff3cd; color: #856404; }
+.badge.type-processor { background: #d1ecf1; color: #0c5460; }
+.badge.type-storage { background: #e2e3e5; color: #383d41; }
+.badge.type-presenter { background: #f8d7da; color: #721c24; }
+.badge.type-ui { background: #d4edda; color: #155724; }
+
+/* 状态徽章 */
+.badge-approved { background: #d4edda; color: #155724; }
+.badge-pending { background: #fff3cd; color: #856404; }
+.badge-disabled { background: #f8d7da; color: #721c24; }
+
+/* 元数据 */
+.plugin-meta { font-size: 0.8rem; color: #666; margin-bottom: 0.5rem; }
+.plugin-meta span { margin-right: 1rem; }
+
+/* 配置区域 */
+.plugin-config { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f0f0f0; }
+.config-warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 0.75rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #856404; }
+.config-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.config-form input[type="text"], .config-form textarea, .config-form select { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
+.config-form textarea { min-height: 80px; resize: vertical; }
+.config-form button { padding: 0.5rem 1rem; background: #2c3e50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; align-self: flex-start; }
+.config-form button:hover { background: #34495e; }
+
+/* 操作按钮 */
+.plugin-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+.plugin-actions button { padding: 0.3rem 0.75rem; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+.plugin-actions button:hover { background: #f5f5f5; }
+
+/* 详情折叠 */
+.detail-content { font-size: 0.9rem; color: #555; line-height: 1.5; margin-bottom: 0.75rem; }
+.detail-content pre { background: #f8f9fa; padding: 0.75rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+.collapse-toggle { color: #666; font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
+.collapse-toggle:hover { color: #2c3e50; }
+
+/* 引导提示 */
+.guidance { padding: 1rem 2rem; background: #e3f2fd; border-bottom: 1px solid #bbdefb; font-size: 0.95rem; color: #1976d2; }
+
+/* 空状态与错误 */
+.empty-state { text-align: center; padding: 3rem; color: #999; }
+.error-msg { padding: 1rem 2rem; background: #f8d7da; color: #721c24; display: none; }

@@ -365,9 +365,14 @@ class SchoolConfigItem(TypedDict):
     verified: bool
 
 
-class ConfigResponseData(TypedDict):
-    global: GlobalConfig
-    schools: List[SchoolConfigItem]
+# /api/config 实际返回的 JSON 键字面量就是 "global"（见 api/server.py 的
+# jsonify({"data": {"global": global_config, ...}})）。而 global 是 Python 关键字，
+# 类语法无法把它写成合法字段名，因此这里用 TypedDict 的函数式写法表达同一个形状。
+# 改名为 global_config 会让注解与真实响应结构不符——那才是真的错。
+ConfigResponseData = TypedDict("ConfigResponseData", {
+    "global": GlobalConfig,
+    "schools": List[SchoolConfigItem],
+})
 
 
 # =====================================================================

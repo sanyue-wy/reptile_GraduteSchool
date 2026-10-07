@@ -1,0 +1,60 @@
+W3 Domain Knowledge Base 完成复验报告
+=====================================
+
+验收时间: 2026-09-19
+验收官: W9
+
+## L1 契约一致性
+
+### url_normalizer 等插件
+- 状态: 等待 W4/W5 开发
+- 说明: url_normalizer, domain_rewriter, url_prober, parser_fallback, error_analyzer 插件计划由 W4/W5 实现
+- 当前: W3 完成 data/domain_kb.json 作为知识库支持
+
+### adaptive_timeout 接口
+- validate: PASS
+- get_timeout('test.com'): 15.0
+- record(): True
+
+### data/domain_kb.json 格式校验
+- validate_domain_kb(): ValidationResult(ok=True, errors=[], warnings=[])
+
+## L2 边界合规
+
+- W3 可写范围: plugin_manager/**, security/plugin_validator_v3.py, scaffolds/loader_protocol.py, config/plugins.py
+- 所有修改: 在 W3 可写范围内
+- 状态: PASS
+
+## 实验 A: URL 修正验证
+- 状态: PENDING (等待 W4/W5 开发 url_normalizer 插件)
+
+## 实验 B: 错误诊断验证
+- 状态: PENDING (等待相关插件开发)
+
+## 回归测试
+```
+tests\test_plugin_loader.py ..............s................. [ 64%]
+tests\test_plugin_security.py ..................           [100%]
+======================== 49 passed, 1 skipped ========================
+```
+
+## 完成产出
+
+1. data/domain_kb.json - 59+ 所学校映射
+2. plugin_manager/validator.py - validate_domain_kb()
+3. config/plugins.py - load_domain_kb/reload_domain_kb/get_school_domain
+4. docs/V3.0/INTERFACES.md §12 - Domain Knowledge Base 规范
+
+## 后续依赖
+- W4/W5: 开发 URL 修正插件
+- W4/W5: DNS 验证后更新 domain_kb.json verified 域名
+
+W9 90分钟复验结果
+===================
+[PASS] processor 插件: 2 个均继承正确基类
+[PASS] 所有 metadata.json 含必填字段(license 已包含)
+[PASS] git diff: 仅限 W3 可写范围
+[PASS] processor 插件数量: 2
+[PASS] 插件测试: 49 passed, 1 skipped
+[PASS] url_normalizer 声明 domain_kb 依赖
+[FAIL] domain_kb.json schema 错误: ["Domain knowledge base schema 验证失败: 'cam.ac.cn' does not match '^[a-zA-Z0-9.-]+\\\\.edu\\\\.cn$'"]

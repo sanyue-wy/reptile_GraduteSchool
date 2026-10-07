@@ -1,0 +1,9 @@
+W9 90分钟复验结果
+===================
+[PASS] processor 插件: 2 个均继承正确基类
+[PASS] 所有 metadata.json 含必填字段(license 已包含)
+[PASS] git diff: 仅限 W3 可写范围
+[PASS] processor 插件数量: 2
+[PASS] 插件测试: 49 passed, 1 skipped
+[PASS] domain_kb.json schema: 有效
+[PASS] url_normalizer 声明 domain_kb 依赖

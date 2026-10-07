@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <title>Failures - Console</title>
+    <script src="api.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
+        .header { background: #2c3e50; color: #fff; padding: 0.75rem 2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .header h1 { font-size: 1.1rem; }
+        .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
+        .header a:hover { color: #fff; }
+        .toolbar { padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #dee2e6; display: flex; gap: 0.75rem; align-items: center; }
+        .toolbar button { padding: 0.4rem 1rem; border: 1px solid #2c3e50; background: #fff; color: #2c3e50; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        .toolbar button:hover { background: #f5f5f5; }
+        .toolbar .view-toggle { display: flex; gap: 0.5rem; }
+        .toolbar .view-toggle button { border-radius: 20px; }
+        .toolbar .view-toggle button.active { background: #2c3e50; color: #fff; }
+        .summary-bar { display: flex; gap: 2rem; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; color: #666; }
+        .summary-item { text-align: center; }
+        .summary-item .value { font-size: 1.5rem; font-weight: 600; color: #2c3e50; }
+        .summary-item .label { font-size: 0.75rem; color: #888; }
+        .failures-grid { padding: 1rem 2rem; display: grid; gap: 1rem; }
+        .failure-group { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; cursor: pointer; }
+        .group-title { font-weight: 600; color: #2c3e50; }
+        .group-count { background: #e3f2fd; color: #1976d2; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; }
+        .group-details { font-size: 0.85rem; color: #555; }
+        .group-schools { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #f0f0f0; }
+        .school-item { font-size: 0.8rem; color: #666; }
+        .expand-icon { font-size: 0.9rem; cursor: pointer; color: #666; }
+        .expand-icon:hover { color: #2c3e50; }
+        .detail-row { display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.8rem; color: #888; }
+        .detail-item { white-space: nowrap; }
+        .error-item { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; }
+        .error-title { font-weight: 500; color: #2c3e50; margin-bottom: 0.25rem; }
+        .error-meta { display: flex; gap: 1.5rem; font-size: 0.75rem; color: #888; margin-bottom: 0.25rem; }
+        .error-message { font-size: 0.8rem; color: #555; line-height: 1.4; }
+        .empty-state { text-align: center; padding: 3rem; color: #999; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html">&larr; Console</a>
+        <h1>Failures</h1>
+    </header>
+
+    <div class="summary-bar">
+        <div class="summary-item">
+            <div class="value" id="total-errors">0</div>
+            <div class="label">总错误数</div>
+        </div>
+        <div class="summary-item">
+            <div class="value" id="error-types">0</div>
+            <div class="label">错误类型</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="view-toggle">
+            <button id="grouped-view" class="active">分组视图</button>
+            <button id="list-view">列表视图</button>
+        </div>
+        <span id="last-update">最后更新：--</span>
+    </div>
+
+    <main id="failures-list" class="failures-grid">
+        <div class="loading">Loading failures...</div>
+    </main>
+
+    <script>
+    (function() {
+        'use strict';
+        var API = '/api';
+        var container = document.getElementById('failures-list');
+        var currentView = 'grouped';
+        var allFailures = [];
+        var groupedFailures = [];
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function loadFailures() {
+            container.innerHTML = '<div class="loading">Loading failures...</div>';
+            fetch(API + '/failures', { credentials: 'same-origin' })
+                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function(data) {
+                    allFailures = data.data.items || [];
+                    updateSummary(data.data);
+                    loadGroupedFailures();
+                })
+                .catch(function(err) {
+                    container.innerHTML = '<div class="empty-state">Failed to load failures: ' + escapeHtml(err.message) + '</div>';
+                });
+        }
+
+        // 加载分组数据（需要 aggregate API）
+        function loadGroupedFailures() {
+            fetch(API + '/failures/grouped', { credentials: 'same-origin' })
+                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function(data) {
+                    groupedFailures = data.data.grouped || [];
+                    renderFailures();
+                })
+                .catch(function(err) {
+                    // 若无分组 API，回退到列表分组
+                    groupedFailures = groupFailuresManually(allFailures);
+                    renderFailures();
+                });
+        }
+
+        // 手动分组（备用方案）
+        function groupFailuresManually(failures) {
+            var groups = {};
+            failures.forEach(function(f) {
+                var type = f.error_type || 'Unknown';
+                if (!groups[type]) groups[type] = [];
+                groups[type].push(f);
+            });
+            return Object.keys(groups).map(function(type) {
+                var items = groups[type];
+                var schools = [...new Set(items.map(function(i) { return i.school || i.source_id || 'Unknown'; }))].slice(0, 5);
+                return {
+                    key: type,
+                    count: items.length,
+                    error_type: type,
+                    sample_schools: schools
+                };
+            }).sort(function(a, b) { return b.count - a.count; });
+        }
+
+        function updateSummary(data) {
+            document.getElementById('total-errors').textContent = data.total || 0;
+            document.getElementById('error-types').textContent = Object.keys(data.summary || {}).length;
+            document.getElementById('last-update').textContent = '最后更新：' + new Date().toLocaleTimeString();
+        }
+
+        function renderFailures() {
+            if (currentView === 'grouped') {
+                renderGroupedView();
+            } else {
+                renderListView();
+            }
+        }
+
+        function renderGroupedView() {
+            if (!groupedFailures.length) {
+                container.innerHTML = '<div class="empty-state">暂无错误</div>';
+                return;
+            }
+            container.innerHTML = groupedFailures.map(function(group, index) {
+                var expanded = index === 0;  // 默认展开第一个
+                return '<div class="failure-group" id="group-' + index + '">' +
+                    '<div class="group-header" onclick="toggleGroup(' + index + ')">' +
+                    '<span class="group-title">' + escapeHtml(group.error_type) + '</span>' +
+                    '<span class="group-count">' + group.count + ' 次</span>' +
+                    '<span class="expand-icon" id="icon-' + index + '">' + (expanded ? '▲' : '▼') + '</span>' +
+                    '</div>' +
+                    '<div id="details-' + index + '" style="display:' + (expanded ? 'block' : 'none') + ';">' +
+                    '<div class="group-details">' +
+                    '<span>首次出现：' + escapeHtml(group.first_seen || '--') + '</span>' +
+                    '<span>最近出现：' + escapeHtml(group.last_seen || '--') + '</span>' +
+                    '</div>' +
+                    '<div class="group-schools">' +
+                    '<strong>涉及高校：</strong>' +
+                    group.sample_schools.map(function(s) { return '<span class="school-item">' + escapeHtml(s) + '</span>'; }).join('') +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+            // 默认展开第一个
+            if (groupedFailures.length > 0) toggleGroup(0, true);
+        }
+
+        function renderListView() {
+            if (!allFailures.length) {
+                container.innerHTML = '<div class="empty-state">暂无错误</div>';
+                return;
+            }
+            var errorItems = allFailures.slice(0, 100).map(function(f) {
+                return '<div class="error-item">' +
+                    '<div class="error-title">' + escapeHtml(f.error_type || 'Unknown') + '</div>' +
+                    '<div class="error-meta">' +
+                    '<span>' + escapeHtml(f.occurred_at || f.timestamp || '') + '</span>' +
+                    '<span>' + escapeHtml(f.source || 'Unknown source') + '</span>' +
+                    '<span>' + escapeHtml(f.plugin_name || f.plugin || 'Unknown plugin') + '</span>' +
+                    '</div>' +
+                    '<div class="error-message">' + escapeHtml(f.error_message || f.message || f.error || 'Unknown error') + '</div>' +
+                    '</div>';
+            }).join('');
+            container.innerHTML = errorItems;
+        }
+
+        window.toggleGroup = function(index, skipAnimation) {
+            var details = document.getElementById('details-' + index);
+            var icon = document.getElementById('icon-' + index);
+            if (!details || !icon) return;
+            var isExpanded = details.style.display !== 'none';
+            details.style.display = isExpanded ? 'none' : 'block';
+            icon.textContent = isExpanded ? '▼' : '▲';
+        };
+
+        // 视图切换
+        document.getElementById('grouped-view').addEventListener('click', function() {
+            currentView = 'grouped';
+            this.className = 'active';
+            document.getElementById('list-view').className = '';
+            renderFailures();
+        });
+
+        document.getElementById('list-view').addEventListener('click', function() {
+            currentView = 'list';
+            this.className = 'active';
+            document.getElementById('grouped-view').className = '';
+            renderFailures();
+        });
+
+        loadFailures();
+    })();
+    </script>
+</body>
+</html>

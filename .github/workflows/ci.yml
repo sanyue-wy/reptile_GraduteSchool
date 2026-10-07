@@ -1,0 +1,107 @@
+name: CI
+
+# 触发：所有分支的 push 与 PR。
+# 本仓库当前开发主线是 Refactoring_code，main 为发布分支，两者都需要门禁。
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+# 同一 ref 的新 run 自动取消旧的，避免连续推送时排队。
+# cancel-in-progress 只对非 main 生效，保证 main 的门禁结果不被中途取消。
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 测试（pytest）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # tests/browser/ 需要 Playwright 的浏览器二进制（约 150MB），CI 不安装。
+      # 该套件在缺浏览器时会整体 skip 而不是失败——所以这里不装 playwright，
+      # 避免出现「装上了包但没浏览器、结果全部静默跳过」的假绿。
+      # 浏览器验收请在本地跑：pytest tests/browser/ -q
+
+      - name: 跑测试
+        run: python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/browser
+
+  syntax:
+    name: 语法门禁（compileall）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 只扫真正的源码包，不扫 scripts/：该目录是一次性修补脚本与运维脚本的混合
+      # （migrate_config.py / acceptance.py / _diagnose_*.py 等），其中若干只对特定
+      # 版本的 dashboard 生效，不保证长期可编译。业务源码包全部纳入门禁。
+      # 注：api/models.py 原先因 `global: GlobalConfig`（global 是 Python 关键字）
+      # 无法编译，已改用 TypedDict 函数式写法修复，现已纳入本门禁。
+      - name: 编译检查
+        run: >
+          python -m compileall -q
+          api infra pipeline plugin_manager plugins contracts converters
+          scaffolds tests tools main.py
+
+  docs:
+    name: 文档构建（mkdocs --strict）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      # mkdocs 相关依赖不在 requirements*.txt 里（它们是文档工具链，不进运行时依赖）。
+      # 版本与本机一致：mkdocs 1.6.1 / mkdocs-material 9.7.7 / mkdocstrings 1.0.6 /
+      # mkdocstrings-python 2.0.8 / pymdown-extensions 11.0.2
+      - name: 安装文档依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "mkdocs==1.6.1" "mkdocs-material==9.7.7" \
+                      "mkdocstrings[python]==1.0.6" "pymdown-extensions==11.0.2"
+
+      # site_dir 在 mkdocs.yml:3 指向 site_build/，构建产物只落在工作区内，
+      # 本 workflow 全程没有任何 git add / commit / push 步骤，不会把产物带回仓库。
+      # .gitignore 第 20 行已忽略 site_build/。
+      - name: 构建文档
+        run: python -m mkdocs build --strict
+
+      - name: 确认构建产物未被 git 追踪
+        run: |
+          if [ -n "$(git status --porcelain -- site_build)" ]; then
+            echo "::error::site_build/ 产物出现在 git status 中，需检查 .gitignore"
+            git status --porcelain -- site_build
+            exit 1
+          fi
+          echo "site_build/ 未出现在 git status（符合预期）"
