@@ -8,6 +8,9 @@ htmlcov/
 .claude/
 data/cache/
 data/output/
+# 爬虫运行时落盘目录：原件快照与运行产物均不入库（程序启动时自动重建）
+data/raw/
+data/runs/
 *.bak
 *.log
 screenshots/
@@ -25,9 +28,12 @@ site_build/
 /*.png
 
 # playwright 网络转储（console-network.json / tasks-modal-network.json 等）。
-# 只匹配 *-network.json，根目录已有 test_encoding.json、verified_urls.json
-# 两个正式数据文件入库，不能用宽泛的 /*.json 规则。
 /*-network.json
+
+# 根目录一次性检查/调试残留（学校名列表、JS 片段等）
+/test_schools.txt
+/temp_check.txt
+/_check.txt
 
 # 一次性浏览器审计脚本（.audit_*.py，硬编码 5101/5102 临时端口；
 # 功能已被 tests/browser/ 的响应式与 pageerror 用例覆盖）
