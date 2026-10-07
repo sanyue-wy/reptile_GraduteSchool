@@ -1,50 +1,482 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
-    <title>Console - GraduteSchool V3.0</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    <title>总览 · 控制台 — GraduteSchool</title>
+    <link rel="stylesheet" href="design-tokens.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
-        .console-header { background: #2c3e50; color: #fff; padding: 1.5rem 2rem; }
-        .console-header h1 { font-size: 1.5rem; font-weight: 600; }
-        .console-header .subtitle { font-size: 0.85rem; color: #adb5bd; margin-top: 0.25rem; }
-        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem; max-width: 960px; margin: 0 auto; }
-        .nav-card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; text-decoration: none; color: inherit; transition: box-shadow 0.2s, transform 0.15s; }
-        .nav-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
-        .nav-card h2 { font-size: 1.2rem; color: #2c3e50; margin-bottom: 0.5rem; }
-        .nav-card p { font-size: 0.9rem; color: #666; line-height: 1.5; }
-        .nav-card .icon { font-size: 2rem; margin-bottom: 1rem; display: block; }
+        /* ============================================================
+           index.html 页面级样式（shadcn 中性极简 + Linear 暗色）
+           颜色/字体/间距全部走 design-tokens.css 的 token 变量，
+           本页只定义布局与组件形态。旧 class 名保留以兼容 JS 渲染。
+           ============================================================ */
+
+        /* 统计卡行 */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--space-3);
+            margin-bottom: var(--space-5);
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+        .stat-value {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-weight-semibold);
+            line-height: var(--leading-tight);
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-label {
+            margin-top: var(--space-1);
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+        }
+
+        /* 区块标题 */
+        .section-title {
+            font-size: var(--text-xl);
+            font-weight: var(--font-weight-semibold);
+            margin: 0 0 var(--space-4);
+        }
+
+        /* 工程卡片 */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--space-4);
+        }
+        .project-card {
+            display: flex; flex-direction: column;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-5);
+            box-shadow: var(--shadow-sm);
+            text-decoration: none; color: inherit;
+            transition: box-shadow var(--duration-base) var(--ease-out),
+                        border-color var(--duration-base) var(--ease-out),
+                        transform var(--duration-fast) var(--ease-out);
+        }
+        .project-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+        }
+        .project-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .project-name {
+            font-size: var(--text-lg);
+            font-weight: var(--font-weight-semibold);
+            margin: 0 0 var(--space-1);
+        }
+        .project-desc {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            line-height: var(--leading-normal);
+            margin-bottom: var(--space-4);
+        }
+        .project-tags {
+            display: flex; flex-wrap: wrap; gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+        .project-footer {
+            margin-top: auto;
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--divider);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+        }
+        .project-enter {
+            font-size: var(--text-sm);
+            font-weight: var(--font-weight-medium);
+            color: var(--text-primary);
+        }
+        .project-enter::after { content: " →"; }
+
+        /* 最近运行 / 日志列表 */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-4);
+        }
+        .log-list { list-style: none; margin: 0; padding: 0; }
+        .log-item {
+            display: flex; align-items: baseline; gap: var(--space-2);
+            padding: var(--space-2) 0;
+            border-bottom: 1px solid var(--divider);
+            font-size: var(--text-sm);
+        }
+        .log-item:last-child { border-bottom: none; }
+        .log-time {
+            flex-shrink: 0;
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+        }
+        .log-level { flex-shrink: 0; }
+        .log-msg {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: var(--text-secondary);
+        }
+        .run-status {
+            display: flex; align-items: center; gap: var(--space-2);
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--divider);
+            font-size: var(--text-sm);
+        }
+        .run-status:last-child { border-bottom: none; }
+        .run-id {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+        .empty-hint {
+            padding: var(--space-5);
+            text-align: center;
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+        }
+        #overview-error {
+            display: none;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-4);
+        }
+
+        /* 卡片头部（复用 design-tokens.css 的 .card-header 模式） */
+        .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--divider);
+        }
+        .card-title {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .card-header .btn-ghost {
+            font-size: var(--text-xs);
+            padding: var(--space-1) var(--space-3);
+        }
+
+        /* 响应式：1280px 以下侧栏折叠为顶栏 */
+        @media (max-width: 1280px) {
+            .console-layout { grid-template-columns: 1fr; }
+            .console-main-col { grid-template-columns: 1fr; }
+            .sidebar {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                flex-direction: row;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: var(--space-1);
+            }
+            .sidebar-brand {
+                height: auto;
+                border-bottom: none;
+                padding: var(--space-2) var(--space-4);
+            }
+            .sidebar-section-label { display: none; }
+            .nav-item { margin: 0 var(--space-1); }
+            .sidebar-project { border-right: none; }
+            .console-main { padding: var(--space-4); }
+            .two-col { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <header class="console-header">
-        <h1>GraduteSchool Console</h1>
-        <p class="subtitle">V3.0 Plugin Management &amp; Configuration</p>
-    </header>
-    <main class="nav-grid">
-        <a href="plugins.html" class="nav-card">
-            <span class="icon">&#9881;</span>
-            <h2>Plugin Management</h2>
-            <p>View approved plugins, check versions, enable/disable instances, and manage plugin lifecycle.</p>
-        </a>
-        <a href="task-config.html" class="nav-card">
-            <span class="icon">&#9881;</span>
-            <h2>Task Definition</h2>
-            <p>Define crawl tasks with source configuration, processing pipeline, and scheduling options.</p>
-        </a>
-        <a href="output-config.html" class="nav-card">
-            <span class="icon">&#9881;</span>
-            <h2>Output Definition</h2>
-            <p>Configure output formats, select templates, choose fields, and re-render from existing records.</p>
-        </a>
-        <a href="failures.html" class="nav-card">
-            <span class="icon">&#9881;</span>
-            <h2>Failures</h2>
-            <p>View categorized crawl errors by type, source, and plugin. Retry or ignore individual failures.</p>
-        </a>
-    </main>
+<div class="console-layout">
+    <!-- 上段：全局导航 -->
+    <aside class="sidebar sidebar-global">
+        <div class="sidebar-brand">
+            <span class="brand-mark">G</span>
+            <span>GraduteSchool 控制台</span>
+        </div>
+        <div class="sidebar-section-label">总览</div>
+        <a class="nav-item active" href="index.html"><span class="nav-icon">◈</span>概览</a>
+        <a class="nav-item" href="plugins.html"><span class="nav-icon">▤</span>插件管理<span class="nav-count badge badge-info" id="plugin-count"></span></a>
+        <div class="sidebar-section-label">采集呈现</div>
+        <a class="nav-item" href="../schools.html"><span class="nav-icon">⌗</span>学校</a>
+        <a class="nav-item" href="../tasks.html"><span class="nav-icon">☰</span>任务</a>
+        <a class="nav-item" href="../tutors.html"><span class="nav-icon">✦</span>导师库</a>
+        <a class="nav-item" href="../failures.html"><span class="nav-icon">⚠</span>失败记录</a>
+        <div class="sidebar-section-label">系统</div>
+        <button class="nav-item theme-toggle" id="theme-toggle" type="button"><span class="nav-icon">◐</span><span id="theme-toggle-label">暗色模式</span></button>
+    </aside>
+
+    <div class="console-main-col">
+        <!-- 下段：当前工程子菜单 -->
+        <aside class="sidebar sidebar-project">
+            <div class="sidebar-brand">双一流高校教师库</div>
+            <div class="sidebar-section-label">工程配置</div>
+            <a class="nav-item" href="task-config.html"><span class="nav-icon">⚙</span>任务定义</a>
+            <a class="nav-item" href="output-config.html"><span class="nav-icon">⇩</span>输出定义</a>
+            <a class="nav-item" href="plugins.html"><span class="nav-icon">▤</span>工程插件</a>
+            <a class="nav-item" href="failures.html"><span class="nav-icon">⚠</span>工程失败</a>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="console-main">
+            <header class="page-header">
+                <h1 class="page-title">总览</h1>
+                <p class="page-subtitle">数据采集平台门户 · 选择工程进入管理</p>
+            </header>
+
+            <div id="overview-error"></div>
+
+            <!-- 统计卡 -->
+            <section class="stat-row" aria-label="总体统计">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">—</div>
+                    <div class="stat-label">学校总数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-done">—</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-running">—</div>
+                    <div class="stat-label">采集中</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-failed">—</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-pending">—</div>
+                    <div class="stat-label">待处理</div>
+                </div>
+            </section>
+
+            <!-- 工程列表 -->
+            <section aria-label="工程列表">
+                <h2 class="section-title">我的工程</h2>
+                <div class="project-grid">
+                    <a class="project-card" href="task-config.html">
+                        <h3 class="project-name">双一流高校教师库</h3>
+                        <p class="project-desc">采集 147 所双一流高校机械/自动化学院教师信息，双源交叉匹配后入库呈现。</p>
+                        <div class="project-tags">
+                            <span class="badge badge-info">默认工程</span>
+                            <span class="badge badge-neutral" id="project-plugin-badge">插件 —</span>
+                        </div>
+                        <div class="project-footer">
+                            <span id="project-updated">数据更新于 —</span>
+                            <span class="project-enter">进入工程</span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- 最近运行 + 最近日志 -->
+            <section class="two-col" style="margin-top: var(--space-6);" aria-label="最近活动">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">最近运行</h2>
+                        <a class="btn btn-ghost" href="../tasks.html">全部任务</a>
+                    </div>
+                    <div id="recent-runs">
+                        <div class="empty-hint">暂无运行记录</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">最近日志</h2>
+                        <a class="btn btn-ghost" href="failures.html">失败中心</a>
+                    </div>
+                    <ul class="log-list" id="recent-logs">
+                        <li class="empty-hint">暂无日志</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var API = '/api';
+
+    // mock 回退数据（后端不可用时保证页面可用）
+    var MOCK_OVERVIEW = {
+        stats: { total_schools: 147, done: 0, running: 0, failed: 0, partial: 0, pending: 147 },
+        progress: {},
+        source_breakdown: {},
+        recent_tutors: [],
+        recent_failures: [],
+        logs: []
+    };
+
+    var isMock = false;
+
+    function $(id) { return document.getElementById(id); }
+
+    // ---------- 主题切换（localStorage 持久化，跨页生效） ----------
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        var label = $('theme-toggle-label');
+        if (label) label.textContent = theme === 'dark' ? '亮色模式' : '暗色模式';
+        try { localStorage.setItem('console-theme', theme); } catch (e) {}
+    }
+    (function initTheme() {
+        var saved = null;
+        try { saved = localStorage.getItem('console-theme'); } catch (e) {}
+        applyTheme(saved === 'dark' ? 'dark' : 'light');
+    })();
+    $('theme-toggle').addEventListener('click', function () {
+        var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(cur);
+    });
+
+    // ---------- 渲染 ----------
+    function renderStats(stats) {
+        if (!stats) return;
+        $('stat-total').textContent = stats.total_schools != null ? stats.total_schools : '—';
+        $('stat-done').textContent = stats.done != null ? stats.done : '—';
+        $('stat-running').textContent = stats.running != null ? stats.running : '—';
+        $('stat-failed').textContent = stats.failed != null ? stats.failed : '—';
+        $('stat-pending').textContent = (stats.pending || 0) + (stats.partial || 0);
+    }
+
+    function levelBadgeClass(level) {
+        if (level === 'ERROR') return 'badge-danger';
+        if (level === 'WARNING') return 'badge-warning';
+        if (level === 'INFO') return 'badge-success';
+        return '';
+    }
+
+    function renderLogs(logs) {
+        var el = $('recent-logs');
+        if (!logs || !logs.length) {
+            el.innerHTML = '<li class="empty-hint">暂无日志' + (isMock ? '（mock 数据）' : '') + '</li>';
+            return;
+        }
+        el.innerHTML = logs.slice(-8).reverse().map(function (log) {
+            var time = (log.time || '').replace(/^\d{4}-/, '');
+            return '<li class="log-item">' +
+                '<span class="log-time">' + escapeHtml(time) + '</span>' +
+                '<span class="log-level badge ' + levelBadgeClass(log.level) + '">' + escapeHtml(log.level || 'LOG') + '</span>' +
+                '<span class="log-msg">' + escapeHtml(log.msg || '') + '</span>' +
+                '</li>';
+        }).join('');
+    }
+
+    function renderRecentRuns(data) {
+        var el = $('recent-runs');
+        var items = [];
+
+        // 从三条管道进度提取运行状态
+        var pipelines = data.progress || {};
+        Object.keys(pipelines).forEach(function (key) {
+            var p = pipelines[key];
+            if (!p) return;
+            items.push({ status: p.status || 'pending', detail: p.label || key, id: '' });
+        });
+
+        // 最近失败也视为一次"异常运行"
+        (data.recent_failures || []).slice(0, 3).forEach(function (f) {
+            items.push({
+                status: 'failed',
+                detail: f.message || f.error || '未知错误',
+                id: f.source || f.school || ''
+            });
+        });
+
+        if (!items.length) {
+            el.innerHTML = '<div class="empty-hint">暂无运行记录</div>';
+            return;
+        }
+
+        var statusMap = {
+            done: ['badge-success', '已完成'],
+            running: ['badge-info', '运行中'],
+            failed: ['badge-danger', '失败'],
+            partial: ['badge-warning', '部分完成'],
+            pending: ['badge-neutral', '待处理']
+        };
+
+        el.innerHTML = items.slice(0, 5).map(function (item) {
+            var s = statusMap[item.status] || statusMap.pending;
+            return '<div class="run-status">' +
+                '<span class="badge ' + s[0] + ' badge-dot">' + s[1] + '</span>' +
+                '<span>' + escapeHtml(item.detail) + '</span>' +
+                (item.id ? '<span class="run-id">' + escapeHtml(item.id) + '</span>' : '') +
+                '</div>';
+        }).join('');
+    }
+
+    function renderPluginCount(count) {
+        var badge = $('plugin-count');
+        var projectBadge = $('project-plugin-badge');
+        if (count == null) return;
+        if (badge) badge.textContent = count;
+        if (projectBadge) projectBadge.textContent = '插件 ' + count;
+    }
+
+    function showError(msg) {
+        var el = $('overview-error');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ---------- 数据加载（fetch + mock 回退） ----------
+    function loadOverview() {
+        fetch(API + '/overview', { credentials: 'same-origin' })
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (json) {
+                var data = json && json.data ? json.data : json;
+                if (!data || typeof data !== 'object') throw new Error('empty response');
+                isMock = false;
+                renderStats(data.stats);
+                renderLogs(data.logs);
+                renderRecentRuns(data);
+            })
+            .catch(function () {
+                isMock = true;
+                renderStats(MOCK_OVERVIEW.stats);
+                renderLogs(MOCK_OVERVIEW.logs);
+                renderRecentRuns(MOCK_OVERVIEW);
+                showError('无法连接后端，已显示演示数据。请确认 Flask 服务已启动（python -m api.server）。');
+            });
+    }
+
+    function loadPluginCount() {
+        fetch(API + '/plugins', { credentials: 'same-origin' })
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (json) {
+                var list = Array.isArray(json) ? json : (json.plugins || json.items || json.data || []);
+                renderPluginCount(list.length);
+            })
+            .catch(function () { /* 静默：非关键数据 */ });
+    }
+
+    loadOverview();
+    loadPluginCount();
+})();
+</script>
 </body>
 </html>

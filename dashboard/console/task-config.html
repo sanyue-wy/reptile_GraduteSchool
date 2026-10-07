@@ -3,34 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
     <title>Task Definition - Console</title>
+    <link rel="stylesheet" href="design-tokens.css">
+    <script>
+    (function() {
+        var t = null;
+        try { t = localStorage.getItem('console-theme'); } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+    })();
+    </script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
-        .header { background: #2c3e50; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
-        .header h1 { font-size: 1.3rem; }
-        .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
-        .header a:hover { color: #fff; }
-        .form-container { max-width: 720px; margin: 2rem auto; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; }
-        .form-container h2 { font-size: 1.2rem; color: #2c3e50; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1.25rem; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
-        .form-group .hint { font-size: 0.75rem; color: #999; margin-bottom: 0.3rem; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;
+        /* ============================================================
+           task-config.html 页面级样式（shadcn 中性极简 + Linear 暗色）
+           颜色/字体/间距全部走 design-tokens.css 的 token 变量，
+           本页只定义布局与组件形态。旧 class 名保留以兼容 JS 渲染。
+           ============================================================ */
+
+        /* ---- 顶栏 ---- */
+        .header {
+            position: sticky; top: 0; z-index: 50;
+            height: var(--header-height, 52px);
+            display: flex; align-items: center; gap: var(--space-3);
+            padding: 0 var(--space-6);
+            background: var(--surface);
+            border-bottom: 1px solid var(--divider, var(--border));
         }
+        .header h1 {
+            font-size: var(--text-lg);
+            font-weight: var(--font-weight-semibold, 600);
+            color: var(--text-primary);
+        }
+        .header a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: var(--text-sm); transition: color var(--transition-fast);
+        }
+        .header a:hover { color: var(--text-primary); }
+
+        /* ---- 表单容器 ---- */
+        .form-container {
+            max-width: 720px;
+            margin: var(--space-6) auto;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-6);
+            box-shadow: var(--shadow-sm);
+        }
+        .form-container h2 {
+            font-size: var(--text-xl);
+            font-weight: var(--font-weight-semibold, 600);
+            color: var(--text-primary);
+            margin-bottom: var(--space-5);
+        }
+
+        /* ---- 表单字段 ---- */
+        .form-group { margin-bottom: var(--space-4); }
+        .form-group label {
+            display: block; font-size: var(--text-sm); font-weight: 600;
+            color: var(--text-secondary); margin-bottom: var(--space-1);
+        }
+        .form-group .hint {
+            font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-1);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-size: var(--text-sm); font-family: inherit; color: var(--text-primary);
+            background: var(--bg-elevated); transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
         .form-group textarea { min-height: 100px; resize: vertical; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
-        .actions button { padding: 0.6rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
-        .btn-primary { background: #2c3e50; color: #fff; }
-        .btn-primary:hover { background: #34495e; }
-        .btn-secondary { background: #fff; color: #2c3e50; border: 1px solid #2c3e50; }
-        .status { margin-top: 1rem; padding: 0.75rem; border-radius: 4px; display: none; font-size: 0.85rem; }
-        .status.success { display: block; background: #d4edda; color: #155724; }
-        .status.error { display: block; background: #f8d7da; color: #721c24; }
-        .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:#fff;animation:spin 1s linear infinite;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+
+        /* ---- 按钮区 ---- */
+        .actions { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
+        .actions button {
+            padding: var(--space-2) var(--space-5); border: none; border-radius: var(--radius-sm);
+            cursor: pointer; font-size: var(--text-sm); font-family: inherit; font-weight: 500;
+            transition: background var(--transition-fast), border-color var(--transition-fast);
+        }
+        .btn-primary { background: var(--accent); color: var(--text-inverse); }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary {
+            background: transparent; color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: var(--surface-hover); border-color: var(--border-strong); }
+
+        /* ---- 状态提示 ---- */
+        .status {
+            margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-sm);
+            display: none; font-size: var(--text-sm);
+        }
+        .status.success { display: block; background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+        .status.error { display: block; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+        /* ---- 加载 spinner ---- */
+        .spinner {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+            border-top-color: #fff; animation: spin 1s linear infinite; margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>

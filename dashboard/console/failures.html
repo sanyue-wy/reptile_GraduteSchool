@@ -3,50 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';">
-    <title>Failures - Console</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    <title>失败记录 - Console</title>
     <script src="api.js"></script>
+    <link rel="stylesheet" href="design-tokens.css">
+    <script>
+    (function() {
+        var t = null;
+        try { t = localStorage.getItem('console-theme'); } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+    })();
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; color: #333; background: #f5f7fa; }
-        .header { background: #2c3e50; color: #fff; padding: 0.75rem 2rem; display: flex; align-items: center; gap: 0.5rem; }
-        .header h1 { font-size: 1.1rem; }
-        .header a { color: #adb5bd; text-decoration: none; font-size: 0.85rem; }
-        .header a:hover { color: #fff; }
-        .toolbar { padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #dee2e6; display: flex; gap: 0.75rem; align-items: center; }
-        .toolbar button { padding: 0.4rem 1rem; border: 1px solid #2c3e50; background: #fff; color: #2c3e50; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
-        .toolbar button:hover { background: #f5f5f5; }
-        .toolbar .view-toggle { display: flex; gap: 0.5rem; }
-        .toolbar .view-toggle button { border-radius: 20px; }
-        .toolbar .view-toggle button.active { background: #2c3e50; color: #fff; }
-        .summary-bar { display: flex; gap: 2rem; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; color: #666; }
-        .summary-item { text-align: center; }
-        .summary-item .value { font-size: 1.5rem; font-weight: 600; color: #2c3e50; }
-        .summary-item .label { font-size: 0.75rem; color: #888; }
-        .failures-grid { padding: 1rem 2rem; display: grid; gap: 1rem; }
-        .failure-group { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; cursor: pointer; }
-        .group-title { font-weight: 600; color: #2c3e50; }
-        .group-count { background: #e3f2fd; color: #1976d2; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; }
-        .group-details { font-size: 0.85rem; color: #555; }
-        .group-schools { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #f0f0f0; }
-        .school-item { font-size: 0.8rem; color: #666; }
-        .expand-icon { font-size: 0.9rem; cursor: pointer; color: #666; }
-        .expand-icon:hover { color: #2c3e50; }
-        .detail-row { display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.8rem; color: #888; }
-        .detail-item { white-space: nowrap; }
-        .error-item { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; }
-        .error-title { font-weight: 500; color: #2c3e50; margin-bottom: 0.25rem; }
-        .error-meta { display: flex; gap: 1.5rem; font-size: 0.75rem; color: #888; margin-bottom: 0.25rem; }
-        .error-message { font-size: 0.8rem; color: #555; line-height: 1.4; }
-        .empty-state { text-align: center; padding: 3rem; color: #999; }
-        .loading { text-align: center; padding: 2rem; color: #666; }
+
+        /* ---------- 页面骨架：顶栏 + 三栏（分组树 / 列表 / 详情） ---------- */
+        .page-shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+
+        .topbar {
+            height: var(--header-height);
+            flex-shrink: 0;
+            display: flex; align-items: center; gap: var(--space-4);
+            padding: 0 var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--divider);
+            position: sticky; top: 0; z-index: 10;
+        }
+        .topbar .crumb-link {
+            font-size: var(--text-sm); color: var(--text-muted);
+            text-decoration: none; white-space: nowrap;
+        }
+        .topbar .crumb-link:hover { color: var(--text-primary); }
+        .topbar h1 { font-size: var(--text-lg); font-weight: var(--font-weight-semibold); }
+        .topbar .last-update {
+            margin-left: auto;
+            font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap;
+        }
+        .theme-toggle {
+            width: 34px; height: 34px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            background: transparent; color: var(--text-secondary); cursor: pointer;
+            font-size: var(--text-base); margin-left: var(--space-2);
+            transition: background-color var(--duration-fast) var(--ease-out),
+                        color var(--duration-fast) var(--ease-out);
+        }
+        .theme-toggle:hover { background: var(--surface-hover); color: var(--text-primary); }
+
+        /* 汇总条 */
+        .summary-bar {
+            flex-shrink: 0;
+            display: flex; align-items: center; gap: var(--space-6);
+            padding: var(--space-3) var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--divider);
+        }
+        .summary-item .value {
+            font-size: var(--text-xl); font-weight: var(--font-weight-semibold);
+            color: var(--text-primary); line-height: var(--leading-tight);
+        }
+        .summary-item .label {
+            font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px;
+        }
+        .summary-spacer { flex: 1; }
+
+        /* 视图切换（shadcn segmented control） */
+        .view-toggle {
+            display: inline-flex; align-items: center;
+            background: var(--surface-muted);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 2px;
+            gap: 2px;
+        }
+        .view-toggle button {
+            appearance: none; border: none; background: transparent; cursor: pointer;
+            font-family: inherit; font-size: var(--text-xs); font-weight: var(--font-weight-medium);
+            color: var(--text-secondary);
+            padding: 5px var(--space-3);
+            border-radius: calc(var(--radius-md) - 2px);
+            transition: background-color var(--duration-fast) var(--ease-out),
+                        color var(--duration-fast) var(--ease-out);
+        }
+        .view-toggle button:hover { color: var(--text-primary); }
+        .view-toggle button.active {
+            background: var(--surface);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ---------- 三栏收件箱布局 ---------- */
+        #failures-list.three-col {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 300px minmax(0, 1fr) minmax(0, 1.2fr);
+            overflow: hidden;
+            background: var(--bg);
+        }
+        #failures-list.three-col > section { min-width: 0; min-height: 0; }
+
+        .col-groups {
+            border-right: 1px solid var(--divider);
+            background: var(--surface);
+            overflow-y: auto;
+            padding: var(--space-2);
+        }
+        .col-list {
+            border-right: 1px solid var(--divider);
+            background: var(--surface);
+            overflow-y: auto;
+        }
+        .col-detail {
+            background: var(--bg);
+            overflow-y: auto;
+            padding: var(--space-5);
+        }
+
+        .col-label {
+            font-size: var(--text-xs); font-weight: var(--font-weight-medium);
+            color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            padding: var(--space-2) var(--space-2) var(--space-2);
+        }
+
+        /* 左栏：分组树项，状态色条在左缘 */
+        .group-node {
+            position: relative;
+            display: block; width: 100%;
+            appearance: none; border: none; background: transparent; cursor: pointer;
+            font-family: inherit; text-align: left;
+            padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 3px);
+            border-radius: var(--radius-md);
+            margin-bottom: 2px;
+            transition: background-color var(--duration-fast) var(--ease-out);
+        }
+        .group-node::before {
+            content: ""; position: absolute; left: 0; top: 6px; bottom: 6px;
+            width: 3px; border-radius: var(--radius-full);
+            background: var(--status-color, var(--border-strong));
+        }
+        .group-node:hover { background: var(--surface-hover); }
+        .group-node.active { background: var(--accent-subtle); }
+        .group-node .gn-row1 {
+            display: flex; align-items: center; gap: var(--space-2);
+            font-size: var(--text-sm); font-weight: var(--font-weight-medium);
+            color: var(--text-primary);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .group-node .gn-count {
+            margin-left: auto; flex-shrink: 0;
+            font-size: var(--text-xs); color: var(--text-muted);
+            background: var(--surface-muted);
+            border: 1px solid var(--border);
+            padding: 1px 8px; border-radius: var(--radius-full);
+        }
+        .group-node .gn-row2 {
+            font-size: var(--text-xs); color: var(--text-muted);
+            margin-top: 2px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* 状态 → 色条颜色映射 */
+        .st-active   { --status-color: var(--danger); }
+        .st-resolved { --status-color: var(--success); }
+        .st-ignored  { --status-color: var(--text-muted); }
+        .st-unknown  { --status-color: var(--warning); }
+
+        /* 中栏：条目行 */
+        .list-head {
+            position: sticky; top: 0; z-index: 1;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: var(--space-3) var(--space-4);
+            background: var(--surface);
+            border-bottom: 1px solid var(--divider);
+        }
+        .list-head .lh-title {
+            font-size: var(--text-sm); font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+        }
+        .list-head .lh-meta { font-size: var(--text-xs); color: var(--text-muted); }
+
+        .item-row {
+            position: relative;
+            padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) + 3px);
+            border-bottom: 1px solid var(--divider);
+            cursor: pointer;
+            transition: background-color var(--duration-fast) var(--ease-out);
+        }
+        .item-row::before {
+            content: ""; position: absolute; left: 0; top: 8px; bottom: 8px;
+            width: 3px; border-radius: var(--radius-full);
+            background: var(--status-color, var(--border-strong));
+        }
+        .item-row:hover { background: var(--surface-hover); }
+        .item-row.selected { background: var(--accent-subtle); }
+        .item-row .ir-main {
+            font-size: var(--text-sm); font-weight: var(--font-weight-medium);
+            color: var(--text-primary);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .item-row .ir-sub {
+            font-size: var(--text-xs); color: var(--text-secondary);
+            margin-top: 3px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .item-row .ir-time {
+            font-size: var(--text-xs); color: var(--text-muted);
+            margin-top: 3px;
+        }
+        .item-row .badge { float: right; margin-left: var(--space-3); }
+
+        /* 右栏：详情 */
+        .detail-empty {
+            height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: var(--text-sm); gap: var(--space-2);
+            text-align: center;
+        }
+        .detail-empty .de-icon { font-size: var(--text-2xl); opacity: 0.5; }
+        .detail-card { max-width: 720px; }
+        .detail-card .dc-title {
+            font-size: var(--text-lg); font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .detail-card .dc-sub {
+            font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);
+        }
+        .detail-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--space-3) var(--space-5);
+            margin-top: var(--space-4);
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--divider);
+        }
+        .dg-cell .dg-label {
+            font-size: var(--text-xs); color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .dg-cell .dg-value {
+            font-size: var(--text-sm); color: var(--text-primary);
+            margin-top: 3px; word-break: break-all;
+        }
+        .dg-cell .dg-value.mono { font-size: var(--text-xs); }
+        .detail-msg {
+            margin-top: var(--space-4);
+            padding: var(--space-3) var(--space-4);
+            background: var(--surface-muted);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+            line-height: var(--leading-normal);
+            white-space: pre-wrap; word-break: break-word;
+            max-height: 240px; overflow-y: auto;
+        }
+
+        /* 通用占位态 */
+        .empty-state {
+            padding: var(--space-7) var(--space-5);
+            text-align: center; color: var(--text-muted); font-size: var(--text-sm);
+        }
+        .loading {
+            padding: var(--space-6) var(--space-5);
+            text-align: center; color: var(--text-secondary); font-size: var(--text-sm);
+        }
+
+        /* 全宽回退：API 不可用时的错误提示 */
+        #failures-list.fallback-wide {
+            flex: 1;
+            padding: var(--space-5);
+            overflow-y: auto;
+        }
+
+        /* ---------- 响应式：1280px 以下侧栏折叠为顶栏 ---------- */
+        @media (max-width: 1280px) {
+            #failures-list.three-col {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto minmax(0, 1fr);
+                overflow-y: auto;
+            }
+            .col-groups {
+                border-right: none;
+                border-bottom: 1px solid var(--divider);
+                max-height: 34vh;
+                overflow-y: auto;
+            }
+            /* 分组树横向化为顶部 chip 条 */
+            .col-groups .groups-chips {
+                display: flex; flex-wrap: wrap; gap: var(--space-2);
+                padding: var(--space-2);
+            }
+            .col-groups .groups-chips .group-node {
+                width: auto;
+                display: inline-flex; align-items: center; gap: var(--space-2);
+                border: 1px solid var(--border);
+                padding: 6px var(--space-3);
+            }
+            .col-groups .groups-chips .group-node::before { display: none; }
+            .col-groups .groups-chips .group-node .gn-row2 { display: none; }
+            .col-groups .groups-chips .group-node .gn-count { margin-left: 0; }
+            .col-list { border-right: none; }
+            .col-detail {
+                border-top: 1px solid var(--divider);
+                min-height: 50vh;
+            }
+        }
+        @media (min-width: 1281px) {
+            .col-groups .groups-chips { display: block; }
+        }
     </style>
 </head>
 <body>
-    <header class="header">
-        <a href="index.html">&larr; Console</a>
-        <h1>Failures</h1>
+<div class="page-shell">
+    <header class="topbar">
+        <a class="crumb-link" href="index.html">&larr; Console</a>
+        <h1>失败记录</h1>
+        <span class="last-update" id="last-update">最后更新：--</span>
+        <button type="button" id="theme-toggle" class="theme-toggle" title="切换明暗主题">&#9788;</button>
     </header>
 
     <div class="summary-bar">
@@ -58,171 +334,362 @@
             <div class="value" id="error-types">0</div>
             <div class="label">错误类型</div>
         </div>
-    </div>
-
-    <div class="toolbar">
+        <div class="summary-spacer"></div>
         <div class="view-toggle">
             <button id="grouped-view" class="active">分组视图</button>
             <button id="list-view">列表视图</button>
         </div>
-        <span id="last-update">最后更新：--</span>
     </div>
 
-    <main id="failures-list" class="failures-grid">
-        <div class="loading">Loading failures...</div>
+    <main id="failures-list" class="three-col">
+        <section class="col-groups" aria-label="分组树">
+            <div class="col-label">按域名 · 错误类型</div>
+            <div class="groups-chips" id="groups-tree">
+                <div class="loading">Loading failures...</div>
+            </div>
+        </section>
+        <section class="col-list" aria-label="失败列表">
+            <div class="list-head">
+                <span class="lh-title" id="list-title">全部失败</span>
+                <span class="lh-meta" id="list-meta"></span>
+            </div>
+            <div id="items-list"></div>
+        </section>
+        <section class="col-detail" aria-label="失败详情">
+            <div id="detail-pane">
+                <div class="detail-empty">
+                    <span class="de-icon">&#9432;</span>
+                    <span>选择左侧记录查看详情</span>
+                </div>
+            </div>
+        </section>
     </main>
+</div>
 
-    <script>
-    (function() {
-        'use strict';
-        var API = '/api';
-        var container = document.getElementById('failures-list');
-        var currentView = 'grouped';
-        var allFailures = [];
-        var groupedFailures = [];
+<script>
+(function() {
+    'use strict';
+    var API = '/api';
+    var container = document.getElementById('failures-list');
+    var groupsTree = document.getElementById('groups-tree');
+    var itemsList = document.getElementById('items-list');
+    var detailPane = document.getElementById('detail-pane');
+    var listTitle = document.getElementById('list-title');
+    var listMeta = document.getElementById('list-meta');
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    var currentView = 'grouped';
+    var allFailures = [];      // /api/failures 的当前页明细
+    var groupedData = null;    // /api/failures/grouped 完整 data（含 grouped[] 与 items[]）
+    var activeGroupKey = null; // 当前选中的分组 key（null = 全部）
+    var selectedItem = null;   // 当前选中的失败记录
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function statusClass(status) {
+        switch (status) {
+            case 'active': return 'st-active';
+            case 'resolved': return 'st-resolved';
+            case 'ignored': return 'st-ignored';
+            default: return 'st-unknown';
         }
+    }
 
-        function loadFailures() {
-            container.innerHTML = '<div class="loading">Loading failures...</div>';
-            fetch(API + '/failures', { credentials: 'same-origin' })
-                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                .then(function(data) {
-                    allFailures = data.data.items || [];
-                    updateSummary(data.data);
-                    loadGroupedFailures();
-                })
-                .catch(function(err) {
-                    container.innerHTML = '<div class="empty-state">Failed to load failures: ' + escapeHtml(err.message) + '</div>';
-                });
+    function statusLabel(status) {
+        switch (status) {
+            case 'active': return '未解决';
+            case 'resolved': return '已解决';
+            case 'ignored': return '已忽略';
+            default: return status || '未知状态';
         }
+    }
 
-        // 加载分组数据（需要 aggregate API）
-        function loadGroupedFailures() {
-            fetch(API + '/failures/grouped', { credentials: 'same-origin' })
-                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                .then(function(data) {
-                    groupedFailures = data.data.grouped || [];
-                    renderFailures();
-                })
-                .catch(function(err) {
-                    // 若无分组 API，回退到列表分组
-                    groupedFailures = groupFailuresManually(allFailures);
-                    renderFailures();
-                });
+    function groupStatusOf(group) {
+        // 分组接口不返回 status；由归属记录的 status 推断（取该组第一条可见明细）
+        var items = visibleItems().filter(function(f) { return sameGroup(f, group); });
+        if (items.length) return items[0].status || 'unknown';
+        return 'unknown';
+    }
+
+    function sameGroup(f, group) {
+        if (!group || !f) return false;
+        if (group.error_type && f.error_type && f.error_type !== group.error_type) return false;
+        if (group.domain) {
+            var host = '';
+            try { host = String(f.url || '').replace(/^https?:\/\//i, '').split('/')[0].toLowerCase(); } catch (e) {}
+            if (host.indexOf('www.') === 0) host = host.slice(4);
+            if (host && host !== group.domain) return false;
         }
+        return true;
+    }
 
-        // 手动分组（备用方案）
-        function groupFailuresManually(failures) {
-            var groups = {};
-            failures.forEach(function(f) {
-                var type = f.error_type || 'Unknown';
-                if (!groups[type]) groups[type] = [];
-                groups[type].push(f);
+    function visibleGroups() {
+        if (currentView === 'list') return [];
+        if (!groupedData) return [];
+        return groupedData.grouped || [];
+    }
+
+    function visibleItems() {
+        if (!allFailures.length && groupedData && groupedData.items) {
+            allFailures = groupedData.items;
+        }
+        if (currentView === 'list') return allFailures;
+        var groups = visibleGroups();
+        if (activeGroupKey) {
+            for (var i = 0; i < groups.length; i++) {
+                if (groups[i].key === activeGroupKey) {
+                    return allFailures.filter(function(f) { return sameGroup(f, groups[i]); });
+                }
+            }
+        }
+        return allFailures;
+    }
+
+    // ---------------- 数据加载（保留原有端点与回退机制） ----------------
+
+    function loadFailures() {
+        container.className = 'fallback-wide';
+        container.innerHTML = '<div class="loading">Loading failures...</div>';
+        fetch(API + '/failures', { credentials: 'same-origin' })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(data) {
+                allFailures = data.data.items || [];
+                updateSummary(data.data);
+                loadGroupedFailures();
+            })
+            .catch(function(err) {
+                container.className = 'fallback-wide';
+                container.innerHTML = '<div class="empty-state">Failed to load failures: ' + escapeHtml(err.message) + '</div>';
             });
-            return Object.keys(groups).map(function(type) {
-                var items = groups[type];
-                var schools = [...new Set(items.map(function(i) { return i.school || i.source_id || 'Unknown'; }))].slice(0, 5);
-                return {
-                    key: type,
-                    count: items.length,
-                    error_type: type,
-                    sample_schools: schools
-                };
-            }).sort(function(a, b) { return b.count - a.count; });
+    }
+
+    // 加载分组数据（需要 aggregate API）
+    function loadGroupedFailures() {
+        fetch(API + '/failures/grouped', { credentials: 'same-origin' })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(data) {
+                groupedData = data.data;
+                groupedData.grouped = groupedData.grouped || [];
+                renderAll();
+            })
+            .catch(function(err) {
+                // 若无分组 API，回退到手动分组的纯列表模式
+                groupedData = null;
+                currentView = 'list';
+                syncViewToggle();
+                renderAll();
+            });
+    }
+
+    function updateSummary(data) {
+        document.getElementById('total-errors').textContent = data.total || 0;
+        document.getElementById('error-types').textContent = Object.keys(data.summary || {}).length;
+        document.getElementById('last-update').textContent = '最后更新：' + new Date().toLocaleTimeString();
+    }
+
+    // ---------------- 渲染 ----------------
+
+    function renderAll() {
+        renderGroups();
+        renderItems();
+        renderDetail();
+    }
+
+    function renderGroups() {
+        var groups = visibleGroups();
+        if (!groups.length) {
+            groupsTree.innerHTML = '<div class="empty-state">' +
+                (groupedData ? '暂无错误' : '加载中...') + '</div>';
+            listTitle.textContent = '全部失败';
+            return;
         }
-
-        function updateSummary(data) {
-            document.getElementById('total-errors').textContent = data.total || 0;
-            document.getElementById('error-types').textContent = Object.keys(data.summary || {}).length;
-            document.getElementById('last-update').textContent = '最后更新：' + new Date().toLocaleTimeString();
-        }
-
-        function renderFailures() {
-            if (currentView === 'grouped') {
-                renderGroupedView();
-            } else {
-                renderListView();
-            }
-        }
-
-        function renderGroupedView() {
-            if (!groupedFailures.length) {
-                container.innerHTML = '<div class="empty-state">暂无错误</div>';
-                return;
-            }
-            container.innerHTML = groupedFailures.map(function(group, index) {
-                var expanded = index === 0;  // 默认展开第一个
-                return '<div class="failure-group" id="group-' + index + '">' +
-                    '<div class="group-header" onclick="toggleGroup(' + index + ')">' +
-                    '<span class="group-title">' + escapeHtml(group.error_type) + '</span>' +
-                    '<span class="group-count">' + group.count + ' 次</span>' +
-                    '<span class="expand-icon" id="icon-' + index + '">' + (expanded ? '▲' : '▼') + '</span>' +
-                    '</div>' +
-                    '<div id="details-' + index + '" style="display:' + (expanded ? 'block' : 'none') + ';">' +
-                    '<div class="group-details">' +
-                    '<span>首次出现：' + escapeHtml(group.first_seen || '--') + '</span>' +
-                    '<span>最近出现：' + escapeHtml(group.last_seen || '--') + '</span>' +
-                    '</div>' +
-                    '<div class="group-schools">' +
-                    '<strong>涉及高校：</strong>' +
-                    group.sample_schools.map(function(s) { return '<span class="school-item">' + escapeHtml(s) + '</span>'; }).join('') +
-                    '</div>' +
-                    '</div>' +
-                    '</div>';
-            }).join('');
-            // 默认展开第一个
-            if (groupedFailures.length > 0) toggleGroup(0, true);
-        }
-
-        function renderListView() {
-            if (!allFailures.length) {
-                container.innerHTML = '<div class="empty-state">暂无错误</div>';
-                return;
-            }
-            var errorItems = allFailures.slice(0, 100).map(function(f) {
-                return '<div class="error-item">' +
-                    '<div class="error-title">' + escapeHtml(f.error_type || 'Unknown') + '</div>' +
-                    '<div class="error-meta">' +
-                    '<span>' + escapeHtml(f.occurred_at || f.timestamp || '') + '</span>' +
-                    '<span>' + escapeHtml(f.source || 'Unknown source') + '</span>' +
-                    '<span>' + escapeHtml(f.plugin_name || f.plugin || 'Unknown plugin') + '</span>' +
-                    '</div>' +
-                    '<div class="error-message">' + escapeHtml(f.error_message || f.message || f.error || 'Unknown error') + '</div>' +
-                    '</div>';
-            }).join('');
-            container.innerHTML = errorItems;
-        }
-
-        window.toggleGroup = function(index, skipAnimation) {
-            var details = document.getElementById('details-' + index);
-            var icon = document.getElementById('icon-' + index);
-            if (!details || !icon) return;
-            var isExpanded = details.style.display !== 'none';
-            details.style.display = isExpanded ? 'none' : 'block';
-            icon.textContent = isExpanded ? '▼' : '▲';
-        };
-
-        // 视图切换
-        document.getElementById('grouped-view').addEventListener('click', function() {
-            currentView = 'grouped';
-            this.className = 'active';
-            document.getElementById('list-view').className = '';
-            renderFailures();
+        var nodes = [
+            '<button type="button" class="group-node' + (activeGroupKey === null ? ' active' : '') + '" data-key="">' +
+                '<span class="gn-row1"><span>全部</span><span class="gn-count">' +
+                (groupedData.total != null ? groupedData.total : allFailures.length) + '</span></span>' +
+                '<span class="gn-row2">所有域名与错误类型</span>' +
+            '</button>'
+        ];
+        groups.forEach(function(group) {
+            var label = group.label || (escapeSafe(group.error_type || 'Unknown') + ' · ' + escapeSafe(group.domain || ''));
+            var st = statusClass(groupStatusOf(group));
+            nodes.push(
+                '<button type="button" class="group-node ' + st + (activeGroupKey === group.key ? ' active' : '') + '" data-key="' + escapeHtml(group.key) + '">' +
+                    '<span class="gn-row1"><span title="' + escapeHtml(label) + '">' + escapeHtml(label) + '</span>' +
+                    '<span class="gn-count">' + group.count + '</span></span>' +
+                    '<span class="gn-row2">' + escapeHtml(group.first_seen || '--') + ' ~ ' + escapeHtml(group.last_seen || '') + '</span>' +
+                '</button>'
+            );
         });
-
-        document.getElementById('list-view').addEventListener('click', function() {
-            currentView = 'list';
-            this.className = 'active';
-            document.getElementById('grouped-view').className = '';
-            renderFailures();
+        groupsTree.innerHTML = nodes.join('');
+        Array.prototype.forEach.call(groupsTree.querySelectorAll('.group-node'), function(btn) {
+            btn.addEventListener('click', function() {
+                var key = this.getAttribute('data-key');
+                activeGroupKey = key === '' ? null : key;
+                selectedItem = null;
+                renderGroups();
+                renderItems();
+                renderDetail();
+            });
         });
+    }
 
-        loadFailures();
+    function escapeSafe(s) { return s == null ? '' : String(s); }
+
+    function renderItems() {
+        var items = visibleItems();
+        if (activeGroupKey !== null) {
+            var g = findActiveGroup();
+            listTitle.textContent = g ? (g.label || g.error_type || '分组') : '全部失败';
+        } else {
+            listTitle.textContent = '全部失败';
+        }
+        listMeta.textContent = items.length + ' 条';
+        if (!items.length) {
+            itemsList.innerHTML = '<div class="empty-state">暂无错误</div>';
+            return;
+        }
+        var shown = items.slice(0, 100);
+        itemsList.innerHTML = shown.map(function(f, i) {
+            var title = f.school || f.source_id || f.domain || f.error_type || 'Unknown';
+            var sub = [f.error_type, f.plugin_name || f.plugin, f.college].filter(Boolean).join(' · ');
+            var time = f.occurred_at || f.timestamp || '';
+            var sel = selectedItem && f.id && selectedItem.id === f.id ? ' selected' : '';
+            return '<div class="item-row ' + statusClass(f.status) + sel + '" data-idx="' + i + '">' +
+                '<div class="ir-main">' + escapeHtml(title) +
+                '<span class="badge ' + badgeTone(f.status) + '">' + escapeHtml(statusLabel(f.status)) + '</span></div>' +
+                (sub ? '<div class="ir-sub">' + escapeHtml(sub) + '</div>' : '') +
+                (time ? '<div class="ir-time">' + escapeHtml(time) + '</div>' : '') +
+                '</div>';
+        }).join('');
+        Array.prototype.forEach.call(itemsList.querySelectorAll('.item-row'), function(row) {
+            row.addEventListener('click', function() {
+                var idx = parseInt(this.getAttribute('data-idx'), 10);
+                selectedItem = shown[idx] || null;
+                renderItems();
+                renderDetail();
+            });
+        });
+    }
+
+    function badgeTone(status) {
+        switch (status) {
+            case 'active': return 'badge-danger';
+            case 'resolved': return 'badge-success';
+            case 'ignored': return 'badge-info';
+            default: return 'badge-warning';
+        }
+    }
+
+    function findActiveGroup() {
+        var groups = visibleGroups();
+        for (var i = 0; i < groups.length; i++) {
+            if (groups[i].key === activeGroupKey) return groups[i];
+        }
+        return null;
+    }
+
+    function renderDetail() {
+        if (!selectedItem) {
+            detailPane.innerHTML = '<div class="detail-empty">' +
+                '<span class="de-icon">&#9432;</span>' +
+                '<span>选择左侧记录查看详情</span></div>';
+            return;
+        }
+        var f = selectedItem;
+        var cells = [
+            ['状态', escapeHtml(statusLabel(f.status)), ''],
+            ['错误类型', escapeHtml(f.error_type || 'Unknown'), ''],
+            ['高校', escapeHtml(f.school || '--'), ''],
+            ['学院', escapeHtml(f.college || '--'), ''],
+            ['来源', escapeHtml(f.source || 'Unknown source'), ''],
+            ['插件', escapeHtml(f.plugin_name || f.plugin || 'Unknown plugin'), ''],
+            ['发生时间', escapeHtml(f.occurred_at || f.timestamp || '--'), ''],
+            ['重试次数', escapeHtml(f.retry_count != null ? f.retry_count : '--'), ''],
+            ['ID', escapeHtml(f.id || '--'), 'mono'],
+            ['URL', escapeHtml(f.url || '--'), 'mono']
+        ];
+        var group = findActiveGroup();
+        if (group && sameGroup(f, group)) {
+            cells.splice(2, 0, ['所属分组', escapeHtml(group.label || group.key), '']);
+        }
+        var msg = f.error_message || f.message || f.error || 'Unknown error';
+        detailPane.innerHTML =
+            '<div class="card detail-card">' +
+                '<div class="dc-title">' + escapeHtml(f.school || f.error_type || '失败记录') + '</div>' +
+                '<div class="dc-sub">' + escapeHtml(f.error_type || '') + (f.url ? ' · ' + escapeHtml(f.url) : '') + '</div>' +
+                '<div class="detail-grid">' +
+                    cells.map(function(c) {
+                        return '<div class="dg-cell"><div class="dg-label">' + c[0] + '</div>' +
+                               '<div class="dg-value ' + c[2] + '">' + c[1] + '</div></div>';
+                    }).join('') +
+                '</div>' +
+                '<div class="detail-msg">' + escapeHtml(msg) + '</div>' +
+            '</div>';
+    }
+
+    // ---------------- 兼容入口：旧版折叠逻辑（后端/测试可能引用 window.toggleGroup） ----------------
+    window.toggleGroup = function(index, skipAnimation) {
+        // 新版为三栏收件箱布局：点击分组等价于选中该分组。
+        // index 支持数字下标或分组 key 字符串两种调用方式。
+        var groups = visibleGroups();
+        var target = null;
+        if (typeof index === 'string') {
+            for (var i = 0; i < groups.length; i++) {
+                if (groups[i].key === index) { target = groups[i]; break; }
+            }
+        } else if (groups[index]) {
+            target = groups[index];
+        }
+        if (target) {
+            activeGroupKey = (activeGroupKey === target.key) ? null : target.key;
+            selectedItem = null;
+            renderGroups();
+            renderItems();
+            renderDetail();
+        }
+    };
+
+    // ---------------- 视图切换 ----------------
+    function syncViewToggle() {
+        document.getElementById('grouped-view').className = currentView === 'grouped' ? 'active' : '';
+        document.getElementById('list-view').className = currentView === 'list' ? 'active' : '';
+    }
+
+    document.getElementById('grouped-view').addEventListener('click', function() {
+        currentView = 'grouped';
+        syncViewToggle();
+        renderAll();
+    });
+
+    document.getElementById('list-view').addEventListener('click', function() {
+        currentView = 'list';
+        activeGroupKey = null;
+        selectedItem = null;
+        syncViewToggle();
+        renderAll();
+    });
+
+    loadFailures();
+
+    // ---------- 主题切换（localStorage 持久化） ----------
+    (function() {
+        var toggle = document.getElementById('theme-toggle');
+        if (!toggle) return;
+        function apply(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            toggle.innerHTML = theme === 'dark' ? '&#9789;' : '&#9788;';
+            try { localStorage.setItem('console-theme', theme); } catch (e) {}
+        }
+        apply(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+        toggle.addEventListener('click', function() {
+            var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            apply(cur);
+        });
     })();
-    </script>
+})();
+</script>
 </body>
 </html>

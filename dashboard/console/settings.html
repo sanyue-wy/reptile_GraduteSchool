@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    <title>设置 - Console</title>
+    <link rel="stylesheet" href="design-tokens.css">
+    <style>
+        /* 页面私有样式：全部基于 design-tokens.css 的 token，无硬编码颜色 */
+        .settings-wrap { max-width: var(--content-max-width, 960px); margin: 0 auto; padding: var(--space-6); }
+
+        /* 页面头部 */
+        .page-header { margin-bottom: var(--space-6); }
+        .page-title { font-size: var(--text-2xl); font-weight: 700; color: var(--text-primary); margin: 0 0 var(--space-1); }
+        .page-subtitle { font-size: var(--text-sm); color: var(--text-muted); margin: 0; }
+
+        /* ---- 分节（Fluent 风格卡片）---- */
+        .settings-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--space-5);
+            overflow: hidden;
+        }
+        .section-head {
+            display: flex; align-items: flex-start; gap: var(--space-3);
+            padding: var(--space-4) var(--space-5);
+            border-bottom: 1px solid var(--divider, var(--border));
+        }
+        .section-icon {
+            width: 28px; height: 28px; flex-shrink: 0; margin-top: 2px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: var(--radius-sm);
+            background: var(--accent-soft);
+            color: var(--text-primary);
+            font-size: var(--text-base);
+        }
+        .section-title {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-semibold, 600);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-1);
+        }
+        .section-desc {
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .section-body { padding: var(--space-5); }
+
+        /* ---- 表单字段 ---- */
+        .field-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);
+        }
+        .field { display: flex; flex-direction: column; gap: var(--space-1); }
+        .label {
+            font-size: var(--text-sm);
+            font-weight: var(--font-weight-medium, 500);
+            color: var(--text-secondary);
+        }
+        .form-hint {
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+            margin-top: var(--space-1);
+        }
+
+        /* 复用 design-tokens 的 .input / .select，这里只做微调 */
+        .input, .select {
+            width: 100%;
+        }
+
+        /* ---- 开关行（switch）---- */
+        .switch-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: var(--space-4);
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--divider, var(--border));
+        }
+        .switch-row:last-child { border-bottom: none; }
+        .switch-label { font-size: var(--text-sm); color: var(--text-primary); font-weight: var(--font-weight-medium, 500); }
+        .switch-sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: 1px; }
+
+        .switch {
+            position: relative; flex-shrink: 0;
+            width: 36px; height: 20px;
+            border-radius: var(--radius-full);
+            background: var(--border-strong);
+            border: none; cursor: pointer; padding: 0;
+            transition: background-color var(--transition-fast) var(--ease-out, ease);
+        }
+        .switch::after {
+            content: ""; position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-fast) var(--ease-out, ease);
+        }
+        .switch[aria-checked="true"] { background: var(--accent); }
+        .switch[aria-checked="true"]::after { transform: translateX(16px); }
+        .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        /* ---- 主题卡片网格 ---- */
+        .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+        .theme-card {
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            cursor: pointer; text-align: left;
+            background: var(--surface);
+            font-family: inherit;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        .theme-card:hover { border-color: var(--text-muted); }
+        .theme-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        .theme-swatch {
+            height: 56px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            margin-bottom: var(--space-3);
+            display: flex; align-items: center; gap: var(--space-2);
+            padding: 0 var(--space-3);
+        }
+        .swatch-light { background: #fafafa; }
+        .swatch-dark { background: #0e0e10; }
+        .swatch-bar { flex: 1; height: 8px; border-radius: var(--radius-full); }
+        .swatch-light .swatch-bar { background: #e4e4e7; }
+        .swatch-dark .swatch-bar { background: #26262b; }
+        .swatch-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .swatch-light .swatch-dot { background: #18181b; }
+        .swatch-dark .swatch-dot { background: #ededf0; }
+        .theme-name { font-size: var(--text-sm); font-weight: var(--font-weight-medium, 500); color: var(--text-primary); }
+        .theme-meta { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+        .theme-check {
+            margin-left: auto; font-size: var(--text-sm);
+            color: var(--accent); visibility: hidden;
+        }
+        .theme-card.selected .theme-check { visibility: visible; }
+
+        /* ---- 状态横幅 ---- */
+        .status-banner {
+            margin-top: var(--space-4);
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+            display: none;
+        }
+        .status-banner.success { display: block; background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+        .status-banner.error { display: block; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+        /* ---- 操作区 ---- */
+        .page-actions-end {
+            display: flex; justify-content: flex-end; gap: var(--space-2);
+            margin-top: var(--space-5);
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--divider, var(--border));
+        }
+
+        /* ---- 响应式：1280px 以下单列；窄屏主题卡也折叠 ---- */
+        @media (max-width: 1280px) {
+            .field-row { grid-template-columns: 1fr; }
+            .settings-wrap { padding: var(--space-4); }
+        }
+        @media (max-width: 720px) {
+            .theme-grid { grid-template-columns: 1fr; }
+            .section-head { flex-direction: column; gap: var(--space-2); }
+            .section-icon { margin-top: 0; }
+        }
+    </style>
+    <script>
+        // 首帧前应用已存主题，避免闪烁（同步内联，先于 CSS 渲染生效）
+        (function () {
+            try {
+                var t = localStorage.getItem('console-theme');
+                if (t === 'dark' || t === 'light') {
+                    document.documentElement.setAttribute('data-theme', t);
+                }
+            } catch (e) { /* localStorage 不可用时保持默认 light */ }
+        })();
+    </script>
+</head>
+<body>
+    <div class="console-layout">
+        <aside class="sidebar sidebar-global">
+            <div class="sidebar-brand">GraduteSchool Console</div>
+            <div class="sidebar-section-label">管理台</div>
+            <a class="nav-item" href="index.html"><span class="nav-icon">&#9632;</span>总览</a>
+            <a class="nav-item" href="plugins.html"><span class="nav-icon">&#9881;</span>插件管理</a>
+            <a class="nav-item" href="task-config.html"><span class="nav-icon">&#9656;</span>任务定义</a>
+            <a class="nav-item" href="output-config.html"><span class="nav-icon">&#8681;</span>输出定义</a>
+            <a class="nav-item" href="failures.html"><span class="nav-icon">&#9888;</span>失败清单</a>
+            <a class="nav-item active" href="settings.html"><span class="nav-icon">&#9881;</span>设置</a>
+        </aside>
+        <main class="console-main">
+            <div class="settings-wrap">
+                <header class="page-header">
+                    <h1 class="page-title">设置</h1>
+                    <p class="page-subtitle">个人资料、通知偏好、外观主题与安全选项（原 Output / Task 配置入口保留在侧栏）</p>
+                </header>
+
+                <!-- 个人资料 -->
+                <section class="settings-section" id="section-profile">
+                    <div class="section-head">
+                        <span class="section-icon">&#128100;</span>
+                        <div>
+                            <h2 class="section-title">个人资料</h2>
+                            <p class="section-desc">显示在控制台与导出报告署名中的信息</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="field-row">
+                            <div class="field">
+                                <label class="label" for="profile-display-name">显示名称</label>
+                                <input class="input" type="text" id="profile-display-name" placeholder="例如：采集管理员" />
+                                <div class="form-hint">留空则使用系统默认「Console User」</div>
+                            </div>
+                            <div class="field">
+                                <label class="label" for="profile-email">联系邮箱</label>
+                                <input class="input" type="email" id="profile-email" placeholder="name@example.edu" />
+                                <div class="form-hint">仅用于报告页脚署名，不发送任何邮件</div>
+                            </div>
+                        </div>
+                        <div class="field" style="margin-top: var(--space-4);">
+                            <label class="label" for="profile-org">所属机构</label>
+                            <input class="input" type="text" id="profile-org" placeholder="高校或团队名称" />
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 通知偏好 -->
+                <section class="settings-section" id="section-notifications">
+                    <div class="section-head">
+                        <span class="section-icon">&#128276;</span>
+                        <div>
+                            <h2 class="section-title">通知偏好</h2>
+                            <p class="section-desc">控制任务运行期间的浏览器内提示行为</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="switch-row">
+                            <div>
+                                <div class="switch-label">任务完成时提醒</div>
+                                <div class="switch-sub">run_state 变为 completed / failed 时弹出 toast</div>
+                            </div>
+                            <button type="button" class="switch" id="notify-complete" role="switch" aria-checked="true"></button>
+                        </div>
+                        <div class="switch-row">
+                            <div>
+                                <div class="switch-label">失败数量告警</div>
+                                <div class="switch-sub">单轮失败条目超过阈值时提醒</div>
+                            </div>
+                            <button type="button" class="switch" id="notify-failures" role="switch" aria-checked="true"></button>
+                        </div>
+                        <div class="switch-row">
+                            <div>
+                                <div class="switch-label">声音提示</div>
+                                <div class="switch-sub">当前版本暂未接入音频，仅保存偏好</div>
+                            </div>
+                            <button type="button" class="switch" id="notify-sound" role="switch" aria-checked="false"></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 外观主题 -->
+                <section class="settings-section" id="section-theme">
+                    <div class="section-head">
+                        <span class="section-icon">&#9789;</span>
+                        <div>
+                            <h2 class="section-title">外观主题</h2>
+                            <p class="section-desc">明暗切换会写入 localStorage 并同步 data-theme 属性，全站生效</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="theme-grid">
+                            <button type="button" class="theme-card" id="theme-light-card">
+                                <div class="theme-swatch swatch-light"><span class="swatch-dot"></span><span class="swatch-bar"></span></div>
+                                <span class="theme-name">浅色</span>
+                                <span class="theme-check">&#10003;</span>
+                                <div class="theme-meta">shadcn 中性灰白底，适合白天办公</div>
+                            </button>
+                            <button type="button" class="theme-card" id="theme-dark-card">
+                                <div class="theme-swatch swatch-dark"><span class="swatch-dot"></span><span class="swatch-bar"></span></div>
+                                <span class="theme-name">深色</span>
+                                <span class="theme-check">&#10003;</span>
+                                <div class="theme-meta">Linear 深灰近黑底，极细分割线</div>
+                            </button>
+                        </div>
+                        <div class="page-actions-end" style="margin-top: var(--space-4); padding-top: 0; border-top: none;">
+                            <button type="button" class="btn btn-outline" id="theme-toggle-btn">切换主题</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 安全 -->
+                <section class="settings-section" id="section-security">
+                    <div class="section-head">
+                        <span class="section-icon">&#128274;</span>
+                        <div>
+                            <h2 class="section-title">安全</h2>
+                            <p class="section-desc">本地会话与数据访问策略</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="switch-row">
+                            <div>
+                                <div class="switch-label">自动加载上次运行状态</div>
+                                <div class="switch-sub">进入控制台时恢复最近一次 run_id 的轮询</div>
+                            </div>
+                            <button type="button" class="switch" id="security-autostart" role="switch" aria-checked="true"></button>
+                        </div>
+                        <div class="switch-row">
+                            <div>
+                                <div class="switch-label">严格模式</div>
+                                <div class="switch-sub">同源请求失败时在页面顶部持续显示错误横幅</div>
+                            </div>
+                            <button type="button" class="switch" id="security-strict" role="switch" aria-checked="false"></button>
+                        </div>
+                        <div class="field" style="margin-top: var(--space-4);">
+                            <label class="label" for="security-session-timeout">会话空闲超时（分钟）</label>
+                            <select class="select" id="security-session-timeout">
+                                <option value="15">15 分钟</option>
+                                <option value="30" selected>30 分钟</option>
+                                <option value="60">60 分钟</option>
+                                <option value="0">永不超时</option>
+                            </select>
+                            <div class="form-hint">纯前端偏好，实际鉴权由服务端决定</div>
+                        </div>
+                    </div>
+                </section>
+
+                <div id="status" class="status-banner"></div>
+
+                <div class="page-actions-end">
+                    <button type="button" class="btn btn-ghost" id="reset-settings-btn">恢复默认</button>
+                    <button type="button" class="btn btn-primary" id="save-settings-btn">保存设置</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        var STORAGE_KEY = 'console-settings';
+        var THEME_KEY = 'console-theme';
+
+        var DEFAULTS = {
+            profile: { displayName: '', email: '', org: '' },
+            notify: { complete: true, failures: true, sound: false },
+            theme: 'light',
+            security: { autostart: true, strict: false, sessionTimeout: '30' }
+        };
+
+        function loadSettings() {
+            try {
+                var raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return JSON.parse(JSON.stringify(DEFAULTS));
+                var parsed = JSON.parse(raw);
+                return {
+                    profile: Object.assign({}, DEFAULTS.profile, parsed.profile || {}),
+                    notify: Object.assign({}, DEFAULTS.notify, parsed.notify || {}),
+                    theme: parsed.theme === 'dark' ? 'dark' : 'light',
+                    security: Object.assign({}, DEFAULTS.security, parsed.security || {})
+                };
+            } catch (e) {
+                console.error('读取设置失败，回退默认值:', e);
+                return JSON.parse(JSON.stringify(DEFAULTS));
+            }
+        }
+
+        function persistSettings(settings) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+                return true;
+            } catch (e) {
+                console.error('写入设置失败:', e);
+                return false;
+            }
+        }
+
+        function showStatus(msg, isError) {
+            var el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status-banner ' + (isError ? 'error' : 'success');
+            clearTimeout(showStatus._timer);
+            showStatus._timer = setTimeout(function() {
+                el.className = 'status-banner';
+                el.textContent = '';
+            }, 4000);
+        }
+
+        // ---------- 主题 ----------
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* 忽略存储异常 */ }
+            document.getElementById('theme-light-card').classList.toggle('selected', theme === 'light');
+            document.getElementById('theme-dark-card').classList.toggle('selected', theme === 'dark');
+        }
+
+        function currentTheme() {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        }
+
+        // ---------- 控件 <-> 数据 ----------
+        function readForm() {
+            return {
+                profile: {
+                    displayName: document.getElementById('profile-display-name').value.trim(),
+                    email: document.getElementById('profile-email').value.trim(),
+                    org: document.getElementById('profile-org').value.trim()
+                },
+                notify: {
+                    complete: getSwitch('notify-complete'),
+                    failures: getSwitch('notify-failures'),
+                    sound: getSwitch('notify-sound')
+                },
+                theme: currentTheme(),
+                security: {
+                    autostart: getSwitch('security-autostart'),
+                    strict: getSwitch('security-strict'),
+                    sessionTimeout: document.getElementById('security-session-timeout').value
+                }
+            };
+        }
+
+        function fillForm(s) {
+            document.getElementById('profile-display-name').value = s.profile.displayName;
+            document.getElementById('profile-email').value = s.profile.email;
+            document.getElementById('profile-org').value = s.profile.org;
+            setSwitch('notify-complete', s.notify.complete);
+            setSwitch('notify-failures', s.notify.failures);
+            setSwitch('notify-sound', s.notify.sound);
+            applyTheme(s.theme);
+            setSwitch('security-autostart', s.security.autostart);
+            setSwitch('security-strict', s.security.strict);
+            document.getElementById('security-session-timeout').value = String(s.security.sessionTimeout);
+        }
+
+        function getSwitch(id) {
+            return document.getElementById(id).getAttribute('aria-checked') === 'true';
+        }
+        function setSwitch(id, on) {
+            document.getElementById(id).setAttribute('aria-checked', on ? 'true' : 'false');
+        }
+
+        // ---------- 事件绑定 ----------
+        ['notify-complete', 'notify-failures', 'notify-sound', 'security-autostart', 'security-strict']
+            .forEach(function(id) {
+                document.getElementById(id).addEventListener('click', function() {
+                    this.setAttribute('aria-checked', getSwitch(id) ? 'false' : 'true');
+                });
+            });
+
+        document.getElementById('theme-light-card').addEventListener('click', function() { applyTheme('light'); });
+        document.getElementById('theme-dark-card').addEventListener('click', function() { applyTheme('dark'); });
+        document.getElementById('theme-toggle-btn').addEventListener('click', function() {
+            applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+        });
+
+        document.getElementById('save-settings-btn').addEventListener('click', function() {
+            var ok = persistSettings(readForm());
+            if (ok) {
+                showStatus('设置已保存到本地（localStorage）', false);
+                if (window.showToast) window.showToast('设置已保存', false, 2000);
+            } else {
+                showStatus('保存失败：本地存储不可用', true);
+            }
+        });
+
+        document.getElementById('reset-settings-btn').addEventListener('click', function() {
+            fillForm(JSON.parse(JSON.stringify(DEFAULTS)));
+            var ok = persistSettings(readForm());
+            showStatus(ok ? '已恢复默认设置' : '已恢复默认显示（持久化失败）', !ok);
+        });
+
+        // ---------- 初始化 ----------
+        fillForm(loadSettings());
+    })();
+    </script>
+</body>
+</html>

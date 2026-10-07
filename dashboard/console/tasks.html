@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理 · 控制台 — GraduteSchool</title>
+    <link rel="stylesheet" href="design-tokens.css">
+    <style>
+        /* ============================================================
+           console/tasks.html — 工程任务管理（shadcn 中性极简 + Linear 暗色）
+           布局与 index.html 一致：双区侧栏 + 主内容；颜色全走 token。
+           ============================================================ */
+
+        /* 页面头 */
+        .page-header { display: flex; align-items: flex-start; justify-content: space-between;
+                       gap: var(--space-4); margin-bottom: var(--space-5); flex-wrap: wrap; }
+        .page-title { font-size: var(--text-2xl); font-weight: 600; margin: 0; }
+        .page-subtitle { font-size: var(--text-sm); color: var(--text-muted); margin: var(--space-1) 0 0; }
+        .page-actions { display: flex; gap: var(--space-2); }
+
+        /* 统计卡行 */
+        .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                    gap: var(--space-3); margin-bottom: var(--space-5); }
+        .stat-card { background: var(--surface); border: 1px solid var(--border);
+                     border-radius: var(--radius-md); padding: var(--space-4);
+                     box-shadow: var(--shadow-sm); cursor: pointer;
+                     transition: box-shadow var(--transition-fast), border-color var(--transition-fast); }
+        .stat-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+        .stat-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+        .stat-value { font-size: var(--text-2xl); font-weight: 700; line-height: 1.2;
+                      font-variant-numeric: tabular-nums; }
+        .stat-label { margin-top: var(--space-1); font-size: var(--text-xs); color: var(--text-secondary); }
+
+        /* 卡片 + 头部 */
+        .card { background: var(--surface); border: 1px solid var(--border);
+                border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;
+                margin-bottom: var(--space-5); }
+        .card-header { display: flex; align-items: center; justify-content: space-between;
+                       gap: var(--space-3); padding: var(--space-3) var(--space-4);
+                       border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .card-title { font-size: var(--text-base); font-weight: 600; margin: 0; }
+
+        /* 工具栏（筛选 + 刷新） */
+        .toolbar { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+        .toolbar select, .toolbar input {
+            padding: var(--space-1) var(--space-3); font-family: inherit; font-size: var(--text-sm);
+            color: var(--text-primary); background: var(--surface);
+            border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+        }
+        .toolbar select:focus, .toolbar input:focus { outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-soft); }
+
+        /* 按钮（与 token 基类一致的轻量补全） */
+        .btn { display: inline-flex; align-items: center; gap: var(--space-2);
+               padding: var(--space-2) var(--space-4); font-size: var(--text-sm); font-weight: 500;
+               font-family: inherit; border-radius: var(--radius-sm); border: 1px solid transparent;
+               cursor: pointer; transition: background var(--transition-fast),
+               border-color var(--transition-fast), color var(--transition-fast); white-space: nowrap; }
+        .btn-primary { background: var(--accent); color: var(--text-inverse); }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-outline { background: transparent; color: var(--text-secondary); border-color: var(--border-strong); }
+        .btn-outline:hover { background: var(--surface-hover); color: var(--text-primary); }
+        .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+        .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+        .btn-danger:hover { background: var(--danger-bg); }
+
+        /* 徽标 */
+        .badge { display: inline-flex; align-items: center; padding: 2px var(--space-2);
+                 font-size: var(--text-xs); font-weight: 600; border-radius: var(--radius-full);
+                 white-space: nowrap; }
+        .badge-running  { background: var(--info-bg);    color: var(--info);    border: 1px solid var(--info-border); }
+        .badge-success  { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+        .badge-danger   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid var(--danger-border); }
+        .badge-warning  { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+        .badge-neutral  { background: var(--accent-soft); color: var(--text-secondary); border: 1px solid var(--border); }
+
+        /* 表格 */
+        .table-wrap { overflow-x: auto; }
+        table.full { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+        table.full th, table.full td { padding: var(--space-2) var(--space-3); text-align: left;
+                                       border-bottom: 1px solid var(--border); white-space: nowrap; }
+        table.full th { font-weight: 600; font-size: var(--text-xs); text-transform: uppercase;
+                        letter-spacing: 0.04em; color: var(--text-muted); background: var(--surface); }
+        table.full tbody tr { transition: background var(--transition-fast); }
+        table.full tbody tr:hover { background: var(--surface-hover); }
+        table.full code { font-family: var(--font-mono); font-size: var(--text-xs);
+                          background: var(--accent-soft); padding: 1px 6px; border-radius: var(--radius-sm); }
+
+        /* 进度条 */
+        .progress { display: flex; align-items: center; gap: var(--space-2); }
+        .progress-track { width: 120px; height: 6px; background: var(--accent-soft);
+                          border-radius: var(--radius-full); overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); border-radius: var(--radius-full);
+                         transition: width var(--transition-slow); }
+        .progress-text { font-size: var(--text-xs); color: var(--text-muted);
+                         font-variant-numeric: tabular-nums; }
+
+        /* 空/加载/错误态 */
+        .empty, .loading { padding: var(--space-8) var(--space-4); text-align: center;
+                           color: var(--text-muted); font-size: var(--text-sm); }
+        .error-msg { display: none; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+                     background: var(--danger-bg); color: var(--danger); font-size: var(--text-sm);
+                     margin-bottom: var(--space-4); }
+
+        /* 操作列按钮组 */
+        .row-actions { display: flex; gap: var(--space-1); }
+
+        /* 响应式：1280px 以下侧栏折叠 */
+        @media (max-width: 1280px) {
+            .console-layout { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; border-right: none;
+                       border-bottom: 1px solid var(--border); }
+            .sidebar-brand { height: auto; border-bottom: none; }
+            .console-main { padding: var(--space-4); }
+        }
+    </style>
+</head>
+<body>
+<div class="console-layout">
+    <!-- 上段：全局导航 -->
+    <aside class="sidebar sidebar-global">
+        <div class="sidebar-brand"><span class="brand-mark">G</span><span>GraduteSchool 控制台</span></div>
+        <div class="sidebar-section-label">总览</div>
+        <a class="nav-item" href="index.html"><span class="nav-icon">◈</span>概览</a>
+        <a class="nav-item" href="plugins.html"><span class="nav-icon">▤</span>插件管理<span class="nav-count badge badge-info" id="plugin-count"></span></a>
+        <div class="sidebar-section-label">采集呈现</div>
+        <a class="nav-item" href="../schools.html"><span class="nav-icon">⌗</span>学校</a>
+        <a class="nav-item" href="../tasks.html"><span class="nav-icon">☰</span>任务监控</a>
+        <a class="nav-item" href="../tutors.html"><span class="nav-icon">✦</span>导师库</a>
+        <a class="nav-item" href="../failures.html"><span class="nav-icon">⚠</span>失败记录</a>
+        <div class="sidebar-section-label">系统</div>
+        <a class="nav-item" href="settings.html"><span class="nav-icon">⚙</span>设置</a>
+    </aside>
+
+    <div class="console-main-col">
+        <!-- 下段：当前工程子菜单 -->
+        <aside class="sidebar sidebar-project">
+            <div class="sidebar-brand">双一流高校教师库</div>
+            <div class="sidebar-section-label">工程管理</div>
+            <a class="nav-item active" href="tasks.html"><span class="nav-icon">☰</span>任务管理</a>
+            <a class="nav-item" href="task-config.html"><span class="nav-icon">＋</span>新建任务</a>
+            <a class="nav-item" href="output-config.html"><span class="nav-icon">⇩</span>输出定义</a>
+            <a class="nav-item" href="plugins.html"><span class="nav-icon">▤</span>工程插件</a>
+            <a class="nav-item" href="failures.html"><span class="nav-icon">⚠</span>工程失败</a>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="console-main">
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">任务管理</h1>
+                    <p class="page-subtitle">当前工程的采集任务 · 创建入口在「新建任务」</p>
+                </div>
+                <div class="page-actions">
+                    <button class="btn btn-outline" id="refresh-btn" onclick="loadTasks()">刷新</button>
+                    <a class="btn btn-primary" href="task-config.html">＋ 新建任务</a>
+                </div>
+            </header>
+
+            <div id="tasks-error" class="error-msg"></div>
+
+            <!-- 统计卡（点击即筛选） -->
+            <section class="stat-row" aria-label="任务统计">
+                <div class="stat-card" data-status="running" onclick="filterTasks('running')">
+                    <div class="stat-value" id="task-running">0</div>
+                    <div class="stat-label">进行中</div>
+                </div>
+                <div class="stat-card" data-status="completed" onclick="filterTasks('completed')">
+                    <div class="stat-value" id="task-completed">0</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+                <div class="stat-card" data-status="failed" onclick="filterTasks('failed')">
+                    <div class="stat-value" id="task-failed">0</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-card" data-status="queued" onclick="filterTasks('queued')">
+                    <div class="stat-value" id="task-queued">0</div>
+                    <div class="stat-label">排队中</div>
+                </div>
+            </section>
+
+            <!-- 任务列表 -->
+            <section class="card" aria-label="任务列表">
+                <div class="card-header">
+                    <h2 class="card-title">任务列表</h2>
+                    <div class="toolbar">
+                        <select id="task-filter" onchange="loadTasks()">
+                            <option value="">全部状态</option>
+                            <option value="running">进行中</option>
+                            <option value="completed">已完成</option>
+                            <option value="failed">失败</option>
+                            <option value="queued">排队中</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="full" id="taskTable">
+                        <thead>
+                            <tr>
+                                <th>任务 ID</th>
+                                <th>模式</th>
+                                <th>学校范围</th>
+                                <th>学科 / 数据源</th>
+                                <th>进度</th>
+                                <th>状态</th>
+                                <th>开始时间</th>
+                                <th>耗时</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                            <tr><td colspan="9" class="loading">正在加载任务…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var API = '/api';
+
+    // ---------- 主题（与 index.html 相同的 localStorage 持久化） ----------
+    (function initTheme() {
+        var saved = null;
+        try { saved = localStorage.getItem('console-theme'); } catch (e) {}
+        document.documentElement.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
+    })();
+
+    // ---------- 工具 ----------
+    function $(id) { return document.getElementById(id); }
+
+    function escapeHtml(text) {
+        if (text == null) return '';
+        var div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+    }
+
+    function formatDateTime(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        return (d.getMonth() + 1) + '/' + d.getDate() + ' ' +
+               String(d.getHours()).padStart(2, '0') + ':' +
+               String(d.getMinutes()).padStart(2, '0');
+    }
+
+    function formatElapsed(iso) {
+        if (!iso) return '—';
+        var diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+        if (diff < 60) return diff + 's';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm' + (diff % 60) + 's';
+        return Math.floor(diff / 3600) + 'h' + Math.floor((diff % 3600) / 60) + 'm';
+    }
+
+    function showError(msg) {
+        var el = $('tasks-error');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ---------- 统计 ----------
+    function updateTaskStats(tasks) {
+        var stats = { running: 0, completed: 0, failed: 0, queued: 0 };
+        tasks.forEach(function (t) { if (stats[t.status] !== undefined) stats[t.status]++; });
+        $('task-running').textContent = stats.running;
+        $('task-completed').textContent = stats.completed;
+        $('task-failed').textContent = stats.failed;
+        $('task-queued').textContent = stats.queued;
+    }
+
+    // ---------- 筛选 ----------
+    window.filterTasks = function (status) {
+        var sel = $('task-filter');
+        sel.value = (sel.value === status) ? '' : status;
+        // 统计卡高亮同步
+        Array.prototype.forEach.call(document.querySelectorAll('.stat-card'), function (c) {
+            c.classList.toggle('active', c.getAttribute('data-status') === sel.value);
+        });
+        loadTasks();
+    };
+
+    // ---------- 表格渲染 ----------
+    function statusBadge(status) {
+        switch (status) {
+            case 'running':   return '<span class="badge badge-running">进行中</span>';
+            case 'completed': return '<span class="badge badge-success">已完成</span>';
+            case 'failed':    return '<span class="badge badge-danger">失败</span>';
+            case 'queued':    return '<span class="badge badge-warning">排队中</span>';
+            case 'canceled':  return '<span class="badge badge-neutral">已取消</span>';
+            default:          return '<span class="badge badge-neutral">' + escapeHtml(status) + '</span>';
+        }
+    }
+
+    function renderTaskTable(tasks) {
+        var tbody = $('taskTableBody');
+        var filter = $('task-filter').value;
+        var filtered = tasks.filter(function (t) { return !filter || t.status === filter; });
+
+        if (!filtered.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">暂无任务' +
+                (filter ? '（该状态筛选下）' : '') + '</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(function (t) {
+            var mode = (t.params && t.params.mode) || 'full';
+            var modeLabel = { full: '全量', resume: '续抓', review: '审核', discover: '发现' }[mode] || mode;
+
+            var schools = (t.params && t.params.schools) || [];
+            var schoolLabel = schools.indexOf('__all__') >= 0 ? '全部学校' : schools.length + ' 所';
+
+            var cats = (t.params && t.params.categories) || [];
+            var catLabel = cats.map(function (c) { return c === 'mechanical' ? '机械' : '自动化'; }).join(',');
+            var srcs = (t.params && t.params.sources) || [];
+            var srcLabel = srcs.map(function (s) { return s === 'source_a' ? '官网' : '研招网'; }).join('+');
+
+            var progress = t.progress || {};
+            var pct = progress.percent || 0;
+
+            var actions = '<div class="row-actions">' +
+                '<button class="btn btn-outline btn-sm" onclick="viewTaskDetail(\'' + escapeHtml(t.task_id) + '\')" title="查看详情">详情</button>' +
+                (t.status === 'running' || t.status === 'queued'
+                    ? ' <button class="btn btn-danger btn-sm" onclick="cancelTask(\'' + escapeHtml(t.task_id) + '\')" title="取消">取消</button>' : '') +
+                (t.status === 'failed'
+                    ? ' <button class="btn btn-outline btn-sm" onclick="retryTask(\'' + escapeHtml(t.task_id) + '\')" title="重试">重试</button>' : '') +
+                '</div>';
+
+            return '<tr>' +
+                '<td><code>' + escapeHtml(t.task_id) + '</code></td>' +
+                '<td>' + escapeHtml(modeLabel) + '</td>' +
+                '<td>' + escapeHtml(schoolLabel) + '</td>' +
+                '<td>' + escapeHtml(catLabel) + ' / ' + escapeHtml(srcLabel) + '</td>' +
+                '<td><div class="progress">' +
+                    '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+                    '<span class="progress-text">' + (progress.completed_steps || 0) + '/' + (progress.total_steps || 0) + '</span>' +
+                '</div></td>' +
+                '<td>' + statusBadge(t.status) + '</td>' +
+                '<td style="font-size:var(--text-xs);color:var(--text-secondary)">' + formatDateTime(t.started_at) + '</td>' +
+                '<td style="font-size:var(--text-xs);color:var(--text-secondary)">' + formatElapsed(t.started_at) + '</td>' +
+                '<td>' + actions + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    // ---------- 任务操作（与后端 /api/tasks/* 契约一致） ----------
+    window.cancelTask = function (taskId) {
+        if (!confirm('确定要取消该任务吗？')) return;
+        fetch(API + '/tasks/' + encodeURIComponent(taskId) + '/cancel', {
+            method: 'POST', credentials: 'same-origin'
+        }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          .then(function () {
+              if (window.showToast) window.showToast('任务已取消', false);
+              loadTasks();
+          })
+          .catch(function (err) { showError('取消失败: ' + err.message); });
+    };
+
+    window.retryTask = function (taskId) {
+        if (!confirm('确定要重试该失败任务吗？')) return;
+        fetch(API + '/tasks/' + encodeURIComponent(taskId) + '/retry', {
+            method: 'POST', credentials: 'same-origin'
+        }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          .then(function () {
+              if (window.showToast) window.showToast('重试任务已加入队列', false);
+              loadTasks();
+          })
+          .catch(function (err) { showError('重试失败: ' + err.message); });
+    };
+
+    window.viewTaskDetail = function (taskId) {
+        fetch(API + '/tasks/' + encodeURIComponent(taskId), { credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (json) {
+                var data = json.data || json;
+                var p = data.progress || {};
+                var msg = '任务 ' + (data.task_id || taskId) + '\n' +
+                    '状态: ' + data.status + '\n' +
+                    '进度: ' + (p.completed_steps || 0) + '/' + (p.total_steps || 0) +
+                    ' (' + (p.percent || 0) + '%)\n' +
+                    '当前: ' + (p.current_step || '—') + '\n' +
+                    '开始: ' + formatDateTime(data.started_at);
+                alert(msg);
+            })
+            .catch(function (err) { showError('获取任务详情失败: ' + err.message); });
+    };
+
+    // ---------- 数据加载 ----------
+    window.loadTasks = function () {
+        $('tasks-error').style.display = 'none';
+        fetch(API + '/tasks', { credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (json) {
+                var data = json.data || json;
+                var tasks = data.tasks || [];
+                updateTaskStats(tasks);
+                renderTaskTable(tasks);
+            })
+            .catch(function (err) {
+                // 后端不可用：友好降级
+                $('taskTableBody').innerHTML =
+                    '<tr><td colspan="9" class="empty">无法加载任务列表（' + escapeHtml(err.message) +
+                    '）。请确认 Flask 服务已启动。</td></tr>';
+                showError('任务列表加载失败: ' + err.message);
+            });
+    };
+
+    loadTasks();
+})();
+</script>
+</body>
+</html>
